@@ -5,6 +5,7 @@
 import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
 import { TemplateConfigSchema } from '../../commands/template.js';
+import { requireGuildManager } from '../auth/middleware.js';
 
 const prisma = getPrismaClient();
 
@@ -53,8 +54,11 @@ export async function templatesRoutes(server: FastifyInstance): Promise<void> {
       description?: string;
       config: any;
     };
-  }>('/', async (request, reply) => {
-    const { guildId, guildName, ...templateData } = request.body;
+  }>(
+    '/',
+    { preHandler: requireGuildManager },
+    async (request, reply) => {
+      const { guildId, guildName, ...templateData } = request.body;
 
     // Validate config with schema
     const validationResult = TemplateConfigSchema.safeParse(templateData.config);
@@ -99,8 +103,31 @@ export async function templatesRoutes(server: FastifyInstance): Promise<void> {
       description?: string;
       config?: any;
     };
-  }>('/:id', async (request, reply) => {
-    const { id } = request.params;
+  }>(
+    '/:id',
+    {
+      preHandler: async (request, reply) => {
+        const { id } = request.params as { id: string };
+        
+        // Fetch template to get guildId
+        const template = await prisma.template.findUnique({
+          where: { id },
+          select: { guildId: true },
+        });
+
+        if (!template) {
+          return reply.code(404).send({ error: 'Template not found' });
+        }
+
+        // Add guildId to request for middleware
+        (request as any).body = { ...(request.body || {}), guildId: template.guildId };
+
+        // Run auth check
+        await requireGuildManager(request, reply);
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
     const updateData: any = {};
 
     if (request.body.name !== undefined) updateData.name = request.body.name;
@@ -139,8 +166,31 @@ export async function templatesRoutes(server: FastifyInstance): Promise<void> {
   // Delete template
   server.delete<{
     Params: { id: string };
-  }>('/:id', async (request, reply) => {
-    const { id } = request.params;
+  }>(
+    '/:id',
+    {
+      preHandler: async (request, reply) => {
+        const { id } = request.params as { id: string };
+        
+        // Fetch template to get guildId
+        const template = await prisma.template.findUnique({
+          where: { id },
+          select: { guildId: true },
+        });
+
+        if (!template) {
+          return reply.code(404).send({ error: 'Template not found' });
+        }
+
+        // Add guildId to request for middleware
+        (request as any).body = { guildId: template.guildId };
+
+        // Run auth check
+        await requireGuildManager(request, reply);
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
 
     try {
       await prisma.template.delete({

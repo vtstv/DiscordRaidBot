@@ -260,6 +260,175 @@ export const dashboardHTML = `<!DOCTYPE html>
             margin-top: 20px;
         }
 
+        .user-info {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info .user-details {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #5865F2;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4752C4;
+        }
+
+        .btn-success {
+            background: #43B581;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #3CA374;
+        }
+
+        .btn-danger {
+            background: #F04747;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #D84040;
+        }
+
+        .btn-secondary {
+            background: #747F8D;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5D6773;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #5865F2;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #747F8D;
+        }
+
+        .close-btn:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #5865F2;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .action-cell {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
         @media (max-width: 768px) {
             .tab-buttons {
                 flex-direction: column;
@@ -272,6 +441,15 @@ export const dashboardHTML = `<!DOCTYPE html>
             th, td {
                 padding: 8px;
             }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
         }
     </style>
 </head>
@@ -281,6 +459,25 @@ export const dashboardHTML = `<!DOCTYPE html>
             <h1>🎮 Discord Raid Bot Dashboard</h1>
             <p class="subtitle">Manage your events and templates</p>
         </header>
+
+        <div id="userInfo" class="user-info" style="display: none;">
+            <div class="user-details">
+                <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
+                <div>
+                    <strong id="userName">Loading...</strong>
+                    <div style="font-size: 12px; color: #666;">Logged in</div>
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="logout()">Logout</button>
+        </div>
+
+        <div id="loginPrompt" class="user-info">
+            <div>
+                <strong>Not logged in</strong>
+                <div style="font-size: 12px; color: #666;">Please log in to manage events and templates</div>
+            </div>
+            <button class="btn btn-primary" onclick="login()">Login with Discord</button>
+        </div>
 
         <div class="guild-selector">
             <label for="guildId">Guild ID:</label>
@@ -296,11 +493,17 @@ export const dashboardHTML = `<!DOCTYPE html>
 
             <div id="events" class="tab-content active">
                 <h2>📅 Events</h2>
+                <div id="eventsActionBar" class="action-buttons" style="display: none;">
+                    <button class="btn btn-primary" onclick="showCreateEventModal()">+ Create Event</button>
+                </div>
                 <div id="eventsData" class="loading">Enter a Guild ID above to load events...</div>
             </div>
 
             <div id="templates" class="tab-content">
                 <h2>📋 Templates</h2>
+                <div id="templatesActionBar" class="action-buttons" style="display: none;">
+                    <button class="btn btn-primary" onclick="showCreateTemplateModal()">+ Create Template</button>
+                </div>
                 <div id="templatesData" class="loading">Enter a Guild ID above to load templates...</div>
             </div>
 
@@ -362,13 +565,142 @@ export const dashboardHTML = `<!DOCTYPE html>
         </div>
     </div>
 
+    <!-- Event Create/Edit Modal -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="eventModalTitle">Create Event</h2>
+                <span class="close" onclick="closeEventModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="eventId" />
+                <div class="form-group">
+                    <label for="eventTitle">Title *</label>
+                    <input type="text" id="eventTitle" required />
+                </div>
+                <div class="form-group">
+                    <label for="eventDescription">Description</label>
+                    <textarea id="eventDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="eventStartTime">Start Time *</label>
+                    <input type="datetime-local" id="eventStartTime" required />
+                </div>
+                <div class="form-group">
+                    <label for="eventDuration">Duration (minutes)</label>
+                    <input type="number" id="eventDuration" min="1" />
+                </div>
+                <div class="form-group">
+                    <label for="eventParticipantLimit">Participant Limit</label>
+                    <input type="number" id="eventParticipantLimit" min="1" placeholder="Leave empty for unlimited" />
+                </div>
+                <div class="form-group">
+                    <label for="eventChannelId">Channel ID *</label>
+                    <input type="text" id="eventChannelId" required placeholder="Discord channel ID" />
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="saveEvent()">Save Event</button>
+                    <button class="btn btn-secondary" onclick="closeEventModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Create/Edit Modal -->
+    <div id="templateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="templateModalTitle">Create Template</h2>
+                <span class="close" onclick="closeTemplateModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="templateId" />
+                <div class="form-group">
+                    <label for="templateName">Name *</label>
+                    <input type="text" id="templateName" required />
+                </div>
+                <div class="form-group">
+                    <label for="templateDescription">Description</label>
+                    <textarea id="templateDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="templateRoles">Roles (comma-separated)</label>
+                    <input type="text" id="templateRoles" placeholder="e.g., Tank, Healer, DPS" />
+                </div>
+                <div class="form-group">
+                    <label for="templateParticipantLimit">Default Participant Limit</label>
+                    <input type="number" id="templateParticipantLimit" min="1" />
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="saveTemplate()">Save Template</button>
+                    <button class="btn btn-secondary" onclick="closeTemplateModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = '/api';
         let currentGuildId = localStorage.getItem('guildId') || '';
         let refreshInterval;
+        let isAuthenticated = false;
+        let currentUser = null;
+
+        // Check authentication status
+        async function checkAuth() {
+            try {
+                const response = await fetch('/auth/me');
+                if (response.ok) {
+                    const user = await response.json();
+                    currentUser = user;
+                    isAuthenticated = true;
+                    
+                    // Show user info
+                    document.getElementById('userInfo').style.display = 'flex';
+                    document.getElementById('loginPrompt').style.display = 'none';
+                    document.getElementById('userName').textContent = user.username;
+                    
+                    // Set avatar
+                    const avatarUrl = user.avatar 
+                        ? \`https://cdn.discordapp.com/avatars/\${user.id}/\${user.avatar}.png\`
+                        : 'https://cdn.discordapp.com/embed/avatars/0.png';
+                    document.getElementById('userAvatar').src = avatarUrl;
+                    
+                    // Show action buttons
+                    document.getElementById('eventsActionBar').style.display = 'flex';
+                    document.getElementById('templatesActionBar').style.display = 'flex';
+                } else {
+                    isAuthenticated = false;
+                    document.getElementById('userInfo').style.display = 'none';
+                    document.getElementById('loginPrompt').style.display = 'flex';
+                    document.getElementById('eventsActionBar').style.display = 'none';
+                    document.getElementById('templatesActionBar').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Failed to check auth:', error);
+                isAuthenticated = false;
+                document.getElementById('userInfo').style.display = 'none';
+                document.getElementById('loginPrompt').style.display = 'flex';
+            }
+        }
+
+        // Login/Logout functions
+        function login() {
+            window.location.href = '/auth/login';
+        }
+
+        function logout() {
+            fetch('/auth/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.reload();
+                })
+                .catch(error => console.error('Logout failed:', error));
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            checkAuth(); // Check authentication first
+            
             const guildInput = document.getElementById('guildId');
             if (currentGuildId) {
                 guildInput.value = currentGuildId;
@@ -453,7 +785,13 @@ export const dashboardHTML = `<!DOCTYPE html>
                     })
                 );
 
-                let html = '<table><thead><tr><th style="width: 40px;"></th><th>Title</th><th>Date & Time</th><th>Participants</th><th>Status</th></tr></thead><tbody>';
+                let html = '<table><thead><tr><th style="width: 40px;"></th><th>Title</th><th>Date & Time</th><th>Participants</th><th>Status</th>';
+                
+                if (isAuthenticated) {
+                    html += '<th style="width: 150px;">Actions</th>';
+                }
+                
+                html += '</tr></thead><tbody>';
 
                 eventsWithDetails.forEach((event, index) => {
                     const startTime = new Date(event.startTime);
@@ -469,6 +807,12 @@ export const dashboardHTML = `<!DOCTYPE html>
                             <td>\${formatDateTime(startTime)}</td>
                             <td>\${participants.length} / \${limit}</td>
                             <td><span class="status-badge status-\${status}">\${status.toUpperCase()}</span></td>
+                            \${isAuthenticated ? \`
+                                <td class="action-cell">
+                                    <button class="btn btn-small btn-success" onclick="event.stopPropagation(); showEditEventModal(\${JSON.stringify(event).replace(/"/g, '&quot;')})">Edit</button>
+                                    <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); deleteEvent('\${event.id}')">Delete</button>
+                                </td>
+                            \` : ''}
                         </tr>
                         <tr id="details-\${index}" style="display: none;">
                             <td colspan="5">
@@ -560,12 +904,14 @@ export const dashboardHTML = `<!DOCTYPE html>
                                 <th>Description</th>
                                 <th>Roles</th>
                                 <th>Created</th>
+                                \${isAuthenticated ? '<th style="width: 150px;">Actions</th>' : ''}
                             </tr>
                         </thead>
                         <tbody>
                             \${templates.map(template => {
                                 const roles = template.config?.roles?.join(', ') || 'N/A';
                                 const created = new Date(template.createdAt).toLocaleDateString();
+                                const templateJson = JSON.stringify(template).replace(/"/g, '&quot;');
 
                                 return \`
                                     <tr>
@@ -573,6 +919,12 @@ export const dashboardHTML = `<!DOCTYPE html>
                                         <td>\${escapeHtml(template.description || 'No description')}</td>
                                         <td>\${escapeHtml(roles)}</td>
                                         <td>\${created}</td>
+                                        \${isAuthenticated ? \`
+                                            <td class="action-cell">
+                                                <button class="btn btn-small btn-success" onclick='showEditTemplateModal(\${templateJson})'>Edit</button>
+                                                <button class="btn btn-small btn-danger" onclick="deleteTemplate('\${template.id}')">Delete</button>
+                                            </td>
+                                        \` : ''}
                                     </tr>
                                 \`;
                             }).join('')}
@@ -601,6 +953,257 @@ export const dashboardHTML = `<!DOCTYPE html>
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // ===== MODAL MANAGEMENT =====
+        function showCreateEventModal() {
+            if (!isAuthenticated) {
+                alert('Please login first');
+                return;
+            }
+            document.getElementById('eventModalTitle').textContent = 'Create Event';
+            document.getElementById('eventId').value = '';
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventDescription').value = '';
+            document.getElementById('eventStartTime').value = '';
+            document.getElementById('eventDuration').value = '';
+            document.getElementById('eventParticipantLimit').value = '';
+            document.getElementById('eventChannelId').value = '';
+            document.getElementById('eventModal').style.display = 'block';
+        }
+
+        function showEditEventModal(event) {
+            if (!isAuthenticated) {
+                alert('Please login first');
+                return;
+            }
+            document.getElementById('eventModalTitle').textContent = 'Edit Event';
+            document.getElementById('eventId').value = event.id;
+            document.getElementById('eventTitle').value = event.title;
+            document.getElementById('eventDescription').value = event.description || '';
+            
+            const startTime = new Date(event.startTime);
+            const localDateTime = new Date(startTime.getTime() - startTime.getTimezoneOffset() * 60000)
+                .toISOString()
+                .slice(0, 16);
+            document.getElementById('eventStartTime').value = localDateTime;
+            
+            document.getElementById('eventDuration').value = event.duration || '';
+            document.getElementById('eventParticipantLimit').value = event.participantLimit || '';
+            document.getElementById('eventChannelId').value = event.channelId;
+            document.getElementById('eventModal').style.display = 'block';
+        }
+
+        function closeEventModal() {
+            document.getElementById('eventModal').style.display = 'none';
+        }
+
+        function showCreateTemplateModal() {
+            if (!isAuthenticated) {
+                alert('Please login first');
+                return;
+            }
+            document.getElementById('templateModalTitle').textContent = 'Create Template';
+            document.getElementById('templateId').value = '';
+            document.getElementById('templateName').value = '';
+            document.getElementById('templateDescription').value = '';
+            document.getElementById('templateRoles').value = '';
+            document.getElementById('templateParticipantLimit').value = '';
+            document.getElementById('templateModal').style.display = 'block';
+        }
+
+        function showEditTemplateModal(template) {
+            if (!isAuthenticated) {
+                alert('Please login first');
+                return;
+            }
+            document.getElementById('templateModalTitle').textContent = 'Edit Template';
+            document.getElementById('templateId').value = template.id;
+            document.getElementById('templateName').value = template.name;
+            document.getElementById('templateDescription').value = template.description || '';
+            
+            const roles = template.config?.roles?.join(', ') || '';
+            document.getElementById('templateRoles').value = roles;
+            
+            document.getElementById('templateParticipantLimit').value = template.config?.participantLimit || '';
+            document.getElementById('templateModal').style.display = 'block';
+        }
+
+        function closeTemplateModal() {
+            document.getElementById('templateModal').style.display = 'none';
+        }
+
+        // ===== EVENT CRUD =====
+        async function saveEvent() {
+            if (!currentGuildId) {
+                alert('Please enter a Guild ID first');
+                return;
+            }
+
+            const eventId = document.getElementById('eventId').value;
+            const title = document.getElementById('eventTitle').value.trim();
+            const description = document.getElementById('eventDescription').value.trim();
+            const startTime = document.getElementById('eventStartTime').value;
+            const duration = document.getElementById('eventDuration').value;
+            const participantLimit = document.getElementById('eventParticipantLimit').value;
+            const channelId = document.getElementById('eventChannelId').value.trim();
+
+            if (!title || !startTime || !channelId) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const eventData = {
+                guildId: currentGuildId,
+                title,
+                description,
+                startTime: new Date(startTime).toISOString(),
+                channelId,
+            };
+
+            if (duration) eventData.duration = parseInt(duration);
+            if (participantLimit) eventData.participantLimit = parseInt(participantLimit);
+
+            try {
+                const url = eventId 
+                    ? \`\${API_BASE}/events/\${eventId}\`
+                    : \`\${API_BASE}/events\`;
+                const method = eventId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(eventData),
+                });
+
+                if (response.ok) {
+                    alert(eventId ? 'Event updated successfully!' : 'Event created successfully!');
+                    closeEventModal();
+                    loadEvents();
+                } else {
+                    const error = await response.json();
+                    alert(\`Failed to save event: \${error.message || 'Unknown error'}\`);
+                }
+            } catch (error) {
+                console.error('Failed to save event:', error);
+                alert(\`Error: \${error.message}\`);
+            }
+        }
+
+        async function deleteEvent(eventId) {
+            if (!confirm('Are you sure you want to delete this event?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(\`\${API_BASE}/events/\${eventId}\`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    alert('Event deleted successfully!');
+                    loadEvents();
+                } else {
+                    const error = await response.json();
+                    alert(\`Failed to delete event: \${error.message || 'Unknown error'}\`);
+                }
+            } catch (error) {
+                console.error('Failed to delete event:', error);
+                alert(\`Error: \${error.message}\`);
+            }
+        }
+
+        // ===== TEMPLATE CRUD =====
+        async function saveTemplate() {
+            if (!currentGuildId) {
+                alert('Please enter a Guild ID first');
+                return;
+            }
+
+            const templateId = document.getElementById('templateId').value;
+            const name = document.getElementById('templateName').value.trim();
+            const description = document.getElementById('templateDescription').value.trim();
+            const rolesInput = document.getElementById('templateRoles').value.trim();
+            const participantLimit = document.getElementById('templateParticipantLimit').value;
+
+            if (!name) {
+                alert('Please enter a template name');
+                return;
+            }
+
+            const roles = rolesInput ? rolesInput.split(',').map(r => r.trim()).filter(r => r) : [];
+
+            const templateData = {
+                guildId: currentGuildId,
+                name,
+                description,
+                config: {
+                    roles,
+                },
+            };
+
+            if (participantLimit) {
+                templateData.config.participantLimit = parseInt(participantLimit);
+            }
+
+            try {
+                const url = templateId 
+                    ? \`\${API_BASE}/templates/\${templateId}\`
+                    : \`\${API_BASE}/templates\`;
+                const method = templateId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(templateData),
+                });
+
+                if (response.ok) {
+                    alert(templateId ? 'Template updated successfully!' : 'Template created successfully!');
+                    closeTemplateModal();
+                    loadTemplates();
+                } else {
+                    const error = await response.json();
+                    alert(\`Failed to save template: \${error.message || 'Unknown error'}\`);
+                }
+            } catch (error) {
+                console.error('Failed to save template:', error);
+                alert(\`Error: \${error.message}\`);
+            }
+        }
+
+        async function deleteTemplate(templateId) {
+            if (!confirm('Are you sure you want to delete this template?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(\`\${API_BASE}/templates/\${templateId}\`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    alert('Template deleted successfully!');
+                    loadTemplates();
+                } else {
+                    const error = await response.json();
+                    alert(\`Failed to delete template: \${error.message || 'Unknown error'}\`);
+                }
+            } catch (error) {
+                console.error('Failed to delete template:', error);
+                alert(\`Error: \${error.message}\`);
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const eventModal = document.getElementById('eventModal');
+            const templateModal = document.getElementById('templateModal');
+            if (event.target === eventModal) {
+                closeEventModal();
+            } else if (event.target === templateModal) {
+                closeTemplateModal();
+            }
         }
     </script>
 </body>

@@ -4,6 +4,7 @@
 
 import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
+import { requireGuildManager } from '../auth/middleware.js';
 
 const prisma = getPrismaClient();
 
@@ -91,8 +92,11 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
       status?: string;
       templateId?: string;
     };
-  }>('/', async (request, reply) => {
-    const { guildId, guildName, ...eventData } = request.body;
+  }>(
+    '/',
+    { preHandler: requireGuildManager },
+    async (request, reply) => {
+      const { guildId, guildName, ...eventData } = request.body;
 
     // Ensure guild exists
     await prisma.guild.upsert({
@@ -134,11 +138,32 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
       roleConfig?: any;
       status?: string;
     };
-  }>('/:id', async (request, reply) => {
-    const { id } = request.params;
-    const updateData: any = {};
+  }>(
+    '/:id',
+    {
+      preHandler: async (request, reply) => {
+        const { id } = request.params as { id: string };
+        
+        // Fetch event to get guildId
+        const event = await prisma.event.findUnique({
+          where: { id },
+          select: { guildId: true },
+        });
 
-    if (request.body.title !== undefined) updateData.title = request.body.title;
+        if (!event) {
+          return reply.code(404).send({ error: 'Event not found' });
+        }
+
+        // Add guildId to request for middleware
+        (request as any).body = { ...(request.body || {}), guildId: event.guildId };
+
+        // Run auth check
+        await requireGuildManager(request, reply);
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      const updateData: any = {};    if (request.body.title !== undefined) updateData.title = request.body.title;
     if (request.body.description !== undefined) updateData.description = request.body.description;
     if (request.body.startTime !== undefined) updateData.startTime = new Date(request.body.startTime);
     if (request.body.duration !== undefined) updateData.duration = request.body.duration;
@@ -165,8 +190,31 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
   // Delete event
   server.delete<{
     Params: { id: string };
-  }>('/:id', async (request, reply) => {
-    const { id } = request.params;
+  }>(
+    '/:id',
+    {
+      preHandler: async (request, reply) => {
+        const { id } = request.params as { id: string };
+        
+        // Fetch event to get guildId
+        const event = await prisma.event.findUnique({
+          where: { id },
+          select: { guildId: true },
+        });
+
+        if (!event) {
+          return reply.code(404).send({ error: 'Event not found' });
+        }
+
+        // Add guildId to request for middleware
+        (request as any).body = { guildId: event.guildId };
+
+        // Run auth check
+        await requireGuildManager(request, reply);
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
 
     try {
       await prisma.event.delete({

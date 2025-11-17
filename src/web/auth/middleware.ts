@@ -125,18 +125,41 @@ export async function requireGuildAdmin(
  * User must have configured manager role or be admin
  */
 export async function requireGuildManager(
-  request: FastifyRequest<{
-    Querystring: { guildId?: string };
-    Params: { guildId?: string };
-  }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ): Promise<void> {
-  await requireGuildAccess(request, reply);
+  // First check auth
+  await requireAuth(request, reply);
   if (reply.sent) return;
 
   const session = (request as any).authSession as AuthSession;
-  const guildId = request.query.guildId || request.params.guildId!;
-  const guild = (request as any).guild;
+  const guildId = 
+    (request as any).query?.guildId || 
+    (request as any).params?.guildId || 
+    (request as any).body?.guildId;
+
+  if (!guildId) {
+    reply.code(400).send({
+      error: 'Bad Request',
+      message: 'Guild ID is required in query, params, or body',
+    });
+    return;
+  }
+
+  // Get user's guilds
+  const guilds = await getUserGuilds(session.accessToken);
+  const guild = guilds.find(g => g.id === guildId);
+
+  if (!guild) {
+    reply.code(403).send({
+      error: 'Forbidden',
+      message: 'You are not a member of this guild',
+    });
+    return;
+  }
+
+  // Store guild info for route handler
+  (request as any).guild = guild;
 
   // Owner and admins always have access
   if (guild.owner || hasAdminPermissions(guild.permissions)) {
