@@ -198,6 +198,13 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
   const channelRequiresApproval = guild.approvalChannels?.includes(channel.id) || false;
   const requireApproval = requireApprovalOverride !== null ? requireApprovalOverride : channelRequiresApproval;
 
+  logger.debug({
+    channelId: channel.id,
+    channelRequiresApproval,
+    requireApprovalOverride,
+    finalRequireApproval: requireApproval,
+  }, 'Approval settings for event');
+
   // Create event
   const event = await prisma.event.create({
     data: {

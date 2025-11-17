@@ -113,6 +113,8 @@ Replace `YOUR_CLIENT_ID` with your Application ID from Step 1.
 docker-compose up -d
 ```
 
+> **Note**: Database migrations run automatically on container startup. No manual migration step required!
+
 **Using Node.js:**
 ```bash
 npm install
@@ -298,60 +300,6 @@ make docker-up    # Start Docker containers
 make docker-logs  # View Docker logs
 make help         # Show all available commands
 ```
-
-## Project Structure
-
-```
-.
-├── src/
-│   ├── bot/          # Discord bot logic
-│   ├── commands/     # Slash commands
-│   ├── database/     # Database utilities
-│   ├── scheduler/    # Event scheduling and reminders
-│   ├── templates/    # Event template management
-│   └── web/          # Optional web dashboard
-├── prisma/
-│   └── schema.prisma # Database schema
-├── docker/
-│   └── healthcheck.sh
-├── tests/            # Test files
-├── scripts/          # Utility scripts
-├── Dockerfile
-├── docker-compose.yml
-└── README.md
-```
-
-## Configuration
-
-Configuration is managed through environment variables. See `.env.example` for all available options.
-
-Key configuration:
-- `DISCORD_TOKEN` - Your Discord bot token
-- `DISCORD_CLIENT_ID` - Your Discord application ID
-- `DATABASE_URL` - PostgreSQL connection string
-- `DEFAULT_TIMEZONE` - Default timezone for events
-- `WEB_ENABLED` - Enable web dashboard (optional)
-
-## Database
-
-The bot uses PostgreSQL with Prisma ORM. Schema includes:
-- `Guild` - Discord guild/server settings
-- `Template` - Event templates
-- `Event` - Scheduled events
-- `Participant` - Event participants
-- `LogEntry` - Audit logs
-
-## Docker
-
-Multi-stage Dockerfile for optimized production builds:
-- Build stage: Compiles TypeScript
-- Runtime stage: Minimal alpine image with only production dependencies
-
-Services in docker-compose:
-- `bot` - Discord bot service
-- `postgres` - PostgreSQL database
-- `redis` - Redis (optional, for advanced queuing)
-- `web` - Web dashboard (optional, use `--profile web`)
 
 ## License
 

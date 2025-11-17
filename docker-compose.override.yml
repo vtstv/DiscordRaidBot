@@ -14,7 +14,8 @@ services:
     environment:
       NODE_ENV: development
       LOG_LEVEL: debug
-    command: npm run dev
+    entrypoint: ["dumb-init", "--"]
+    command: ["/start.sh"]
 
   web:
     build:

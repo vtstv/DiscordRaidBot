@@ -25,12 +25,22 @@ export async function createEventMessage(event: any) {
   const participants = await prisma.participant.findMany({
     where: { eventId: event.id, status: 'confirmed' },
     orderBy: { joinedAt: 'asc' },
+    select: { userId: true, username: true, role: true, spec: true, joinedAt: true },
   });
 
   const pending = await prisma.participant.findMany({
     where: { eventId: event.id, status: 'pending' },
     orderBy: { joinedAt: 'asc' },
+    select: { userId: true, username: true, role: true },
   });
+
+  logger.debug({
+    eventId: event.id,
+    requireApproval: event.requireApproval,
+    participantsCount: participants.length,
+    pendingCount: pending.length,
+  }, 'Creating event message with participants');
+
 
   // Build message content
   let content = `# ${event.title}\n\n`;
@@ -91,34 +101,37 @@ export async function createEventMessage(event: any) {
       compositionLine += `${emoji} ${role} (${limit ? current + '/' + limit : current}):\n`;
       
       if (roleGroups[role].length > 0) {
-        compositionLine += roleGroups[role].map((p, i) => `${i + 1}. ${p.username}`).join('\n');
+        compositionLine += roleGroups[role].map((p: any, i: number) => `${i + 1}. <@${p.userId}>`).join('\n');
       } else {
         compositionLine += `_${t('event.empty')}_`;
       }
       compositionLine += '\n';
     }
     content += compositionLine;
+  }
 
-    // Pending participants section
-    if (event.requireApproval && pending.length > 0) {
-      content += `\n**⏳ ${t('event.pendingApproval')} (${pending.length})**\n`;
-      for (const participant of pending) {
-        const roleInfo = participant.role ? ` [${participant.role}]` : '';
-        content += `• ${participant.username}${roleInfo}\n`;
-      }
-    }
-  } else {
-    // Simple participant list (no roles)
+  // Simple participant list (no roles) - only if no roleConfig
+  if (!roleConfig) {
     const maxPart = event.maxParticipants || t('event.unlimited');
     content += `**${t('event.participants')} (${participants.length}/${maxPart})**\n`;
 
     if (participants.length > 0) {
       for (let i = 0; i < participants.length; i++) {
-        content += `${i + 1}. ${participants[i].username}\n`;
+        content += `${i + 1}. <@${(participants[i] as any).userId}>\n`;
       }
     } else {
       content += `_${t('event.noParticipants')}_\n`;
     }
+  }
+
+  // Pending participants section (show AFTER participant list)
+  if (event.requireApproval && pending.length > 0) {
+    content += `\n**⏳ ${t('event.pendingApproval')} (${pending.length})**\n`;
+    const pendingMentions = pending.map((p: any) => {
+      const roleInfo = p.role ? ` [${p.role}]` : '';
+      return `<@${p.userId}>${roleInfo}`;
+    }).join(', ');
+    content += pendingMentions + '\n';
   }
 
   // Footer
@@ -210,7 +223,21 @@ export async function createEventMessage(event: any) {
           .setCustomId(`event_leave:${event.id}`)
           .setLabel(t('buttons.leave'))
           .setStyle(ButtonStyle.Danger)
-          .setEmoji('❌'),
+          .setEmoji('❌')
+      );
+
+      // Add approve button if there are pending participants
+      if (event.requireApproval && pending.length > 0) {
+        buttonRow.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`event_approve:${event.id}`)
+            .setLabel(t('buttons.approve'))
+            .setStyle(ButtonStyle.Success)
+            .setEmoji('✅')
+        );
+      }
+
+      buttonRow.addComponents(
         new ButtonBuilder()
           .setCustomId(`event_edit:${event.id}`)
           .setLabel(t('buttons.edit'))

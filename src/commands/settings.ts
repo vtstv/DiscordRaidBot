@@ -21,7 +21,6 @@ const command: Command = {
   data: new SlashCommandBuilder()
     .setName('settings')
     .setDescription('Manage server settings')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand(subcommand =>
       subcommand
         .setName('view')
@@ -101,6 +100,19 @@ const command: Command = {
     )
     .addSubcommand(subcommand =>
       subcommand
+        .setName('prefix')
+        .setDescription('Set command prefix for text commands')
+        .addStringOption(option =>
+          option
+            .setName('prefix')
+            .setDescription('Command prefix (e.g., !, $, #, **)')
+            .setRequired(false)
+            .setMinLength(1)
+            .setMaxLength(3)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
         .setName('approval-channels')
         .setDescription('Manage channels that require participant approval')
         .addStringOption(option =>
@@ -129,6 +141,12 @@ const command: Command = {
       throw new CommandError('This command can only be used in a server');
     }
 
+    // Check if user is administrator
+    const member = interaction.member as any;
+    if (!member?.permissions?.has(PermissionFlagsBits.Administrator)) {
+      throw new CommandError('You must be an administrator to use this command.');
+    }
+
     const subcommand = interaction.options.getSubcommand();
 
     switch (subcommand) {
@@ -140,6 +158,9 @@ const command: Command = {
         break;
       case 'manager-role':
         await handleManagerRole(interaction);
+        break;
+      case 'prefix':
+        await handlePrefix(interaction);
         break;
       case 'approval-channels':
         await handleApprovalChannels(interaction);
@@ -355,10 +376,67 @@ async function handleManagerRole(interaction: ChatInputCommandInteraction): Prom
   logger.info({ guildId, managerRoleId: role?.id }, 'Manager role updated');
 
   if (role) {
-    await interaction.editReply(`✅ Bot manager role set to ${role}\\n\\nUsers with this role can create events and templates.`);
+    await interaction.editReply(`✅ Bot manager role set to ${role}\n\nUsers with this role can create events and templates.`);
   } else {
-    await interaction.editReply('✅ Manager role cleared.\\n\\nOnly **Administrators** can manage the bot now.');
+    await interaction.editReply('✅ Manager role cleared.\n\nOnly **Administrators** can manage the bot now.');
   }
+}
+
+async function handlePrefix(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply();
+
+  const guildId = interaction.guild!.id;
+  const prefix = interaction.options.getString('prefix');
+
+  if (!prefix) {
+    // Show current prefix
+    const guild = await prisma.guild.findUnique({
+      where: { id: guildId },
+      select: { commandPrefix: true },
+    });
+
+    const currentPrefix = guild?.commandPrefix || '!';
+    await interaction.editReply(
+      `**Current command prefix:** \`${currentPrefix}\`\n\n` +
+      `**Usage:** \`/settings prefix <symbol>\`\n` +
+      `**Examples:** \`$\`, \`#\`, \`!!\`, \`**\`\n\n` +
+      `**Available commands:**\n` +
+      `\`${currentPrefix}help\` - Show help\n` +
+      `\`${currentPrefix}event list\` - List events\n` +
+      `\`${currentPrefix}template list\` - List templates\n` +
+      `\`${currentPrefix}settings\` - View settings`
+    );
+    return;
+  }
+
+  // Validate prefix
+  if (!/^[!@#$%^&*\-_=+|\\:;]{1,3}$/.test(prefix)) {
+    await interaction.editReply('❌ Prefix must be 1-3 special characters (e.g., !, $, #, **, etc.)');
+    return;
+  }
+
+  await prisma.guild.upsert({
+    where: { id: guildId },
+    create: {
+      id: guildId,
+      name: interaction.guild!.name,
+      commandPrefix: prefix,
+    },
+    update: {
+      commandPrefix: prefix,
+    },
+  });
+
+  logger.info({ guildId, prefix }, 'Command prefix updated');
+
+  await interaction.editReply(
+    `✅ Command prefix changed to: \`${prefix}\`\n\n` +
+    `**You can now use:**\n` +
+    `\`${prefix}help\` - Show help\n` +
+    `\`${prefix}event list\` - List events\n` +
+    `\`${prefix}template list\` - List templates\n` +
+    `\`${prefix}settings\` - View settings`
+  );
 }
 
 async function handleApprovalChannels(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -399,7 +477,7 @@ async function handleApprovalChannels(interaction: ChatInputCommandInteraction):
       });
       logger.info({ guildId, channelId: channel.id }, 'Approval channel added');
       await interaction.editReply(
-        `✅ Approval required for ${channel}\\n\\n` +
+        `✅ Approval required for ${channel}\n\n` +
         `Events posted in this channel will require creator approval before participants are confirmed.`
       );
       break;
@@ -423,12 +501,12 @@ async function handleApprovalChannels(interaction: ChatInputCommandInteraction):
 
     case 'list':
       if (currentChannels.length === 0) {
-        await interaction.editReply('📋 No approval channels configured.\\n\\nUse `/settings approval-channels action:Add` to add channels.');
+        await interaction.editReply('📋 No approval channels configured.\n\nUse `/settings approval-channels action:Add` to add channels.');
         return;
       }
       const channelMentions = currentChannels.map((id: string) => `<#${id}>`).join(', ');
       await interaction.editReply(
-        `📋 **Channels requiring participant approval:**\\n\\n${channelMentions}\\n\\n` +
+        `📋 **Channels requiring participant approval:**\n\n${channelMentions}\n\n` +
         `Events in these channels require creator approval before participants are confirmed.`
       );
       break;

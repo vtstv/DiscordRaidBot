@@ -219,7 +219,7 @@ async function handleButton(interaction: ButtonInteraction): Promise<void> {
         // Get pending participants
         const pendingParticipants = await prisma.participant.findMany({
           where: { eventId, status: 'pending' },
-          select: { userId: true, username: true },
+          select: { userId: true, username: true, role: true },
         });
 
         if (pendingParticipants.length === 0) {
@@ -227,31 +227,114 @@ async function handleButton(interaction: ButtonInteraction): Promise<void> {
           break;
         }
 
-        // Create select menu for approval
-        const { StringSelectMenuBuilder: SelectMenuBuilder, ActionRowBuilder } = await import('discord.js');
+        // Create buttons for approval
+        const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = await import('discord.js');
         
-        const options = pendingParticipants.map((p: any) => ({
-          label: p.username,
-          value: p.userId,
-          description: 'Click to approve',
-        }));
+        // Build participant list text
+        let participantList = `✅ **Approve Participants** (${pendingParticipants.length} pending)\n\n`;
+        participantList += pendingParticipants.map((p: any, i: number) => {
+          const roleInfo = p.role ? ` [${p.role}]` : '';
+          return `${i + 1}. <@${p.userId}>${roleInfo}`;
+        }).join('\n');
 
-        const selectMenu = new SelectMenuBuilder()
-          .setCustomId(`approve_select:${eventId}`)
-          .setPlaceholder('Select participants to approve')
-          .setMinValues(1)
-          .setMaxValues(Math.min(options.length, 25))
-          .addOptions(options);
+        const components: any[] = [];
 
-        const row = new ActionRowBuilder<any>().addComponents(selectMenu);
+        // Add "Approve All" button
+        const approveAllRow = new ActionRowBuilder<any>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`approve_all:${eventId}`)
+            .setLabel(`Approve All (${pendingParticipants.length})`)
+            .setStyle(ButtonStyle.Success)
+            .setEmoji('✅')
+        );
+        components.push(approveAllRow);
+
+        // Add individual approve buttons (up to 20 participants, 4 per row)
+        let currentRow: any = null;
+        for (let i = 0; i < Math.min(pendingParticipants.length, 20); i++) {
+          if (i % 4 === 0) {
+            if (currentRow) components.push(currentRow);
+            currentRow = new ActionRowBuilder<any>();
+          }
+          
+          const p = pendingParticipants[i];
+          currentRow.addComponents(
+            new ButtonBuilder()
+              .setCustomId(`approve_user:${eventId}:${p.userId}`)
+              .setLabel(`${i + 1}`)
+              .setStyle(ButtonStyle.Primary)
+          );
+        }
+        if (currentRow && currentRow.components.length > 0) {
+          components.push(currentRow);
+        }
 
         await interaction.editReply({
-          content: `✅ **Approve Participants** (${pendingParticipants.length} pending)\\n\\nSelect one or more participants to approve:`,
-          components: [row],
+          content: participantList + '\n\n_Click a number to approve individual participant, or "Approve All" to approve everyone._',
+          components,
         });
       } catch (error: any) {
         logger.error({ error, eventId: params[0] }, 'Failed to handle approve button');
         await interaction.editReply(`❌ ${error.message || 'Failed to process approval request'}`);
+      }
+      break;
+
+    case 'approve_all':
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const eventId = params[0];
+        const getPrismaClient = (await import('../database/db.js')).default;
+        const prisma = getPrismaClient();
+        
+        // Get all pending participants
+        const pendingParticipants = await prisma.participant.findMany({
+          where: { eventId, status: 'pending' },
+          select: { userId: true },
+        });
+
+        if (pendingParticipants.length === 0) {
+          await interaction.editReply('❌ No pending participants to approve.');
+          break;
+        }
+
+        const userIds = pendingParticipants.map((p: any) => p.userId);
+        const { approveParticipants } = await import('../services/participation.js');
+        
+        const result = await approveParticipants(
+          eventId,
+          userIds,
+          interaction.user.id
+        );
+
+        await interaction.editReply(`✅ Approved ${result.approved} participant(s)!`);
+      } catch (error: any) {
+        logger.error({ error, eventId: params[0] }, 'Failed to approve all participants');
+        await interaction.editReply(`❌ ${error.message || 'Failed to approve participants'}`);
+      }
+      break;
+
+    case 'approve_user':
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const eventId = params[0];
+        const userId = params[1];
+        
+        const { approveParticipants } = await import('../services/participation.js');
+        
+        const result = await approveParticipants(
+          eventId,
+          [userId],
+          interaction.user.id
+        );
+
+        if (result.approved > 0) {
+          await interaction.editReply(`✅ Participant approved!`);
+        } else {
+          await interaction.editReply(`❌ Could not approve participant (may be full or already approved).`);
+        }
+      } catch (error: any) {
+        logger.error({ error, eventId: params[0], userId: params[1] }, 'Failed to approve user');
+        await interaction.editReply(`❌ ${error.message || 'Failed to approve participant'}`);
       }
       break;
 
@@ -276,27 +359,9 @@ async function handleSelectMenu(interaction: StringSelectMenuInteraction): Promi
 
   logger.debug({ action, params, values: interaction.values, user: interaction.user.tag }, 'Select menu interaction');
 
-  const { updateParticipantRole, approveParticipants } = await import('../services/participation.js');
+  const { updateParticipantRole } = await import('../services/participation.js');
 
   switch (action) {
-    case 'approve_select':
-      await interaction.deferReply({ ephemeral: true });
-      try {
-        const eventId = params[0];
-        const selectedUserIds = interaction.values;
-        
-        const result = await approveParticipants(
-          eventId,
-          selectedUserIds,
-          interaction.user.id
-        );
-
-        await interaction.editReply(result.message);
-      } catch (error: any) {
-        await interaction.editReply(`❌ ${error.message || 'Failed to approve participants'}`);
-      }
-      break;
-
     case 'event_role':
       await interaction.deferReply({ ephemeral: true });
       try {

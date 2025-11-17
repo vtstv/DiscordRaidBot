@@ -157,8 +157,8 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
   if (name.length < 1 || name.length > 100) {
     throw new ValidationError('Template name must be between 1 and 100 characters');
   }
-  if (!/^[a-zA-Z0-9\s\-_а-яА-ЯёЁ]+$/u.test(name)) {
-    throw new ValidationError('Template name can only contain letters, numbers, spaces, hyphens, and underscores');
+  if (!/^[a-zA-Z0-9\s\-_+а-яА-ЯёЁ]+$/u.test(name)) {
+    throw new ValidationError('Template name can only contain letters, numbers, spaces, hyphens, underscores, and plus signs');
   }
 
   // Parse and validate JSON config

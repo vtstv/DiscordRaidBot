@@ -1,8 +1,8 @@
 # Build stage
 FROM node:18-alpine AS build
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+# Install OpenSSL for Prisma and dumb-init for signal handling
+RUN apk add --no-cache openssl dumb-init
 
 WORKDIR /app
 
@@ -22,6 +22,11 @@ RUN npx prisma generate
 
 # Build TypeScript
 RUN npm run build
+
+# Copy startup script and healthcheck to build stage too
+COPY docker/start.sh /start.sh
+COPY docker/healthcheck.sh /healthcheck.sh
+RUN chmod +x /start.sh /healthcheck.sh
 
 # Runtime stage
 FROM node:18-alpine AS runtime
@@ -54,12 +59,17 @@ COPY public ./public
 COPY docker/healthcheck.sh /healthcheck.sh
 RUN chmod +x /healthcheck.sh
 
+# Copy startup script
+COPY docker/start.sh /start.sh
+RUN chmod +x /start.sh
+
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
 # Change ownership
-RUN chown -R nodejs:nodejs /app
+RUN chown -R nodejs:nodejs /app && \
+    chown nodejs:nodejs /start.sh
 
 USER nodejs
 
@@ -67,6 +77,6 @@ USER nodejs
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD ["/healthcheck.sh"]
 
-# Run with dumb-init
+# Run with dumb-init and startup script
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/bot/index.js"]
+CMD ["/start.sh"]

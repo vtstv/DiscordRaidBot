@@ -4,7 +4,9 @@
 
 import { ChatInputCommandInteraction, GuildMember, PermissionFlagsBits } from 'discord.js';
 import getPrismaClient from '../database/db.js';
+import { getModuleLogger } from './logger.js';
 
+const logger = getModuleLogger('permissions');
 const prisma = getPrismaClient();
 
 /**
@@ -19,10 +21,18 @@ export async function hasManagementPermissions(
     return false;
   }
 
-  const member = interaction.member as GuildMember;
+  // Fetch full member data to ensure roles are cached
+  let member: GuildMember;
+  try {
+    member = await interaction.guild.members.fetch(interaction.user.id);
+  } catch (error) {
+    logger.error({ error, userId: interaction.user.id }, 'Failed to fetch member');
+    return false;
+  }
 
   // Check if user is administrator
   if (member.permissions.has(PermissionFlagsBits.Administrator)) {
+    logger.debug({ userId: member.user.id, username: member.user.tag }, 'User is administrator');
     return true;
   }
 
@@ -32,10 +42,27 @@ export async function hasManagementPermissions(
     select: { managerRoleId: true },
   });
 
+  logger.debug({
+    guildId: interaction.guild.id,
+    userId: member.user.id,
+    username: member.user.tag,
+    managerRoleId: guild?.managerRoleId,
+    userRoles: Array.from(member.roles.cache.keys()),
+  }, 'Checking manager role permissions');
+
   if (guild?.managerRoleId) {
-    return member.roles.cache.has(guild.managerRoleId);
+    const hasRole = member.roles.cache.has(guild.managerRoleId);
+    logger.info({ 
+      hasRole, 
+      managerRoleId: guild.managerRoleId,
+      userId: member.user.id,
+      username: member.user.tag,
+      roleExists: member.guild.roles.cache.has(guild.managerRoleId),
+    }, 'Manager role check result');
+    return hasRole;
   }
 
+  logger.debug({ userId: member.user.id }, 'No manager role configured, denying access');
   // Default: only administrators
   return false;
 }

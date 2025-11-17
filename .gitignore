@@ -54,3 +54,4 @@ prisma/migrations/**/migration.sql
 .cache/
 temp/
 tmp/
+scripts/add-c.ps1

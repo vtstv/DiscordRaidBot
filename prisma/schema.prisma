@@ -17,6 +17,7 @@ model Guild {
   logChannelId String?
   archiveChannelId String?
   managerRoleId String?  // Role that can manage bot (create events, templates, etc.)
+  commandPrefix String   @default("!")  // Prefix for text commands (e.g., !, $, #)
   approvalChannels String[] @default([])  // Channels that require approval for participants
   reminderIntervals String[] @default(["1h", "15m"])
   createdAt DateTime @default(now())

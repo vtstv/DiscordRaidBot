@@ -96,6 +96,15 @@ export async function joinEvent(params: JoinEventParams): Promise<{ success: boo
     },
   });
 
+  logger.info({ 
+    eventId, 
+    userId, 
+    username, 
+    role, 
+    status, 
+    requireApproval: event.requireApproval,
+  }, 'Participant created');
+
   // Update event message
   await updateEventMessage(eventId);
 

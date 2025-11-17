@@ -8,6 +8,7 @@ import { getModuleLogger } from '../utils/logger.js';
 import { connectDatabase, disconnectDatabase } from '../database/db.js';
 import { loadCommands, getCommands } from './commandLoader.js';
 import { handleInteraction } from './interactionHandler.js';
+import { handlePrefixCommand } from './prefixCommandHandler.js';
 import { startScheduler, stopScheduler } from '../scheduler/eventScheduler.js';
 
 const logger = getModuleLogger('bot');
@@ -29,8 +30,10 @@ export async function startBot(): Promise<void> {
       intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        // MessageContent is a privileged intent - only needed if reading message content
-        // For slash commands and interactions, we don't need this
+        // MessageContent is a privileged intent - enable in Discord Developer Portal
+        // Required for prefix commands (!event, $template, etc.)
+        // If not enabled, only slash commands will work
+        ...(process.env.ENABLE_PREFIX_COMMANDS === 'true' ? [GatewayIntentBits.MessageContent] : []),
       ],
     });
 
@@ -41,6 +44,13 @@ export async function startBot(): Promise<void> {
     // Register event handlers
     client.once(Events.ClientReady, handleReady);
     client.on(Events.InteractionCreate, handleInteraction);
+    
+    // Prefix commands - only if MessageContent intent is enabled
+    if (process.env.ENABLE_PREFIX_COMMANDS === 'true') {
+      client.on(Events.MessageCreate, handlePrefixCommand);
+      logger.info('Prefix commands enabled');
+    }
+    
     client.on(Events.Error, handleError);
 
     // Login to Discord
