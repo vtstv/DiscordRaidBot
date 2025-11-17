@@ -17,6 +17,47 @@ import type { Command } from '../types/command.js';
 const logger = getModuleLogger('template-command');
 const prisma = getPrismaClient();
 
+/**
+ * Sanitize template name to prevent SQL injection
+ * Allows most characters but removes dangerous SQL constructs
+ * @param name - Raw template name from user input
+ * @returns Sanitized template name
+ */
+function sanitizeTemplateName(name: string): string {
+  // Remove null bytes
+  let sanitized = name.replace(/\0/g, '');
+  
+  // Remove SQL comment markers
+  sanitized = sanitized.replace(/--/g, '');
+  sanitized = sanitized.replace(/\/\*/g, '');
+  sanitized = sanitized.replace(/\*\//g, '');
+  
+  // Remove SQL keywords that could be dangerous (case-insensitive)
+  // Do this BEFORE removing semicolons to preserve word boundaries
+  const dangerousPatterns = [
+    /\bDROP\b/gi,
+    /\bDELETE\b/gi,
+    /\bTRUNCATE\b/gi,
+    /\bEXEC\b/gi,
+    /\bEXECUTE\b/gi,
+    /\bUNION\b/gi,
+    /\bINSERT\b/gi,
+    /\bUPDATE\b/gi,
+    /\bALTER\b/gi,
+    /\bCREATE\b/gi,
+  ];
+  
+  for (const pattern of dangerousPatterns) {
+    sanitized = sanitized.replace(pattern, '');
+  }
+  
+  // Remove semicolons (statement terminators) AFTER keywords
+  sanitized = sanitized.replace(/;/g, '');
+  
+  // Trim whitespace
+  return sanitized.trim();
+}
+
 // Validation schema for template config
 export const TemplateConfigSchema = z.object({
   roles: z.array(z.string()).min(1),
@@ -149,16 +190,25 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
   }
 
   const guildId = interaction.guild!.id;
-  const name = interaction.options.getString('name', true).trim();
+  const rawName = interaction.options.getString('name', true).trim();
   const configString = interaction.options.getString('config', true);
   const description = interaction.options.getString('description');
 
-  // Validate name
-  if (name.length < 1 || name.length > 100) {
-    throw new ValidationError('Template name must be between 1 and 100 characters');
+  // Sanitize and validate name
+  const name = sanitizeTemplateName(rawName);
+  
+  if (name.length < 1) {
+    throw new ValidationError('Template name cannot be empty or contain only dangerous SQL characters');
   }
-  if (!/^[a-zA-Z0-9\s\-_+а-яА-ЯёЁ]+$/u.test(name)) {
-    throw new ValidationError('Template name can only contain letters, numbers, spaces, hyphens, underscores, and plus signs');
+  
+  if (name.length > 100) {
+    throw new ValidationError('Template name must be 100 characters or less');
+  }
+  
+  // Check if sanitization removed too much (indicates suspicious input)
+  if (name.length < rawName.length * 0.5 && rawName.length > 10) {
+    logger.warn({ rawName, sanitized: name }, 'Template name heavily sanitized - possible injection attempt');
+    throw new ValidationError('Template name contains too many invalid characters. Please use a simpler name.');
   }
 
   // Parse and validate JSON config
