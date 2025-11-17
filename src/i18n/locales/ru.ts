@@ -17,6 +17,7 @@ export const ru: TranslationKeys = {
     description: 'Описание',
     noDescription: 'Описание отсутствует',
     startTime: '📅 Время начала',
+    leader: '👑 Лидер',
     duration: '⏱️ Длительность',
     plannedDuration: 'Плановое время рейда',
     durationMinutes: '{duration} минут',

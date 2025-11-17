@@ -15,6 +15,7 @@ export const en = {
     description: 'Description',
     noDescription: 'No description provided',
     startTime: '📅 Start Time',
+    leader: '👑 Leader',
     duration: '⏱️ Duration',
     plannedDuration: 'Planned raid time',
     durationMinutes: '{duration} minutes',

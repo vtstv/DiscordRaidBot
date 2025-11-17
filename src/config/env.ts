@@ -16,6 +16,14 @@ export const config = cleanEnv(process.env, {
   DISCORD_CLIENT_ID: str({
     desc: 'Discord application/client ID',
   }),
+  DISCORD_CLIENT_SECRET: str({
+    desc: 'Discord OAuth2 client secret (for web dashboard)',
+    default: '',
+  }),
+  DISCORD_OAUTH_REDIRECT_URI: str({
+    desc: 'OAuth2 redirect URI (e.g., http://localhost:3000/auth/callback)',
+    default: 'http://localhost:3000/auth/callback',
+  }),
 
   // Database
   DATABASE_URL: url({
@@ -46,6 +54,10 @@ export const config = cleanEnv(process.env, {
   WEB_JWT_SECRET: str({
     default: 'change-this-secret-in-production',
     desc: 'JWT secret for web authentication',
+  }),
+  WEB_SESSION_SECRET: str({
+    default: 'change-this-session-secret-in-production',
+    desc: 'Session secret for web dashboard',
   }),
 
   // Redis (optional)

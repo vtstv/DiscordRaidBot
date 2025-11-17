@@ -4,6 +4,7 @@
 
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -44,6 +45,11 @@ export async function startWebServer(): Promise<void> {
     // Register CORS
     await server.register(cors, {
       origin: true, // Configure properly in production
+    });
+
+    // Register cookie support
+    await server.register(cookie, {
+      secret: config.WEB_SESSION_SECRET,
     });
 
     // Serve dashboard HTML FIRST

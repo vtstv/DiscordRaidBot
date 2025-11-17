@@ -132,6 +132,32 @@ async function handleAutocomplete(interaction: any): Promise<void> {
         }))
       );
     }
+  } else if (commandName === 'template') {
+    const focusedOption = options.getFocused(true);
+    
+    if (focusedOption.name === 'name') {
+      const guildId = interaction.guild?.id;
+      if (!guildId) return;
+
+      const prisma = (await import('../database/db.js')).default();
+      const templates = await prisma.template.findMany({
+        where: { guildId },
+        select: { name: true, description: true },
+        orderBy: { name: 'asc' },
+        take: 25,
+      });
+
+      const filtered = templates
+        .filter(t => t.name.toLowerCase().includes(focusedOption.value.toLowerCase()))
+        .slice(0, 25);
+
+      await interaction.respond(
+        filtered.map(t => ({ 
+          name: t.description ? `${t.name} - ${t.description.substring(0, 50)}` : t.name, 
+          value: t.name 
+        }))
+      );
+    }
   }
 }
 

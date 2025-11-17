@@ -533,11 +533,17 @@ export const dashboardHTML = `<!DOCTYPE html>
 
         async function loadTemplates() {
             const container = document.getElementById('templatesData');
+            if (!container) {
+                console.error('templatesData container not found');
+                return;
+            }
             container.innerHTML = '<div class="loading">Loading templates...</div>';
 
             try {
                 const response = await fetch(\`\${API_BASE}/templates?guildId=\${currentGuildId}\`);
-                if (!response.ok) throw new Error('Failed to fetch templates');
+                if (!response.ok) {
+                    throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+                }
 
                 const templates = await response.json();
 
@@ -552,21 +558,21 @@ export const dashboardHTML = `<!DOCTYPE html>
                             <tr>
                                 <th>Name</th>
                                 <th>Description</th>
-                                <th>Participant Limit</th>
                                 <th>Roles</th>
+                                <th>Created</th>
                             </tr>
                         </thead>
                         <tbody>
                             \${templates.map(template => {
-                                const limit = template.participantLimit || 'No limit';
-                                const roles = template.allowedRoles?.length || 0;
+                                const roles = template.config?.roles?.join(', ') || 'N/A';
+                                const created = new Date(template.createdAt).toLocaleDateString();
 
                                 return \`
                                     <tr>
                                         <td><strong>\${escapeHtml(template.name)}</strong></td>
-                                        <td>\${escapeHtml(template.description || 'N/A')}</td>
-                                        <td>\${limit}</td>
-                                        <td>\${roles} role(s)</td>
+                                        <td>\${escapeHtml(template.description || 'No description')}</td>
+                                        <td>\${escapeHtml(roles)}</td>
+                                        <td>\${created}</td>
                                     </tr>
                                 \`;
                             }).join('')}
@@ -576,6 +582,7 @@ export const dashboardHTML = `<!DOCTYPE html>
 
                 container.innerHTML = table;
             } catch (error) {
+                console.error('Failed to load templates:', error);
                 container.innerHTML = \`<div class="error">Error loading templates: \${error.message}</div>\`;
             }
         }

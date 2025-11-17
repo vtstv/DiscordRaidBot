@@ -4,17 +4,19 @@
 
 import { en } from './locales/en.js';
 import { ru } from './locales/ru.js';
+import { de } from './locales/de.js';
 import getPrismaClient from '../database/db.js';
 import { getModuleLogger } from '../utils/logger.js';
 
 const logger = getModuleLogger('i18n');
 const prisma = getPrismaClient();
 
-type Locale = 'en' | 'ru';
+type Locale = 'en' | 'ru' | 'de';
 
 const translations = {
   en,
   ru,
+  de,
 };
 
 /**

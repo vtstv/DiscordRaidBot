@@ -48,11 +48,6 @@ export async function createEventMessage(event: any) {
   // Get role config early
   const roleConfig = event.roleConfig as any;
 
-  // Image from template
-  if (roleConfig?.imageUrl) {
-    content += `${roleConfig.imageUrl}\n\n`;
-  }
-
   // Description
   if (event.description) {
     content += `${event.description}\n\n`;
@@ -62,6 +57,9 @@ export async function createEventMessage(event: any) {
   const startTimeDt = DateTime.fromJSDate(event.startTime, { zone: event.timezone });
   const unixTimestamp = Math.floor(startTimeDt.toMillis() / 1000);
   content += `**${t('event.startTime')}:** <t:${unixTimestamp}:F> (<t:${unixTimestamp}:R>)\n`;
+
+  // Leader/Creator
+  content += `**${t('event.leader')}:** <@${event.createdBy}>\n`;
 
   // Duration if specified
   if (event.duration) {
@@ -135,8 +133,12 @@ export async function createEventMessage(event: any) {
   }
 
   // Footer
-  content += `\n---\n_${t('common.createdBy')} <@${event.createdBy}>_`;
-  content += `\n_ID: \`${event.id.substring(0, 8)}\`_`;
+  content += `\n---\n_ID: \`${event.id.substring(0, 8)}\`_`;
+
+  // Image from template (at the bottom)
+  if (roleConfig?.imageUrl) {
+    content += `\n\n${roleConfig.imageUrl}`;
+  }
 
   // Interactive components
   const components: any[] = [];
