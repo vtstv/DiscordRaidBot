@@ -1,0 +1,130 @@
+// Prisma schema for Discord Raid Bot
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Guild {
+  id        String   @id
+  name      String
+  timezone  String   @default("UTC")
+  locale    String   @default("en")
+  logChannelId String?
+  archiveChannelId String?
+  managerRoleId String?  // Role that can manage bot (create events, templates, etc.)
+  approvalChannels String[] @default([])  // Channels that require approval for participants
+  reminderIntervals String[] @default(["1h", "15m"])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  templates Template[]
+  events    Event[]
+  logEntries LogEntry[]
+
+  @@map("guilds")
+}
+
+model Template {
+  id          String   @id @default(uuid())
+  guildId     String
+  name        String
+  description String?
+  
+  // Flexible template configuration stored as JSON
+  // Example: { "roles": ["Tank", "Healer", "DPS"], "limits": { "Tank": 2, "Healer": 3, "DPS": 10 }, "emojiMap": { "Tank": "🛡️", "Healer": "💚", "DPS": "⚔️" } }
+  config      Json
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  events      Event[]
+
+  @@unique([guildId, name])
+  @@map("templates")
+}
+
+model Event {
+  id              String    @id @default(uuid())
+  guildId         String
+  templateId      String?
+  channelId       String
+  messageId       String?
+  threadId        String?   // Thread for event comments
+  
+  title           String
+  description     String?
+  startTime       DateTime
+  duration        Int?      // Duration in minutes
+  timezone        String    @default("UTC")
+  
+  maxParticipants Int?
+  status          String    @default("scheduled") // scheduled, active, completed, cancelled, archived
+  
+  // Per-role limits and configuration
+  roleConfig      Json?     // { "Tank": { "limit": 2, "emoji": "🛡️" }, ... }
+  
+  createdBy       String    // Discord user ID
+  editorRoleId    String?   // Role ID that can edit this event
+  requireApproval Boolean   @default(false)  // If true, participants need approval from creator
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  archivedAt      DateTime?
+
+  guild           Guild         @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  template        Template?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  participants    Participant[]
+  logEntries      LogEntry[]
+
+  @@index([guildId, status])
+  @@index([startTime])
+  @@map("events")
+}
+
+model Participant {
+  id          String   @id @default(uuid())
+  eventId     String
+  userId      String   // Discord user ID
+  username    String
+  
+  role        String?  // Tank, Healer, DPS, etc.
+  spec        String?  // Specific specialization
+  status      String   @default("confirmed") // confirmed, tentative, declined, waitlist, pending
+  position    Int?     // Position in waitlist or signup order
+  
+  notes       String?
+  joinedAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId, status])
+  @@map("participants")
+}
+
+model LogEntry {
+  id          String   @id @default(uuid())
+  guildId     String
+  eventId     String?
+  
+  action      String   // create_event, edit_event, delete_event, signup, leave, etc.
+  userId      String   // Discord user ID who performed the action
+  username    String
+  
+  details     Json?    // Additional context about the action
+  
+  createdAt   DateTime @default(now())
+
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  event       Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, createdAt])
+  @@index([eventId])
+  @@map("log_entries")
+}

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Raid Bot - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #5865F2;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+        }
+
+        .guild-selector {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .guild-selector label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .guild-selector input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .guild-selector input:focus {
+            outline: none;
+            border-color: #5865F2;
+        }
+
+        .tabs {
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #5865F2;
+            color: white;
+        }
+
+        .tab:hover:not(.active) {
+            background: #f0f0f0;
+        }
+
+        .content {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-height: 400px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.scheduled {
+            background: #E3F2FD;
+            color: #1976D2;
+        }
+
+        .badge.active {
+            background: #E8F5E9;
+            color: #388E3C;
+        }
+
+        .badge.completed {
+            background: #F3E5F5;
+            color: #7B1FA2;
+        }
+
+        .badge.cancelled {
+            background: #FFEBEE;
+            color: #C62828;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #FFEBEE;
+            color: #C62828;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #5865F2;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #4752C4;
+        }
+
+        .btn-danger {
+            background: #ED4245;
+        }
+
+        .btn-danger:hover {
+            background: #C03537;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 Discord Raid Bot Dashboard</h1>
+            <p class="subtitle">Manage your events, templates, and guild settings</p>
+        </header>
+
+        <div class="guild-selector">
+            <label for="guildId">Discord Server ID (Guild ID):</label>
+            <input type="text" id="guildId" placeholder="Enter your Discord server ID (e.g., 1234567890123456789)" />
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="events">📅 Events</button>
+            <button class="tab" data-tab="templates">📋 Templates</button>
+            <button class="tab" data-tab="help">❓ Help</button>
+        </div>
+
+        <div class="content">
+            <div id="events" class="tab-content active">
+                <h2>Events</h2>
+                <div id="eventsContent" class="loading">Loading events...</div>
+            </div>
+
+            <div id="templates" class="tab-content">
+                <h2>Templates</h2>
+                <div id="templatesContent" class="loading">Loading templates...</div>
+            </div>
+
+            <div id="help" class="tab-content">
+                <h2>Quick Start Guide</h2>
+                
+                <h3 style="margin-top: 20px;">📝 How to Get Your Guild ID</h3>
+                <ol style="line-height: 1.8; margin-left: 20px;">
+                    <li>Enable Developer Mode in Discord (User Settings → Advanced → Developer Mode)</li>
+                    <li>Right-click your server icon in the server list</li>
+                    <li>Click "Copy Server ID"</li>
+                    <li>Paste it in the field above</li>
+                </ol>
+
+                <h3 style="margin-top: 30px;">🤖 Bot Commands</h3>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Command</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td><code>/ping</code></td>
+                        <td>Check if bot is responsive</td>
+                    </tr>
+                    <tr>
+                        <td><code>/template create</code></td>
+                        <td>Create a reusable event template</td>
+                    </tr>
+                    <tr>
+                        <td><code>/template list</code></td>
+                        <td>View all templates</td>
+                    </tr>
+                    <tr>
+                        <td><code>/event create</code></td>
+                        <td>Create a new event</td>
+                    </tr>
+                    <tr>
+                        <td><code>/event list</code></td>
+                        <td>View upcoming events</td>
+                    </tr>
+                    <tr>
+                        <td><code>/settings timezone</code></td>
+                        <td>Set server timezone</td>
+                    </tr>
+                </table>
+
+                <h3 style="margin-top: 30px;">🎯 Example Workflow</h3>
+                <ol style="line-height: 1.8; margin-left: 20px;">
+                    <li><strong>Create a template:</strong> Use <code>/template create</code> to set up a raid template with roles (Tank, Healer, DPS)</li>
+                    <li><strong>Create an event:</strong> Use <code>/event create</code> and select your template</li>
+                    <li><strong>Players signup:</strong> Members click buttons on the event message to join with their role</li>
+                    <li><strong>Auto-reminders:</strong> Bot sends reminders before the event starts</li>
+                    <li><strong>Auto-archive:</strong> Completed events are automatically archived</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let currentGuildId = localStorage.getItem('guildId') || '';
+
+        // Load saved guild ID
+        if (currentGuildId) {
+            document.getElementById('guildId').value = currentGuildId;
+            loadData();
+        }
+
+        // Guild ID input handler
+        document.getElementById('guildId').addEventListener('change', function(e) {
+            currentGuildId = e.target.value.trim();
+            localStorage.setItem('guildId', currentGuildId);
+            if (currentGuildId) {
+                loadData();
+            }
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.dataset.tab;
+                
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Update active content
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(tabName).classList.add('active');
+                
+                // Load data for the selected tab
+                if (currentGuildId && tabName !== 'help') {
+                    loadData();
+                }
+            });
+        });
+
+        // Load data based on active tab
+        async function loadData() {
+            const activeTab = document.querySelector('.tab.active').dataset.tab;
+            
+            if (activeTab === 'events') {
+                await loadEvents();
+            } else if (activeTab === 'templates') {
+                await loadTemplates();
+            }
+        }
+
+        // Load events
+        async function loadEvents() {
+            const container = document.getElementById('eventsContent');
+            container.innerHTML = '<div class="loading">Loading events...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/events?guildId=${currentGuildId}`);
+                const events = await response.json();
+
+                if (events.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty">
+                            <div class="empty-icon">📅</div>
+                            <p>No events found</p>
+                            <p style="margin-top: 10px; font-size: 14px;">Use <code>/event create</code> in Discord to create your first event</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Title</th><th>Start Time</th><th>Status</th><th>Participants</th></tr></thead><tbody>';
+                
+                events.forEach(event => {
+                    const startTime = new Date(event.startTime).toLocaleString();
+                    html += `
+                        <tr>
+                            <td><strong>${event.title}</strong><br/><small>${event.description || 'No description'}</small></td>
+                            <td>${startTime}</td>
+                            <td><span class="badge ${event.status}">${event.status}</span></td>
+                            <td>${event._count?.participants || 0}${event.maxParticipants ? ' / ' + event.maxParticipants : ''}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="error">Failed to load events: ${error.message}</div>`;
+            }
+        }
+
+        // Load templates
+        async function loadTemplates() {
+            const container = document.getElementById('templatesContent');
+            container.innerHTML = '<div class="loading">Loading templates...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/templates?guildId=${currentGuildId}`);
+                const templates = await response.json();
+
+                if (templates.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty">
+                            <div class="empty-icon">📋</div>
+                            <p>No templates found</p>
+                            <p style="margin-top: 10px; font-size: 14px;">Use <code>/template create</code> in Discord to create your first template</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Name</th><th>Description</th><th>Roles</th><th>Created</th></tr></thead><tbody>';
+                
+                templates.forEach(template => {
+                    const created = new Date(template.createdAt).toLocaleDateString();
+                    const roles = template.config?.roles?.join(', ') || 'N/A';
+                    html += `
+                        <tr>
+                            <td><strong>${template.name}</strong></td>
+                            <td>${template.description || 'No description'}</td>
+                            <td>${roles}</td>
+                            <td>${created}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="error">Failed to load templates: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (currentGuildId && document.querySelector('.tab.active').dataset.tab !== 'help') {
+                loadData();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

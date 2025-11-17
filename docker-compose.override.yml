@@ -1,0 +1,26 @@
+version: '3.9'
+
+# Development overrides
+# This file is automatically loaded when running docker-compose up
+# Use this for local development conveniences
+
+services:
+  bot:
+    build:
+      target: build
+    volumes:
+      - ./src:/app/src:ro
+      - ./prisma:/app/prisma:ro
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+    command: npm run dev
+
+  web:
+    build:
+      target: build
+    volumes:
+      - ./src:/app/src:ro
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
