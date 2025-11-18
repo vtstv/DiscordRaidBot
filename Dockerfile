@@ -52,9 +52,6 @@ COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 # Copy built application
 COPY --from=build /app/dist ./dist
 
-# Copy public directory for web interface
-COPY public ./public
-
 # Copy healthcheck script
 COPY docker/healthcheck.sh /healthcheck.sh
 RUN chmod +x /healthcheck.sh

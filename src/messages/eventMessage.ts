@@ -179,13 +179,16 @@ export async function createEventMessage(event: any) {
       
       for (const role of firstRowRoles) {
         const emoji = roleConfig.emojiMap?.[role];
-        buttonRow1.addComponents(
-          new ButtonBuilder()
-            .setCustomId(`event_join_role:${event.id}:${role}`)
-            .setLabel(role)
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji(emoji || '•')
-        );
+        const button = new ButtonBuilder()
+          .setCustomId(`event_join_role:${event.id}:${role}`)
+          .setLabel(role)
+          .setStyle(ButtonStyle.Primary);
+        
+        if (emoji) {
+          button.setEmoji({ name: emoji });
+        }
+        
+        buttonRow1.addComponents(button);
       }
       components.push(buttonRow1);
 
@@ -196,13 +199,16 @@ export async function createEventMessage(event: any) {
         
         for (const role of secondRowRoles) {
           const emoji = roleConfig.emojiMap?.[role];
-          buttonRow2.addComponents(
-            new ButtonBuilder()
-              .setCustomId(`event_join_role:${event.id}:${role}`)
-              .setLabel(role)
-              .setStyle(ButtonStyle.Primary)
-              .setEmoji(emoji || '•')
-          );
+          const button = new ButtonBuilder()
+            .setCustomId(`event_join_role:${event.id}:${role}`)
+            .setLabel(role)
+            .setStyle(ButtonStyle.Primary);
+          
+          if (emoji) {
+            button.setEmoji({ name: emoji });
+          }
+          
+          buttonRow2.addComponents(button);
         }
         components.push(buttonRow2);
       }
@@ -215,7 +221,7 @@ export async function createEventMessage(event: any) {
           .setCustomId(`event_leave:${event.id}`)
           .setLabel(t('buttons.leave'))
           .setStyle(ButtonStyle.Danger)
-          .setEmoji('❌')
+          .setEmoji({ name: '❌' })
       );
 
       // Add approve button if there are pending participants
@@ -225,7 +231,7 @@ export async function createEventMessage(event: any) {
             .setCustomId(`event_approve:${event.id}`)
             .setLabel(t('buttons.approve'))
             .setStyle(ButtonStyle.Success)
-            .setEmoji('✅')
+            .setEmoji({ name: '✅' })
         );
       }
 
@@ -236,7 +242,7 @@ export async function createEventMessage(event: any) {
             .setCustomId(`event_promote:${event.id}`)
             .setLabel('Promote')
             .setStyle(ButtonStyle.Success)
-            .setEmoji('⬆️')
+            .setEmoji({ name: '⬆️' })
         );
       }
 
@@ -245,7 +251,7 @@ export async function createEventMessage(event: any) {
           .setCustomId(`event_edit:${event.id}`)
           .setLabel(t('buttons.edit'))
           .setStyle(ButtonStyle.Secondary)
-          .setEmoji('📝')
+          .setEmoji({ name: '📝' })
       );
 
       components.push(actionRow);
@@ -258,12 +264,12 @@ export async function createEventMessage(event: any) {
           .setCustomId(`event_join:${event.id}`)
           .setLabel(t('buttons.join'))
           .setStyle(ButtonStyle.Success)
-          .setEmoji('✅'),
+          .setEmoji({ name: '✅' }),
         new ButtonBuilder()
           .setCustomId(`event_leave:${event.id}`)
           .setLabel(t('buttons.leave'))
           .setStyle(ButtonStyle.Danger)
-          .setEmoji('❌')
+          .setEmoji({ name: '❌' })
       );
 
       // Add approve button if there are pending participants
@@ -273,7 +279,7 @@ export async function createEventMessage(event: any) {
             .setCustomId(`event_approve:${event.id}`)
             .setLabel(t('buttons.approve'))
             .setStyle(ButtonStyle.Success)
-            .setEmoji('✅')
+            .setEmoji({ name: '✅' })
         );
       }
 
@@ -284,7 +290,7 @@ export async function createEventMessage(event: any) {
             .setCustomId(`event_promote:${event.id}`)
             .setLabel('Promote')
             .setStyle(ButtonStyle.Success)
-            .setEmoji('⬆️')
+            .setEmoji({ name: '⬆️' })
         );
       }
 
@@ -293,7 +299,7 @@ export async function createEventMessage(event: any) {
           .setCustomId(`event_edit:${event.id}`)
           .setLabel(t('buttons.edit'))
           .setStyle(ButtonStyle.Secondary)
-          .setEmoji('📝')
+          .setEmoji({ name: '📝' })
       );
 
       components.push(buttonRow);

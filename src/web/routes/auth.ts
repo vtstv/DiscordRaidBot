@@ -125,6 +125,16 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
   });
 
   /**
+   * POST /auth/logout
+   * Clear session (API endpoint)
+   */
+  fastify.post('/auth/logout', async (_request, reply) => {
+    reply.clearCookie('auth', { path: '/' });
+    logger.info('User logged out via API');
+    reply.send({ success: true });
+  });
+
+  /**
    * GET /auth/me
    * Get current user info
    */

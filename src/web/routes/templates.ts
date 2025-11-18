@@ -60,8 +60,27 @@ export async function templatesRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const { guildId, guildName, ...templateData } = request.body;
 
+    // Normalize config - ensure emojiMap doesn't have invalid values
+    const config = { ...templateData.config };
+    
+    // Remove invalid emoji entries (undefined, null, empty strings)
+    if (config.emojiMap) {
+      const cleanEmojiMap: Record<string, string> = {};
+      for (const [role, emoji] of Object.entries(config.emojiMap)) {
+        if (emoji && typeof emoji === 'string' && emoji.trim()) {
+          cleanEmojiMap[role] = emoji.trim();
+        }
+      }
+      // Only keep emojiMap if it has valid entries
+      if (Object.keys(cleanEmojiMap).length > 0) {
+        config.emojiMap = cleanEmojiMap;
+      } else {
+        delete config.emojiMap;
+      }
+    }
+    
     // Validate config with schema
-    const validationResult = TemplateConfigSchema.safeParse(templateData.config);
+    const validationResult = TemplateConfigSchema.safeParse(config);
     if (!validationResult.success) {
       return reply.code(400).send({ 
         error: 'Invalid template configuration', 

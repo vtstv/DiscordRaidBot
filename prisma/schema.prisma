@@ -76,6 +76,7 @@ model Event {
   editorRoleId    String?   // Role ID that can edit this event
   requireApproval Boolean   @default(false)  // If true, participants need approval from creator
   createThread    Boolean   @default(false)  // If true, create a thread for this event
+  deleteThread    Boolean   @default(true)   // If true, delete thread when event completes or is archived
   allowedRoles    String[]  @default([])     // Discord role IDs allowed to sign up (empty = all allowed)
   benchOverflow   Boolean   @default(true)   // If true, users without allowed roles go to bench; if false, signup denied
   deadline        Int?                       // Hours before event start to close signups (negative = after start, null = closes at start)

@@ -451,6 +451,38 @@ export const dashboardHTML = `<!DOCTYPE html>
                 padding: 20px;
             }
         }
+
+        footer {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        footer .version {
+            font-weight: 600;
+            color: #5865F2;
+            margin-bottom: 5px;
+        }
+
+        footer .license {
+            margin-top: 5px;
+        }
+
+        footer a {
+            color: #5865F2;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        footer a:hover {
+            color: #4752c4;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -598,6 +630,34 @@ export const dashboardHTML = `<!DOCTYPE html>
                     <label for="eventChannelId">Channel ID *</label>
                     <input type="text" id="eventChannelId" required placeholder="Discord channel ID" />
                 </div>
+                <div class="form-group">
+                    <label for="eventDeadline">Signup Deadline (hours before event)</label>
+                    <input type="number" id="eventDeadline" min="-168" max="168" placeholder="e.g., 24 for 24h before" />
+                    <small>Positive = hours before start, Negative = hours after start, 0/empty = close at start</small>
+                </div>
+                <div class="form-group">
+                    <label for="eventAllowedRoles">Allowed Role IDs (comma-separated)</label>
+                    <input type="text" id="eventAllowedRoles" placeholder="e.g., 123456789,987654321" />
+                    <small>Leave empty to allow everyone. Users without these roles will go to bench if enabled.</small>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="eventBenchOverflow" checked />
+                        Bench Overflow (send users without allowed roles to bench instead of denying)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="eventCreateThread" />
+                        Create Thread for this event
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="eventDeleteThread" checked />
+                        Auto-delete thread when event is completed/archived
+                    </label>
+                </div>
                 <div class="action-buttons">
                     <button class="btn btn-primary" onclick="saveEvent()">Save Event</button>
                     <button class="btn btn-secondary" onclick="closeEventModal()">Cancel</button>
@@ -624,8 +684,24 @@ export const dashboardHTML = `<!DOCTYPE html>
                     <textarea id="templateDescription"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="templateRoles">Roles (comma-separated)</label>
-                    <input type="text" id="templateRoles" placeholder="e.g., Tank, Healer, DPS" />
+                    <label for="templateRoles">Roles (comma-separated) *</label>
+                    <input type="text" id="templateRoles" placeholder="e.g., Tank, Healer, DPS" required />
+                    <small>Separate multiple roles with commas</small>
+                </div>
+                <div class="form-group">
+                    <label for="templateLimits">Role Limits (JSON format) *</label>
+                    <textarea id="templateLimits" placeholder='{"Tank": 2, "Healer": 4, "DPS": 14}' required></textarea>
+                    <small>Enter as JSON object: {"RoleName": limit}</small>
+                </div>
+                <div class="form-group">
+                    <label for="templateEmojiMap">Emoji Map (JSON format)</label>
+                    <textarea id="templateEmojiMap" placeholder='{"Tank": "🛡️", "Healer": "💚", "DPS": "⚔️"}'></textarea>
+                    <small>Optional: {"RoleName": "emoji"}</small>
+                </div>
+                <div class="form-group">
+                    <label for="templateImageUrl">Image URL</label>
+                    <input type="url" id="templateImageUrl" placeholder="https://example.com/image.png" />
+                    <small>Optional: Discord-hosted image or external URL</small>
                 </div>
                 <div class="form-group">
                     <label for="templateParticipantLimit">Default Participant Limit</label>
@@ -638,6 +714,16 @@ export const dashboardHTML = `<!DOCTYPE html>
             </div>
         </div>
     </div>
+
+    </div> <!-- /container -->
+
+    <footer>
+        <div class="version">Discord Raid Bot v1.0.0</div>
+        <div>© 2025 <a href="https://github.com/vtstv" target="_blank">Murr (vtstv)</a></div>
+        <div class="license">
+            Licensed under <a href="https://github.com/vtstv/DiscordRaidBot/blob/main/LICENSE" target="_blank">MIT License</a>
+        </div>
+    </footer>
 
     <script>
         const API_BASE = '/api';
@@ -690,11 +776,15 @@ export const dashboardHTML = `<!DOCTYPE html>
         }
 
         function logout() {
-            fetch('/auth/logout', { method: 'POST' })
+            fetch('/auth/logout', { method: 'POST', credentials: 'include' })
                 .then(() => {
-                    window.location.reload();
+                    window.location.href = '/auth/login';
                 })
-                .catch(error => console.error('Logout failed:', error));
+                .catch(error => {
+                    console.error('Logout failed:', error);
+                    // Fallback: redirect anyway
+                    window.location.href = '/auth/login';
+                });
         }
 
         // Initialize
@@ -969,7 +1059,12 @@ export const dashboardHTML = `<!DOCTYPE html>
             document.getElementById('eventDuration').value = '';
             document.getElementById('eventParticipantLimit').value = '';
             document.getElementById('eventChannelId').value = '';
-            document.getElementById('eventModal').style.display = 'block';
+            document.getElementById('eventDeadline').value = '';
+            document.getElementById('eventAllowedRoles').value = '';
+            document.getElementById('eventBenchOverflow').checked = true;
+            document.getElementById('eventCreateThread').checked = false;
+            document.getElementById('eventDeleteThread').checked = true;
+            document.getElementById('eventModal').classList.add('active');
         }
 
         function showEditEventModal(event) {
@@ -989,13 +1084,18 @@ export const dashboardHTML = `<!DOCTYPE html>
             document.getElementById('eventStartTime').value = localDateTime;
             
             document.getElementById('eventDuration').value = event.duration || '';
-            document.getElementById('eventParticipantLimit').value = event.participantLimit || '';
+            document.getElementById('eventParticipantLimit').value = event.maxParticipants || '';
             document.getElementById('eventChannelId').value = event.channelId;
-            document.getElementById('eventModal').style.display = 'block';
+            document.getElementById('eventDeadline').value = event.deadline || '';
+            document.getElementById('eventAllowedRoles').value = event.allowedRoles?.join(',') || '';
+            document.getElementById('eventBenchOverflow').checked = event.benchOverflow !== false;
+            document.getElementById('eventCreateThread').checked = event.createThread === true;
+            document.getElementById('eventDeleteThread').checked = event.deleteThread !== false;
+            document.getElementById('eventModal').classList.add('active');
         }
 
         function closeEventModal() {
-            document.getElementById('eventModal').style.display = 'none';
+            document.getElementById('eventModal').classList.remove('active');
         }
 
         function showCreateTemplateModal() {
@@ -1008,8 +1108,11 @@ export const dashboardHTML = `<!DOCTYPE html>
             document.getElementById('templateName').value = '';
             document.getElementById('templateDescription').value = '';
             document.getElementById('templateRoles').value = '';
+            document.getElementById('templateLimits').value = '';
+            document.getElementById('templateEmojiMap').value = '';
+            document.getElementById('templateImageUrl').value = '';
             document.getElementById('templateParticipantLimit').value = '';
-            document.getElementById('templateModal').style.display = 'block';
+            document.getElementById('templateModal').classList.add('active');
         }
 
         function showEditTemplateModal(template) {
@@ -1025,12 +1128,19 @@ export const dashboardHTML = `<!DOCTYPE html>
             const roles = template.config?.roles?.join(', ') || '';
             document.getElementById('templateRoles').value = roles;
             
+            const limits = template.config?.limits ? JSON.stringify(template.config.limits, null, 2) : '';
+            document.getElementById('templateLimits').value = limits;
+            
+            const emojiMap = template.config?.emojiMap ? JSON.stringify(template.config.emojiMap, null, 2) : '';
+            document.getElementById('templateEmojiMap').value = emojiMap;
+            
+            document.getElementById('templateImageUrl').value = template.config?.imageUrl || '';
             document.getElementById('templateParticipantLimit').value = template.config?.participantLimit || '';
-            document.getElementById('templateModal').style.display = 'block';
+            document.getElementById('templateModal').classList.add('active');
         }
 
         function closeTemplateModal() {
-            document.getElementById('templateModal').style.display = 'none';
+            document.getElementById('templateModal').classList.remove('active');
         }
 
         // ===== EVENT CRUD =====
@@ -1047,6 +1157,11 @@ export const dashboardHTML = `<!DOCTYPE html>
             const duration = document.getElementById('eventDuration').value;
             const participantLimit = document.getElementById('eventParticipantLimit').value;
             const channelId = document.getElementById('eventChannelId').value.trim();
+            const deadline = document.getElementById('eventDeadline').value;
+            const allowedRolesInput = document.getElementById('eventAllowedRoles').value.trim();
+            const benchOverflow = document.getElementById('eventBenchOverflow').checked;
+            const createThread = document.getElementById('eventCreateThread').checked;
+            const deleteThread = document.getElementById('eventDeleteThread').checked;
 
             if (!title || !startTime || !channelId) {
                 alert('Please fill in all required fields');
@@ -1059,10 +1174,19 @@ export const dashboardHTML = `<!DOCTYPE html>
                 description,
                 startTime: new Date(startTime).toISOString(),
                 channelId,
+                benchOverflow,
+                createThread,
+                deleteThread,
             };
 
             if (duration) eventData.duration = parseInt(duration);
-            if (participantLimit) eventData.participantLimit = parseInt(participantLimit);
+            if (participantLimit) eventData.maxParticipants = parseInt(participantLimit);
+            if (deadline) eventData.deadline = parseInt(deadline);
+            
+            // Parse allowed roles
+            if (allowedRolesInput) {
+                eventData.allowedRoles = allowedRolesInput.split(',').map(r => r.trim()).filter(r => r);
+            }
 
             try {
                 const url = eventId 
@@ -1073,6 +1197,7 @@ export const dashboardHTML = `<!DOCTYPE html>
                 const response = await fetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify(eventData),
                 });
 
@@ -1124,27 +1249,64 @@ export const dashboardHTML = `<!DOCTYPE html>
             const name = document.getElementById('templateName').value.trim();
             const description = document.getElementById('templateDescription').value.trim();
             const rolesInput = document.getElementById('templateRoles').value.trim();
+            const limitsInput = document.getElementById('templateLimits').value.trim();
+            const emojiMapInput = document.getElementById('templateEmojiMap').value.trim();
+            const imageUrl = document.getElementById('templateImageUrl').value.trim();
             const participantLimit = document.getElementById('templateParticipantLimit').value;
 
-            if (!name) {
-                alert('Please enter a template name');
+            if (!name || !rolesInput || !limitsInput) {
+                alert('Please fill in required fields: Name, Roles, and Limits');
                 return;
             }
 
-            const roles = rolesInput ? rolesInput.split(',').map(r => r.trim()).filter(r => r) : [];
+            // Parse roles
+            const roles = rolesInput.split(',').map(r => r.trim()).filter(r => r);
+            
+            if (roles.length === 0) {
+                alert('Please enter at least one role');
+                return;
+            }
+
+            // Parse limits
+            let limits;
+            try {
+                limits = JSON.parse(limitsInput);
+                if (typeof limits !== 'object' || Array.isArray(limits)) {
+                    throw new Error('Limits must be an object');
+                }
+            } catch (e) {
+                alert('Invalid Limits JSON format. Example: {"Tank": 2, "Healer": 4}');
+                return;
+            }
+
+            // Parse emoji map (optional)
+            let emojiMap = undefined;
+            if (emojiMapInput) {
+                try {
+                    emojiMap = JSON.parse(emojiMapInput);
+                } catch (e) {
+                    alert('Invalid Emoji Map JSON format. Example: {"Tank": "🛡️"}');
+                    return;
+                }
+            }
+
+            // Build config object
+            const config = {
+                roles,
+                limits,
+            };
+
+            if (emojiMap) config.emojiMap = emojiMap;
+            if (imageUrl) config.imageUrl = imageUrl;
+            if (participantLimit) config.participantLimit = parseInt(participantLimit);
 
             const templateData = {
                 guildId: currentGuildId,
+                guildName: 'Unknown', // Will be updated by backend
                 name,
                 description,
-                config: {
-                    roles,
-                },
+                config,
             };
-
-            if (participantLimit) {
-                templateData.config.participantLimit = parseInt(participantLimit);
-            }
 
             try {
                 const url = templateId 
@@ -1155,6 +1317,7 @@ export const dashboardHTML = `<!DOCTYPE html>
                 const response = await fetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify(templateData),
                 });
 
@@ -1164,7 +1327,7 @@ export const dashboardHTML = `<!DOCTYPE html>
                     loadTemplates();
                 } else {
                     const error = await response.json();
-                    alert(\`Failed to save template: \${error.message || 'Unknown error'}\`);
+                    alert(\`Failed to save template: \${error.error || 'Unknown error'}\\nDetails: \${error.details || ''}\`);
                 }
             } catch (error) {
                 console.error('Failed to save template:', error);

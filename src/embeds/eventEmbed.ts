@@ -132,23 +132,31 @@ export async function createEventEmbed(event: any) {
           .setCustomId(`event_join:${event.id}`)
           .setLabel('Join')
           .setStyle(ButtonStyle.Success)
-          .setEmoji('✅'),
+          .setEmoji({ name: '✅' }),
         new ButtonBuilder()
           .setCustomId(`event_leave:${event.id}`)
           .setLabel('Leave')
           .setStyle(ButtonStyle.Danger)
-          .setEmoji('❌'),
+          .setEmoji({ name: '❌' }),
       );
 
     components.push(buttons);
 
     // Role selection menu
     if (roleConfig && roleConfig.roles && roleConfig.roles.length > 1) {
-      const options = roleConfig.roles.map((role: string) => ({
-        label: role,
-        value: role,
-        emoji: roleConfig.emojiMap?.[role],
-      }));
+      const options = roleConfig.roles.map((role: string) => {
+        const option: any = {
+          label: role,
+          value: role,
+        };
+        
+        // Only add emoji if it exists and is valid
+        if (roleConfig.emojiMap?.[role]) {
+          option.emoji = roleConfig.emojiMap[role];
+        }
+        
+        return option;
+      });
 
       const selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
         .addComponents(

@@ -221,6 +221,19 @@ async function archiveEvent(event: any): Promise<void> {
   // Update the original event message
   await updateEventMessage(event.id);
 
+  // Delete thread if configured
+  if (client && event.deleteThread && event.threadId) {
+    try {
+      const thread = await client.channels.fetch(event.threadId);
+      if (thread && thread.isThread()) {
+        await thread.delete('Event completed and deleteThread enabled');
+        logger.info({ eventId: event.id, threadId: event.threadId }, 'Thread deleted');
+      }
+    } catch (error) {
+      logger.error({ error, eventId: event.id, threadId: event.threadId }, 'Failed to delete thread');
+    }
+  }
+
   // Optionally post to archive channel
   if (client && event.guild.archiveChannelId) {
     try {

@@ -91,6 +91,11 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
       createdBy: string;
       status?: string;
       templateId?: string;
+      createThread?: boolean;
+      deleteThread?: boolean;
+      allowedRoles?: string[];
+      benchOverflow?: boolean;
+      deadline?: number;
     };
   }>(
     '/',
@@ -119,6 +124,11 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
         createdBy: eventData.createdBy,
         status: eventData.status || 'scheduled',
         templateId: eventData.templateId,
+        createThread: eventData.createThread,
+        deleteThread: eventData.deleteThread,
+        allowedRoles: eventData.allowedRoles,
+        benchOverflow: eventData.benchOverflow,
+        deadline: eventData.deadline,
       },
     });
 
@@ -137,6 +147,11 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
       maxParticipants?: number;
       roleConfig?: any;
       status?: string;
+      createThread?: boolean;
+      deleteThread?: boolean;
+      allowedRoles?: string[];
+      benchOverflow?: boolean;
+      deadline?: number;
     };
   }>(
     '/:id',
@@ -163,7 +178,9 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const { id } = request.params;
-      const updateData: any = {};    if (request.body.title !== undefined) updateData.title = request.body.title;
+      const updateData: any = {};
+
+    if (request.body.title !== undefined) updateData.title = request.body.title;
     if (request.body.description !== undefined) updateData.description = request.body.description;
     if (request.body.startTime !== undefined) updateData.startTime = new Date(request.body.startTime);
     if (request.body.duration !== undefined) updateData.duration = request.body.duration;
@@ -171,6 +188,11 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
     if (request.body.maxParticipants !== undefined) updateData.maxParticipants = request.body.maxParticipants;
     if (request.body.roleConfig !== undefined) updateData.roleConfig = request.body.roleConfig;
     if (request.body.status !== undefined) updateData.status = request.body.status;
+    if (request.body.createThread !== undefined) updateData.createThread = request.body.createThread;
+    if (request.body.deleteThread !== undefined) updateData.deleteThread = request.body.deleteThread;
+    if (request.body.allowedRoles !== undefined) updateData.allowedRoles = request.body.allowedRoles;
+    if (request.body.benchOverflow !== undefined) updateData.benchOverflow = request.body.benchOverflow;
+    if (request.body.deadline !== undefined) updateData.deadline = request.body.deadline;
 
     try {
       const event = await prisma.event.update({

@@ -5,9 +5,6 @@
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
-import fastifyStatic from '@fastify/static';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { config } from '../config/env.js';
 import { getModuleLogger } from '../utils/logger.js';
 import { connectDatabase, disconnectDatabase } from '../database/db.js';
@@ -15,8 +12,6 @@ import { registerRoutes } from './routes/index.js';
 import { dashboardHTML } from './dashboard-template.js';
 
 const logger = getModuleLogger('web');
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 let server: any = null;
 
@@ -65,18 +60,6 @@ export async function startWebServer(): Promise<void> {
 
     // Register API routes
     await registerRoutes(server);
-
-    // Serve static files from public directory if it exists
-    const publicPath = path.join(__dirname, '..', '..', 'public');
-    try {
-      await server.register(fastifyStatic, {
-        root: publicPath,
-        prefix: '/assets',
-      });
-      logger.info('Static file serving enabled');
-    } catch (error: any) {
-      logger.warn({ error: error.message }, 'Static file serving disabled - public directory not found');
-    }
 
     // Start server
     await server.listen({
