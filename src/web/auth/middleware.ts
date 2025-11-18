@@ -11,23 +11,22 @@ const prisma = getPrismaClient();
 const logger = getModuleLogger('auth-middleware');
 
 /**
- * Get auth session from cookie
+ * Get auth session from request.session (Fastify session)
  */
 function getAuthSession(request: FastifyRequest): AuthSession | null {
-  const authCookie = request.cookies.auth;
-  if (!authCookie) return null;
+  const session = (request as any).session;
+  if (!session?.user) return null;
 
   try {
-    const session = JSON.parse(authCookie) as AuthSession;
-    
-    // Check if expired
-    if (Date.now() >= session.expiresAt) {
-      return null;
-    }
-
-    return session;
+    // Build AuthSession from Fastify session
+    return {
+      user: session.user,
+      accessToken: session.accessToken || '',
+      refreshToken: session.refreshToken || '',
+      expiresAt: session.expiresAt || Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days default
+    };
   } catch (error) {
-    logger.error({ error }, 'Failed to parse auth cookie');
+    logger.error({ error }, 'Failed to get auth session');
     return null;
   }
 }

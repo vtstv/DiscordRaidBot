@@ -48,14 +48,32 @@ Once the bot is running, access the web dashboard at **http://localhost:3000**
 The dashboard provides:
 - **Real-time event viewing**: See all upcoming and past events
 - **Template management**: View all configured event templates
+- **Event creation**: Create events through web interface
 - **Help guide**: Complete documentation for using the bot
 - **Auto-refresh**: Data updates every 30 seconds
 
+#### Admin Panel 🛡️
+
+Administrators can access the **Admin Panel** at **http://localhost:3000/admin** with enhanced features:
+
+- **Dashboard Statistics**: Real-time bot metrics across all guilds
+- **Guild Management**: Monitor all servers using the bot
+- **Bulk Operations**: Mass delete events or templates
+- **Activity Logs**: Complete audit trail of all actions
+- **System Monitoring**: Bot uptime, ping, and health checks
+
+**Quick Setup**:
+1. Get your Discord User ID (Settings → Advanced → Developer Mode)
+2. Add to `.env`: `ADMIN_USER_IDS=your_user_id_here`
+3. Restart bot: `docker-compose restart bot web`
+4. Login and click "Admin Panel" button
+
 To use the dashboard:
 1. Open http://localhost:3000 in your browser
-2. Enter your Discord Server (Guild) ID in the input field
-3. Switch between Events, Templates, and Help tabs
-4. Your Guild ID is saved automatically in browser storage
+2. Click "Login with Discord" to authenticate
+3. Enter your Discord Server (Guild) ID in the input field
+4. Switch between Events, Templates, and Help tabs
+5. Your Guild ID is saved automatically in browser storage
 
 ### How to Find Your Guild ID
 

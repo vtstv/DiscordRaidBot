@@ -6,6 +6,7 @@ import { FastifyInstance } from 'fastify';
 import { eventsRoutes } from './events.js';
 import { templatesRoutes } from './templates.js';
 import { registerAuthRoutes } from './auth.js';
+import { adminRoutes } from './admin.js';
 
 export async function registerRoutes(server: FastifyInstance): Promise<void> {
   // Auth routes (no prefix)
@@ -15,5 +16,6 @@ export async function registerRoutes(server: FastifyInstance): Promise<void> {
   server.register(async (api) => {
     await api.register(eventsRoutes, { prefix: '/events' });
     await api.register(templatesRoutes, { prefix: '/templates' });
+    await api.register(adminRoutes, { prefix: '/admin' });
   }, { prefix: '/api' });
 }

@@ -500,7 +500,10 @@ export const dashboardHTML = `<!DOCTYPE html>
                     <div style="font-size: 12px; color: #666;">Logged in</div>
                 </div>
             </div>
-            <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-secondary" id="adminBtn" onclick="goToAdmin()" style="display: none;">Admin Panel</button>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
         </div>
 
         <div id="loginPrompt" class="user-info">
@@ -720,9 +723,6 @@ export const dashboardHTML = `<!DOCTYPE html>
     <footer>
         <div class="version">Discord Raid Bot v1.0.0</div>
         <div>© 2025 <a href="https://github.com/vtstv" target="_blank">Murr (vtstv)</a></div>
-        <div class="license">
-            Licensed under <a href="https://github.com/vtstv/DiscordRaidBot/blob/main/LICENSE" target="_blank">MIT License</a>
-        </div>
     </footer>
 
     <script>
@@ -755,6 +755,9 @@ export const dashboardHTML = `<!DOCTYPE html>
                     // Show action buttons
                     document.getElementById('eventsActionBar').style.display = 'flex';
                     document.getElementById('templatesActionBar').style.display = 'flex';
+
+                    // Check if user is admin
+                    checkAdminStatus();
                 } else {
                     isAuthenticated = false;
                     document.getElementById('userInfo').style.display = 'none';
@@ -770,9 +773,27 @@ export const dashboardHTML = `<!DOCTYPE html>
             }
         }
 
+        async function checkAdminStatus() {
+            try {
+                const response = await fetch('/api/admin/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.isAdmin) {
+                        document.getElementById('adminBtn').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                // Not admin or error - button stays hidden
+            }
+        }
+
         // Login/Logout functions
         function login() {
             window.location.href = '/auth/login';
+        }
+
+        function goToAdmin() {
+            window.location.href = '/admin';
         }
 
         function logout() {

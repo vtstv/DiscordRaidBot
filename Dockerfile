@@ -17,6 +17,9 @@ RUN npm ci
 # Copy source code
 COPY src ./src
 
+# Copy admin panel static files
+COPY src/web/admin/public ./src/web/admin/public
+
 # Generate Prisma client
 RUN npx prisma generate
 
@@ -51,6 +54,9 @@ COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 
 # Copy built application
 COPY --from=build /app/dist ./dist
+
+# Copy admin panel static files to dist
+COPY --from=build /app/src/web/admin/public ./dist/web/admin/public
 
 # Copy healthcheck script
 COPY docker/healthcheck.sh /healthcheck.sh

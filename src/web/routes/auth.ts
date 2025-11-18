@@ -14,8 +14,11 @@ import { getModuleLogger } from '../../utils/logger.js';
 
 const logger = getModuleLogger('auth-routes');
 
+// Admin user IDs from environment
+const ADMIN_IDS = (config.ADMIN_USER_IDS || '').split(',').filter(id => id.trim());
+
 // Temporary in-memory store for OAuth states (in production, use Redis)
-const stateStore = new Map<string, { created: number }>();
+const stateStore = new Map<string, { created: number; returnTo?: string }>();
 
 // Clean up expired states every 5 minutes
 setInterval(() => {
@@ -32,13 +35,16 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
    * GET /auth/login
    * Redirect to Discord OAuth
    */
-  fastify.get('/auth/login', async (_request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/auth/login', async (request: FastifyRequest<{
+    Querystring: { returnTo?: string };
+  }>, reply: FastifyReply) => {
     const state = crypto.randomBytes(16).toString('hex');
-    stateStore.set(state, { created: Date.now() });
+    const returnTo = request.query.returnTo || '/';
+    stateStore.set(state, { created: Date.now(), returnTo });
 
     const authUrl = getAuthorizationUrl(config.DISCORD_OAUTH_REDIRECT_URI, state);
     
-    logger.info({ state }, 'Redirecting to Discord OAuth');
+    logger.info({ state, returnTo }, 'Redirecting to Discord OAuth');
     reply.redirect(authUrl);
   });
 
@@ -75,6 +81,8 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       });
     }
 
+    // Get state data BEFORE deleting
+    const stateData = stateStore.get(state)!;
     stateStore.delete(state);
 
     try {
@@ -84,27 +92,29 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       // Get user info
       const user = await getDiscordUser(tokenData.access_token);
 
-      // Create session data
-      const sessionData = {
-        user,
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token,
-        expiresAt: Date.now() + tokenData.expires_in * 1000,
+      // Store user in session (same format as password auth)
+      (request as any).session.user = {
+        id: user.id,
+        username: user.username,
+        avatar: user.avatar,
       };
 
-      // Store in cookie (simplified version - in production use encrypted cookies or JWT)
-      reply.setCookie('auth', JSON.stringify(sessionData), {
-        httpOnly: true,
-        secure: config.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: tokenData.expires_in,
-      });
+      // Also store tokens for API calls
+      (request as any).session.accessToken = tokenData.access_token;
+      (request as any).session.refreshToken = tokenData.refresh_token;
+      (request as any).session.expiresAt = Date.now() + tokenData.expires_in * 1000;
 
-      logger.info({ userId: user.id, username: user.username }, 'User logged in');
+      logger.info({ userId: user.id, username: user.username }, 'User logged in via Discord');
 
-      // Redirect to dashboard
-      reply.redirect('/');
+      // Get the stored returnTo or default redirect
+      const returnTo = stateData.returnTo || '/';
+      
+      // Check if user is admin
+      const isAdmin = ADMIN_IDS.includes(user.id);
+      const redirectUrl = isAdmin ? '/a' : returnTo;
+      
+      logger.info({ userId: user.id, isAdmin, redirectUrl }, 'Redirecting after OAuth');
+      reply.redirect(redirectUrl);
     } catch (error) {
       logger.error({ error }, 'Failed to complete OAuth flow');
       reply.code(500).send({
@@ -118,8 +128,8 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
    * GET /auth/logout
    * Clear session
    */
-  fastify.get('/auth/logout', async (_request, reply) => {
-    reply.clearCookie('auth', { path: '/' });
+  fastify.get('/auth/logout', async (request, reply) => {
+    (request as any).session.destroy();
     logger.info('User logged out');
     reply.redirect('/');
   });
@@ -128,8 +138,8 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
    * POST /auth/logout
    * Clear session (API endpoint)
    */
-  fastify.post('/auth/logout', async (_request, reply) => {
-    reply.clearCookie('auth', { path: '/' });
+  fastify.post('/auth/logout', async (request, reply) => {
+    (request as any).session.destroy();
     logger.info('User logged out via API');
     reply.send({ success: true });
   });
@@ -139,36 +149,15 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
    * Get current user info
    */
   fastify.get('/auth/me', async (request, reply) => {
-    const authCookie = request.cookies.auth;
+    const user = (request as any).session?.user;
     
-    if (!authCookie) {
+    if (!user) {
       return reply.code(401).send({
         error: 'Unauthorized',
         message: 'Not authenticated',
       });
     }
 
-    try {
-      const sessionData = JSON.parse(authCookie);
-      
-      if (Date.now() >= sessionData.expiresAt) {
-        reply.clearCookie('auth', { path: '/' });
-        return reply.code(401).send({
-          error: 'Unauthorized',
-          message: 'Session expired',
-        });
-      }
-
-      reply.send({
-        user: sessionData.user,
-      });
-    } catch (error) {
-      logger.error({ error }, 'Failed to parse auth cookie');
-      reply.clearCookie('auth', { path: '/' });
-      reply.code(401).send({
-        error: 'Unauthorized',
-        message: 'Invalid session',
-      });
-    }
+    reply.send({ user });
   });
 }

@@ -75,6 +75,24 @@ export const config = cleanEnv(process.env, {
     default: '1h,15m',
     desc: 'Comma-separated reminder intervals (e.g., "1h,15m")',
   }),
+
+  // Admin
+  ADMIN_USER_IDS: str({
+    default: '',
+    desc: 'Comma-separated list of Discord user IDs with admin access',
+  }),
+  ADMIN_USERNAME: str({
+    default: '',
+    desc: 'Admin panel username for password authentication',
+  }),
+  ADMIN_PASSWORD: str({
+    default: '',
+    desc: 'Admin panel password for password authentication',
+  }),
+  ADMIN_BASE_URL: str({
+    default: 'http://localhost:3000',
+    desc: 'Admin panel base URL (no trailing slash)',
+  }),
 });
 
 export type Config = typeof config;

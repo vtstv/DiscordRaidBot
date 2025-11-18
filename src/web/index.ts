@@ -5,6 +5,10 @@
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
+import session from '@fastify/session';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { config } from '../config/env.js';
 import { getModuleLogger } from '../utils/logger.js';
 import { connectDatabase, disconnectDatabase } from '../database/db.js';
@@ -12,6 +16,8 @@ import { registerRoutes } from './routes/index.js';
 import { dashboardHTML } from './dashboard-template.js';
 
 const logger = getModuleLogger('web');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let server: any = null;
 
@@ -39,7 +45,8 @@ export async function startWebServer(): Promise<void> {
 
     // Register CORS
     await server.register(cors, {
-      origin: true, // Configure properly in production
+      origin: true,
+      credentials: true, // Allow credentials (cookies)
     });
 
     // Register cookie support
@@ -47,10 +54,34 @@ export async function startWebServer(): Promise<void> {
       secret: config.WEB_SESSION_SECRET,
     });
 
+    // Register session support
+    await server.register(session, {
+      secret: config.WEB_SESSION_SECRET,
+      cookie: {
+        secure: false, // Set to true in production with HTTPS
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        sameSite: 'lax',
+      },
+      saveUninitialized: false,
+      rolling: true, // Refresh session on each request
+    });
+
+    // Register static files for admin panel
+    await server.register(fastifyStatic, {
+      root: path.join(__dirname, '..', '..', 'src', 'web', 'admin', 'public'),
+      prefix: '/a/',
+    });
+
     // Serve dashboard HTML FIRST
     server.get('/', async (_request: FastifyRequest, reply: FastifyReply) => {
       reply.type('text/html');
       return dashboardHTML;
+    });
+
+    // Serve admin panel at /a (redirect to /a/ for static files)
+    server.get('/a', async (_request: FastifyRequest, reply: FastifyReply) => {
+      return reply.redirect('/a/index.html');
     });
 
     // Health check
