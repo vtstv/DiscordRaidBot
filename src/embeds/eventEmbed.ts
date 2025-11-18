@@ -131,13 +131,11 @@ export async function createEventEmbed(event: any) {
         new ButtonBuilder()
           .setCustomId(`event_join:${event.id}`)
           .setLabel('Join')
-          .setStyle(ButtonStyle.Success)
-          .setEmoji({ name: '✅' }),
+          .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId(`event_leave:${event.id}`)
           .setLabel('Leave')
-          .setStyle(ButtonStyle.Danger)
-          .setEmoji({ name: '❌' }),
+          .setStyle(ButtonStyle.Danger),
       );
 
     components.push(buttons);

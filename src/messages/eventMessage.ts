@@ -221,7 +221,6 @@ export async function createEventMessage(event: any) {
           .setCustomId(`event_leave:${event.id}`)
           .setLabel(t('buttons.leave'))
           .setStyle(ButtonStyle.Danger)
-          .setEmoji({ name: '❌' })
       );
 
       // Add approve button if there are pending participants
@@ -231,7 +230,6 @@ export async function createEventMessage(event: any) {
             .setCustomId(`event_approve:${event.id}`)
             .setLabel(t('buttons.approve'))
             .setStyle(ButtonStyle.Success)
-            .setEmoji({ name: '✅' })
         );
       }
 
@@ -242,7 +240,6 @@ export async function createEventMessage(event: any) {
             .setCustomId(`event_promote:${event.id}`)
             .setLabel('Promote')
             .setStyle(ButtonStyle.Success)
-            .setEmoji({ name: '⬆️' })
         );
       }
 
@@ -251,7 +248,6 @@ export async function createEventMessage(event: any) {
           .setCustomId(`event_edit:${event.id}`)
           .setLabel(t('buttons.edit'))
           .setStyle(ButtonStyle.Secondary)
-          .setEmoji({ name: '📝' })
       );
 
       components.push(actionRow);
@@ -263,43 +259,36 @@ export async function createEventMessage(event: any) {
         new ButtonBuilder()
           .setCustomId(`event_join:${event.id}`)
           .setLabel(t('buttons.join'))
-          .setStyle(ButtonStyle.Success)
-          .setEmoji({ name: '✅' }),
+          .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId(`event_leave:${event.id}`)
           .setLabel(t('buttons.leave'))
           .setStyle(ButtonStyle.Danger)
-          .setEmoji({ name: '❌' })
       );
 
       // Add approve button if there are pending participants
       if (event.requireApproval && pending.length > 0) {
-        buttonRow.addComponents(
+        actionRow.addComponents(
           new ButtonBuilder()
             .setCustomId(`event_approve:${event.id}`)
             .setLabel(t('buttons.approve'))
             .setStyle(ButtonStyle.Success)
-            .setEmoji({ name: '✅' })
         );
       }
-
       // Add promote button if there are waitlisted participants
       if (waitlist.length > 0) {
-        buttonRow.addComponents(
+        actionRow.addComponents(
           new ButtonBuilder()
             .setCustomId(`event_promote:${event.id}`)
             .setLabel('Promote')
             .setStyle(ButtonStyle.Success)
-            .setEmoji({ name: '⬆️' })
         );
       }
-
       buttonRow.addComponents(
         new ButtonBuilder()
           .setCustomId(`event_edit:${event.id}`)
           .setLabel(t('buttons.edit'))
           .setStyle(ButtonStyle.Secondary)
-          .setEmoji({ name: '📝' })
       );
 
       components.push(buttonRow);
