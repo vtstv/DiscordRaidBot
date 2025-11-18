@@ -2,6 +2,24 @@
 
 A powerful Discord event management system, built with TypeScript and discord.js v14.
 
+## 📸 Screenshots
+
+<div align="center">
+
+### Discord Event Management
+<img src="Media/discord.png" alt="Discord Event Interface" width="700"/>
+
+### Web Admin Panel
+<img src="Media/botadmin.png" alt="Admin Panel" width="700"/>
+
+### Panel Selection
+<img src="Media/selectpanel.png" alt="Server Selection" width="700"/>
+
+### Template Creation & Editing
+<img src="Media/create_edit_template.png" alt="Template Editor" width="700"/>
+
+</div>
+
 ## Features
 
 - 📅 **Event Management** - Create, edit, delete events with slash commands
@@ -214,8 +232,6 @@ make docker-build-amd64
 ./docker-build.sh latest "vtstv" true               # Linux/Docker Hub
 ./docker-build.sh latest "ghcr.io/vtstv" true       # GitHub Container Registry
 ```
-
-See [docs/DOCKER_MULTIPLATFORM.md](docs/DOCKER_MULTIPLATFORM.md) for detailed multi-platform build instructions.
 
 ## License
 
