@@ -8,6 +8,8 @@ import {
   getAuthorizationUrl,
   exchangeCode,
   getDiscordUser,
+  getUserGuilds,
+  hasAdminPermissions,
 } from '../auth/discord-oauth.js';
 import { config } from '../../config/env.js';
 import { getModuleLogger } from '../../utils/logger.js';
@@ -92,6 +94,14 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       // Get user info
       const user = await getDiscordUser(tokenData.access_token);
 
+      // Get user's guilds to check permissions
+      const guilds = await getUserGuilds(tokenData.access_token);
+      
+      // Find guilds where user has admin permissions
+      const adminGuilds = guilds.filter(guild => 
+        guild.owner || hasAdminPermissions(guild.permissions)
+      );
+
       // Store user in session using direct assignment
       (request as any).session.user = {
         id: user.id,
@@ -104,16 +114,52 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       (request as any).session.refreshToken = tokenData.refresh_token;
       (request as any).session.expiresAt = Date.now() + tokenData.expires_in * 1000;
 
-      logger.info({ userId: user.id, username: user.username }, 'User logged in via Discord');
+      // Store admin guilds
+      (request as any).session.adminGuilds = adminGuilds.map(g => ({
+        id: g.id,
+        name: g.name,
+        icon: g.icon,
+        owner: g.owner,
+      }));
+
+      logger.info({ 
+        userId: user.id, 
+        username: user.username,
+        adminGuildsCount: adminGuilds.length 
+      }, 'User logged in via Discord');
 
       // Get the stored returnTo or default redirect
       const returnTo = stateData.returnTo || '/';
       
-      // Check if user is admin
-      const isAdmin = ADMIN_IDS.includes(user.id);
-      const redirectUrl = isAdmin ? '/a' : returnTo;
+      // Check if user is bot admin
+      const isBotAdmin = ADMIN_IDS.includes(user.id);
       
-      logger.info({ userId: user.id, isAdmin, redirectUrl }, 'Redirecting after OAuth');
+      logger.info({ 
+        userId: user.id,
+        username: user.username,
+        adminIds: ADMIN_IDS,
+        isBotAdmin,
+        adminGuildsCount: adminGuilds.length
+      }, 'OAuth: Checking user permissions');
+      
+      // Determine redirect:
+      // 1. Bot admins go to /select-panel (choose between bot admin and guild admin)
+      // 2. Guild admins go to /servers (server selection)
+      // 3. Regular users go to returnTo
+      let redirectUrl = returnTo;
+      if (isBotAdmin) {
+        redirectUrl = '/select-panel';
+      } else if (adminGuilds.length > 0) {
+        redirectUrl = '/servers';
+      }
+      
+      logger.info({ 
+        userId: user.id, 
+        isBotAdmin, 
+        hasGuildAdmin: adminGuilds.length > 0,
+        redirectUrl 
+      }, 'Redirecting after OAuth');
+      
       reply.redirect(redirectUrl);
     } catch (error) {
       logger.error({ error }, 'Failed to complete OAuth flow');
@@ -126,12 +172,19 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
 
   /**
    * GET /auth/logout
-   * Clear session
+   * Clear session and redirect
    */
   fastify.get('/auth/logout', async (request, reply) => {
-    request.session.destroy();
-    logger.info('User logged out');
-    reply.redirect('/');
+    return new Promise<void>((resolve) => {
+      request.session.destroy((err) => {
+        if (err) {
+          logger.error({ err }, 'Error destroying session');
+        }
+        logger.info('User logged out');
+        reply.redirect('/');
+        resolve();
+      });
+    });
   });
 
   /**
@@ -139,9 +192,18 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
    * Clear session (API endpoint)
    */
   fastify.post('/auth/logout', async (request, reply) => {
-    request.session.destroy();
-    logger.info('User logged out via API');
-    reply.send({ success: true });
+    return new Promise<void>((resolve) => {
+      request.session.destroy((err) => {
+        if (err) {
+          logger.error({ err }, 'Error destroying session');
+          reply.code(500).send({ error: 'Failed to logout' });
+        } else {
+          logger.info('User logged out via API');
+          reply.send({ success: true });
+        }
+        resolve();
+      });
+    });
   });
 
   /**
@@ -158,6 +220,32 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       });
     }
 
-    reply.send({ user });
+    const adminGuilds = (request as any).session?.adminGuilds || [];
+    const isBotAdmin = ADMIN_IDS.includes(user.id);
+
+    reply.send({ 
+      user,
+      adminGuilds,
+      isBotAdmin,
+    });
+  });
+
+  /**
+   * GET /auth/guilds
+   * Get user's admin guilds
+   */
+  fastify.get('/auth/guilds', async (request, reply) => {
+    const user = (request as any).session?.user;
+    
+    if (!user) {
+      return reply.code(401).send({
+        error: 'Unauthorized',
+        message: 'Not authenticated',
+      });
+    }
+
+    const adminGuilds = (request as any).session?.adminGuilds || [];
+    
+    reply.send({ guilds: adminGuilds });
   });
 }

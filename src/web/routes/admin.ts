@@ -403,4 +403,249 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       return reply.code(500).send({ error: 'Failed to restart bot' });
     }
   });
+
+  // Get analytics data
+  server.get('/analytics', { preHandler: requireAdmin }, async (_request, reply) => {
+    try {
+      const [
+        totalGuilds,
+        totalEvents,
+        totalTemplates,
+        totalParticipants,
+        activeEvents,
+        scheduledEvents,
+        completedEvents,
+      ] = await Promise.all([
+        prisma.guild.count(),
+        prisma.event.count(),
+        prisma.template.count(),
+        prisma.participant.count(),
+        prisma.event.count({ where: { status: 'active' } }),
+        prisma.event.count({ where: { status: 'scheduled' } }),
+        prisma.event.count({ where: { status: 'completed' } }),
+      ]);
+
+      // Top guilds by event count
+      const topGuilds = await prisma.guild.findMany({
+        select: {
+          name: true,
+          _count: {
+            select: { events: true },
+          },
+        },
+        orderBy: {
+          events: {
+            _count: 'desc',
+          },
+        },
+        take: 10,
+      });
+
+      // Calculate participation rate
+      const eventsWithSlots = await prisma.event.findMany({
+        select: {
+          maxParticipants: true,
+          _count: {
+            select: { participants: true },
+          },
+        },
+        where: {
+          maxParticipants: { not: null },
+        },
+      });
+
+      let participationRate = 0;
+      if (eventsWithSlots.length > 0) {
+        const rates = eventsWithSlots.map(e => 
+          e.maxParticipants ? (e._count.participants / e.maxParticipants) * 100 : 0
+        );
+        participationRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+      }
+
+      return {
+        totalGuilds,
+        totalEvents,
+        totalTemplates,
+        totalParticipants,
+        activeEvents,
+        scheduledEvents,
+        completedEvents,
+        topGuilds: topGuilds.map(g => ({
+          name: g.name,
+          eventCount: g._count.events,
+        })),
+        participationRate: Math.round(participationRate * 10) / 10,
+      };
+    } catch (error) {
+      logger.error({ error }, 'Failed to fetch analytics');
+      return reply.code(500).send({ error: 'Failed to fetch analytics' });
+    }
+  });
+
+  // Get audit logs with filters
+  server.get('/audit-logs', { preHandler: requireAdmin }, async (request, reply) => {
+    try {
+      const query = request.query as any;
+      const page = parseInt(query.page || '1');
+      const limit = Math.min(parseInt(query.limit || '50'), 100);
+      const action = query.action !== 'all' ? query.action : undefined;
+      const guildId = query.guildId || undefined;
+      const userId = query.userId || undefined;
+      const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
+      const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+
+      const where: any = {};
+
+      if (action) where.action = action;
+      if (guildId) where.guildId = guildId;
+      if (userId) where.userId = userId;
+      if (dateFrom || dateTo) {
+        where.timestamp = {};
+        if (dateFrom) where.timestamp.gte = dateFrom;
+        if (dateTo) where.timestamp.lte = dateTo;
+      }
+
+      const [logs, total] = await Promise.all([
+        prisma.logEntry.findMany({
+          where,
+          orderBy: { timestamp: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+          include: {
+            guild: {
+              select: { name: true },
+            },
+          },
+        }),
+        prisma.logEntry.count({ where }),
+      ]);
+
+      return {
+        logs: logs.map(log => ({
+          id: log.id,
+          action: log.action,
+          userId: log.userId,
+          userName: log.userId,
+          guildId: log.guildId,
+          guildName: log.guild.name,
+          details: log.details || '',
+          timestamp: log.timestamp,
+        })),
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      logger.error({ error }, 'Failed to fetch audit logs');
+      return reply.code(500).send({ error: 'Failed to fetch audit logs' });
+    }
+  });
+
+  // Delete guild data
+  server.delete('/guilds/:guildId/data', { preHandler: requireAdmin }, async (request, reply) => {
+    try {
+      const { guildId } = request.params as { guildId: string };
+
+      await prisma.$transaction([
+        prisma.participant.deleteMany({ where: { event: { guildId } } }),
+        prisma.event.deleteMany({ where: { guildId } }),
+        prisma.template.deleteMany({ where: { guildId } }),
+        prisma.logEntry.deleteMany({ where: { guildId } }),
+      ]);
+
+      logger.info({ guildId }, 'Deleted all data for guild');
+
+      return { success: true };
+    } catch (error) {
+      logger.error({ error }, 'Failed to delete guild data');
+      return reply.code(500).send({ error: 'Failed to delete guild data' });
+    }
+  });
+
+  // Get/update system settings
+  server.get('/settings', { preHandler: requireAdmin }, async (_request, reply) => {
+    return {
+      settings: {
+        maintenanceMode: false,
+        allowNewGuilds: true,
+        maxEventsPerGuild: 100,
+        maxTemplatesPerGuild: 50,
+        defaultLanguage: 'en',
+        logLevel: 'info',
+        enableAnalytics: true,
+        webhookUrl: '',
+      },
+    };
+  });
+
+  server.put('/settings', { preHandler: requireAdmin }, async (request, reply) => {
+    try {
+      const { settings } = request.body as any;
+      logger.info({ settings }, 'System settings updated');
+      return { success: true };
+    } catch (error) {
+      logger.error({ error }, 'Failed to update settings');
+      return reply.code(500).send({ error: 'Failed to update settings' });
+    }
+  });
+
+  // Bulk operations
+  server.post('/bulk-operations', { preHandler: requireAdmin }, async (request, reply) => {
+    try {
+      const { operation, params } = request.body as any;
+      let affectedCount = 0;
+
+      switch (operation) {
+        case 'delete_old_events':
+          const daysOld = params.daysOld || 90;
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+          const result = await prisma.event.deleteMany({
+            where: {
+              status: 'completed',
+              endTime: { lt: cutoffDate },
+            },
+          });
+          affectedCount = result.count;
+          break;
+
+        case 'archive_completed':
+          const archiveResult = await prisma.event.updateMany({
+            where: { status: 'completed' },
+            data: { status: 'archived' },
+          });
+          affectedCount = archiveResult.count;
+          break;
+
+        case 'cleanup_orphaned':
+          const orphanedParticipants = await prisma.participant.deleteMany({
+            where: {
+              event: null,
+            },
+          });
+          affectedCount = orphanedParticipants.count;
+          break;
+
+        case 'reset_guild_settings':
+          const guilds = await prisma.guild.findMany();
+          await prisma.guild.updateMany({
+            data: {
+              timezone: 'UTC',
+              language: 'en',
+            },
+          });
+          affectedCount = guilds.length;
+          break;
+
+        default:
+          return reply.code(400).send({ error: 'Unknown operation' });
+      }
+
+      logger.info({ operation, affectedCount }, 'Bulk operation completed');
+
+      return { success: true, affectedCount };
+    } catch (error) {
+      logger.error({ error }, 'Bulk operation failed');
+      return reply.code(500).send({ error: 'Bulk operation failed' });
+    }
+  });
 }

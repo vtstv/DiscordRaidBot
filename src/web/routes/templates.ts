@@ -63,6 +63,14 @@ export async function templatesRoutes(server: FastifyInstance): Promise<void> {
     // Normalize config - ensure emojiMap doesn't have invalid values
     const config = { ...templateData.config };
     
+    // Provide defaults for required fields
+    if (!config.roles || !Array.isArray(config.roles)) {
+      config.roles = [];
+    }
+    if (!config.limits) {
+      config.limits = {};
+    }
+    
     // Remove invalid emoji entries (undefined, null, empty strings)
     if (config.emojiMap) {
       const cleanEmojiMap: Record<string, string> = {};

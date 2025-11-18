@@ -49,6 +49,7 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://raidbot:raidbot_password@postgres:5432/raidbot
       REDIS_URL: redis://redis:6379
+      PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
     env_file:
       - .env
     volumes:
@@ -68,11 +69,12 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://raidbot:raidbot_password@postgres:5432/raidbot
       WEB_ENABLED: "true"
+      START_WEB: "true"
+      PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
     env_file:
       - .env
     ports:
       - "3000:3000"
-    command: node dist/web/index.js
 
 volumes:
   postgres-data:

@@ -73,15 +73,17 @@ export async function startWebServer(): Promise<void> {
       prefix: '/a/',
     });
 
-    // Serve dashboard HTML FIRST
-    server.get('/', async (_request: FastifyRequest, reply: FastifyReply) => {
-      reply.type('text/html');
-      return dashboardHTML;
-    });
-
-    // Serve admin panel at /a (redirect to /a/ for static files)
-    server.get('/a', async (_request: FastifyRequest, reply: FastifyReply) => {
-      return reply.redirect('/a/index.html');
+    // Register static files for React frontend
+    // In production: dist/web/frontend (built by Vite)
+    // In development: served by Vite dev server on port 5173
+    const frontendRoot = config.NODE_ENV === 'production' 
+      ? path.join(__dirname, '..', '..', 'dist', 'web', 'frontend')
+      : path.join(__dirname, '..', '..', 'dist', 'web', 'frontend'); // fallback to dist even in dev
+    
+    // Serve React static files (no prefix, files are accessed directly like /assets/...)
+    await server.register(fastifyStatic, {
+      root: frontendRoot,
+      decorateReply: false,
     });
 
     // Health check
@@ -89,8 +91,28 @@ export async function startWebServer(): Promise<void> {
       return { status: 'ok', timestamp: new Date().toISOString() };
     });
 
+    // Config endpoint for frontend
+    server.get('/api/config', async () => {
+      return {
+        apiBaseUrl: config.WEB_BASE_URL || `http://localhost:${config.WEB_PORT}`,
+        discordClientId: config.DISCORD_CLIENT_ID,
+      };
+    });
+
     // Register API routes
     await registerRoutes(server);
+
+    // Serve React frontend for all non-API routes
+    // This catches all routes and serves index.html for client-side routing
+    server.setNotFoundHandler(async (request: FastifyRequest, reply: FastifyReply) => {
+      // If it's an API route, return 404 JSON
+      if (request.url.startsWith('/api/') || request.url.startsWith('/auth/')) {
+        return reply.code(404).send({ error: 'Not found' });
+      }
+      // Otherwise serve React app index.html (including /a route)
+      reply.type('text/html');
+      return reply.sendFile('index.html', frontendRoot);
+    });
 
     // Start server
     await server.listen({

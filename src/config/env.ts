@@ -51,6 +51,10 @@ export const config = cleanEnv(process.env, {
     default: 3000,
     desc: 'Web server port',
   }),
+  WEB_BASE_URL: str({
+    default: 'http://localhost:3000',
+    desc: 'Web panel base URL (no trailing slash)',
+  }),
   WEB_JWT_SECRET: str({
     default: 'change-this-secret-in-production',
     desc: 'JWT secret for web authentication',

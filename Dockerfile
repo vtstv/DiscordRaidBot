@@ -1,30 +1,38 @@
 # Build stage
 FROM node:18-alpine AS build
 
-# Install OpenSSL for Prisma and dumb-init for signal handling
-RUN apk add --no-cache openssl dumb-init
-
 WORKDIR /app
+
+# Install dependencies for Prisma and build tools
+RUN apk update && apk add --no-cache \
+    python3 \
+    make \
+    g++
 
 # Copy package files
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY prisma ./prisma/
 
-# Install all dependencies (including dev dependencies for build)
+# Install all dependencies and generate Prisma Client
 RUN npm ci
+RUN npx prisma generate
 
 # Copy source code
 COPY src ./src
 
+# Copy React frontend files
+COPY src/web/frontend ./src/web/frontend
+COPY vite.frontend.config.ts ./
+
 # Copy admin panel static files
 COPY src/web/admin/public ./src/web/admin/public
 
-# Generate Prisma client
-RUN npx prisma generate
+# Build React frontend (doesn't depend on Prisma)
+RUN npm run build:frontend
 
-# Build TypeScript
-RUN npm run build
+# Note: TypeScript backend will be run via tsx, not pre-compiled
+# This avoids Prisma generation issues during build time
 
 # Copy startup script and healthcheck to build stage too
 COPY docker/start.sh /start.sh
@@ -34,29 +42,40 @@ RUN chmod +x /start.sh /healthcheck.sh
 # Runtime stage
 FROM node:18-alpine AS runtime
 
-# Install OpenSSL and dumb-init for proper signal handling
-RUN apk add --no-cache openssl dumb-init
-
 WORKDIR /app
+
+# Install runtime dependencies
+RUN apk update && apk add --no-cache \
+    dumb-init \
+    openssl
 
 # Set production environment
 ENV NODE_ENV=production
 
-# Copy package files
+# Copy package files and install production dependencies
 COPY package*.json ./
+RUN npm ci --only=production
 
-# Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
-
-# Copy Prisma schema and generated client
+# Copy Prisma schema
 COPY --from=build /app/prisma ./prisma
+
+# Copy generated Prisma Client from build stage
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 
-# Copy built application
-COPY --from=build /app/dist ./dist
+# Copy React frontend build
+COPY --from=build /app/dist/web/frontend ./dist/web/frontend
 
-# Copy admin panel static files to dist
-COPY --from=build /app/src/web/admin/public ./dist/web/admin/public
+# Copy admin panel static files
+COPY --from=build /app/src/web/admin/public ./src/web/admin/public
+
+# Copy TypeScript source (will be run via tsx)
+COPY --from=build /app/src ./src
+COPY --from=build /app/tsconfig.json ./tsconfig.json
+COPY --from=build /app/vite.frontend.config.ts ./vite.frontend.config.ts
+
+# Install tsx for running TypeScript
+RUN npm install -g tsx
 
 # Copy healthcheck script
 COPY docker/healthcheck.sh /healthcheck.sh
@@ -67,8 +86,7 @@ COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN addgroup -S nodejs && adduser -S -G nodejs nodejs
 
 # Change ownership
 RUN chown -R nodejs:nodejs /app && \
@@ -81,5 +99,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD ["/healthcheck.sh"]
 
 # Run with dumb-init and startup script
-ENTRYPOINT ["dumb-init", "--"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["/start.sh"]

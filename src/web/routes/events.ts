@@ -144,6 +144,7 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
     { preHandler: requireGuildManager },
     async (request, reply) => {
       const { guildId, guildName, ...eventData } = request.body;
+      const userId = (request as any).session?.user?.id || 'unknown';
 
     // Ensure guild exists
     await prisma.guild.upsert({
@@ -163,7 +164,7 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
         timezone: eventData.timezone || 'UTC',
         maxParticipants: eventData.maxParticipants,
         roleConfig: eventData.roleConfig,
-        createdBy: eventData.createdBy,
+        createdBy: userId,
         status: eventData.status || 'scheduled',
         templateId: eventData.templateId,
         createThread: eventData.createThread,
