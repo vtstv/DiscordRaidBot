@@ -44,6 +44,8 @@ export async function startBot(): Promise<void> {
     // Register event handlers
     client.once(Events.ClientReady, handleReady);
     client.on(Events.InteractionCreate, handleInteraction);
+    client.on(Events.GuildCreate, handleGuildCreate);
+    client.on(Events.GuildUpdate, handleGuildUpdate);
     
     // Prefix commands - only if MessageContent intent is enabled
     if (process.env.ENABLE_PREFIX_COMMANDS === 'true') {
@@ -70,9 +72,52 @@ export async function startBot(): Promise<void> {
 }
 
 /**
+ * Handle guild join - update guild info in database
+ */
+async function handleGuildCreate(guild: any): Promise<void> {
+  logger.info({ guildId: guild.id, guildName: guild.name }, 'Bot joined guild');
+  
+  try {
+    const prisma = (await import('../database/db.js')).default();
+    await prisma.guild.upsert({
+      where: { id: guild.id },
+      create: {
+        id: guild.id,
+        name: guild.name,
+      },
+      update: {
+        name: guild.name,
+      },
+    });
+    logger.info({ guildId: guild.id }, 'Guild info updated in database');
+  } catch (error) {
+    logger.error({ error, guildId: guild.id }, 'Failed to update guild info');
+  }
+}
+
+/**
+ * Handle guild update - update guild name in database
+ */
+async function handleGuildUpdate(_oldGuild: any, newGuild: any): Promise<void> {
+  try {
+    const prisma = (await import('../database/db.js')).default();
+    await prisma.guild.update({
+      where: { id: newGuild.id },
+      data: {
+        name: newGuild.name,
+      },
+    });
+    logger.info({ guildId: newGuild.id, newName: newGuild.name }, 'Guild name updated');
+  } catch (error) {
+    logger.error({ error, guildId: newGuild.id }, 'Failed to update guild name');
+  }
+}
+
+/**
  * Handle bot ready event
  */
-async function handleReady(readyClient: Client<true>): Promise<void> {
+async function handleReady(client: Client): Promise<void> {
+  const readyClient = client as Client<true>;
   logger.info(`Bot ready! Logged in as ${readyClient.user.tag}`);
   logger.info(`Serving ${readyClient.guilds.cache.size} guilds`);
 

@@ -5,7 +5,6 @@
 import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
 import { getModuleLogger } from '../../utils/logger.js';
-import { getClient } from '../../bot/index.js';
 import { config } from '../../config/env.js';
 
 const logger = getModuleLogger('admin');
@@ -58,8 +57,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
     }
 
     if (username === config.ADMIN_USERNAME && password === config.ADMIN_PASSWORD) {
-      // Create session
-      (request as any).session = {
+      // Create session data
+      const sessionData = {
         user: {
           id: 'admin',
           username: 'Administrator',
@@ -67,15 +66,14 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
         }
       };
 
+      // Set session using direct assignment
+      (request as any).session.user = sessionData.user;
+
       logger.info({ username }, 'Admin logged in with password');
 
       return { 
         success: true,
-        user: {
-          id: 'admin',
-          username: 'Administrator',
-          avatar: null
-        }
+        user: sessionData.user
       };
     }
 
@@ -125,13 +123,9 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
         prisma.event.count({ where: { status: 'completed' } })
       ]);
 
-      const client = getClient();
-      const botStats = client ? {
-        guilds: client.guilds.cache.size,
-        users: client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0),
-        uptime: process.uptime(),
-        ping: client.ws.ping
-      } : null;
+      // Note: Bot stats not available in multi-container setup
+      // Web container cannot access bot container's Discord client
+      const botStats = null;
 
       return {
         database: {
@@ -166,15 +160,15 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
         }
       });
 
-      const client = getClient();
-      const enrichedGuilds = guilds.map(guild => {
-        const discordGuild = client?.guilds.cache.get(guild.id);
-        return {
-          ...guild,
-          memberCount: discordGuild?.memberCount || 0,
-          online: !!discordGuild
-        };
-      });
+      // Note: In multi-container setup, web cannot access bot's Discord client
+      // We rely on database information only
+      const enrichedGuilds = guilds.map(guild => ({
+        id: guild.id,
+        name: guild.name || 'Unknown',
+        memberCount: 0, // Not available in multi-container setup
+        online: true, // Assume online if in database
+        _count: guild._count
+      }));
 
       return enrichedGuilds;
     } catch (error) {
@@ -232,6 +226,31 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
     } catch (error) {
       logger.error({ error }, 'Failed to search events');
       return reply.code(500).send({ error: 'Failed to search events' });
+    }
+  });
+
+  // Get single template
+  server.get<{
+    Params: { id: string };
+  }>('/templates/:id', { preHandler: requireAdmin }, async (request, reply) => {
+    try {
+      const template = await prisma.template.findUnique({
+        where: { id: request.params.id },
+        include: {
+          guild: {
+            select: { id: true, name: true }
+          }
+        }
+      });
+
+      if (!template) {
+        return reply.code(404).send({ error: 'Template not found' });
+      }
+
+      return template;
+    } catch (error) {
+      logger.error({ error }, 'Failed to get template');
+      return reply.code(500).send({ error: 'Failed to get template' });
     }
   });
 

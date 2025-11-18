@@ -38,7 +38,7 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
     return events;
   });
 
-  // Get event details
+  // Get event details by ID only
   server.get<{
     Params: { id: string };
   }>('/:id', async (request, reply) => {
@@ -51,11 +51,53 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
           orderBy: { joinedAt: 'asc' },
         },
         template: true,
+        guild: true,
       },
     });
 
     if (!event) {
       return reply.code(404).send({ error: 'Event not found' });
+    }
+
+    // Return HTML view for browser, JSON for API
+    if (request.headers.accept?.includes('text/html')) {
+      return reply.type('text/html').send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>${event.title} - Event Details</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+            h1 { color: #5865f2; }
+            .info { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
+            .participants { margin-top: 20px; }
+            .participant { padding: 10px; border-bottom: 1px solid #ddd; }
+          </style>
+        </head>
+        <body>
+          <h1>${event.title}</h1>
+          <div class="info">
+            <p><strong>Server:</strong> ${event.guild?.name || 'Unknown'}</p>
+            <p><strong>Start Time:</strong> ${new Date(event.startTime).toLocaleString()}</p>
+            <p><strong>Status:</strong> ${event.status}</p>
+            <p><strong>Participants:</strong> ${event.participants.length} / ${event.maxParticipants || '∞'}</p>
+            ${event.description ? `<p><strong>Description:</strong> ${event.description}</p>` : ''}
+          </div>
+          <div class="participants">
+            <h2>Participants</h2>
+            ${event.participants.map(p => `
+              <div class="participant">
+                <strong>${p.username}</strong> - ${p.role || 'No role'}
+                ${p.spec ? `(${p.spec})` : ''}
+                <span style="float: right; color: ${p.status === 'confirmed' ? 'green' : 'orange'}">
+                  ${p.status}
+                </span>
+              </div>
+            `).join('')}
+          </div>
+        </body>
+        </html>
+      `);
     }
 
     return event;

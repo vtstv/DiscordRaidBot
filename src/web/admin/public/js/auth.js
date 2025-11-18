@@ -31,6 +31,7 @@ async function checkAuth() {
 
 function showApp() {
   document.getElementById('loginModal').classList.remove('active');
+  document.getElementById('app').style.display = 'block';
   document.getElementById('userInfo').style.display = 'flex';
   document.getElementById('userName').textContent = currentUser?.username || 'Admin';
   
@@ -38,12 +39,6 @@ function showApp() {
     const avatarUrl = `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=128`;
     document.getElementById('userAvatar').src = avatarUrl;
   }
-  
-  // Load data
-  loadStats();
-  loadServers();
-  searchEvents();
-  searchTemplates();
 }
 
 function showLoginModal() {

@@ -1,5 +1,8 @@
 // Main application entry point
 document.addEventListener('DOMContentLoaded', async () => {
+  // Load config first
+  await loadConfig();
+  
   // Check authentication
   const isAuth = await checkAuth();
   

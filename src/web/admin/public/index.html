@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/a/css/styles.css">
 </head>
 <body>
-  <div id="app">
+  <div id="app" style="display: none;">
     <!-- Header -->
     <header class="header">
       <h1 class="header-title">🛡️ RaidBot Admin Panel</h1>
@@ -121,10 +121,11 @@
                   <th>Date</th>
                   <th>Participants</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="eventsTable">
-                <tr><td colspan="6" class="loading">Loading events...</td></tr>
+                <tr><td colspan="7" class="loading">Loading events...</td></tr>
               </tbody>
             </table>
           </div>
@@ -160,10 +161,11 @@
                   <th>Server</th>
                   <th>Roles</th>
                   <th>Created</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="templatesTable">
-                <tr><td colspan="5" class="loading">Loading templates...</td></tr>
+                <tr><td colspan="6" class="loading">Loading templates...</td></tr>
               </tbody>
             </table>
           </div>
@@ -210,7 +212,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-      <p>&copy; 2025 Murr. Licensed under MIT License. v1.0.0</p>
+      <p>&copy; 2025 Murr. v1.0.0</p>
     </footer>
   </div>
 

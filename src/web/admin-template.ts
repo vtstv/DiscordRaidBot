@@ -526,7 +526,7 @@ export function generateAdminHTML(): string {
   </div>
 
   <footer>
-    <p>&copy; 2025 Murr. Licensed under MIT License. v1.0.0</p>
+    <p>&copy; 2025 Murr. v1.0.0</p>
   </footer>
 
   <script>

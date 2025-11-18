@@ -57,6 +57,13 @@ async function loadStats() {
     }
   } catch (error) {
     console.error('Failed to load stats:', error);
+    // Set default values on error
+    document.getElementById('statServers').textContent = '-';
+    document.getElementById('statEvents').textContent = '-';
+    document.getElementById('statActiveEvents').textContent = '-';
+    document.getElementById('statTemplates').textContent = '-';
+    document.getElementById('statParticipants').textContent = '-';
+    document.getElementById('statUptime').textContent = '-';
   }
 }
 
@@ -120,12 +127,15 @@ async function searchEvents() {
 
     tbody.innerHTML = data.events.map(event => `
       <tr>
-        <td><input type="checkbox" class="event-checkbox" value="${event.id}"></td>
+        <td><input type="checkbox" class="event-checkbox" data-id="${event.id}"></td>
         <td><strong>${escapeHtml(event.title)}</strong></td>
-        <td>${escapeHtml(event.guild.name)}</td>
-        <td>${new Date(event.dateTime).toLocaleString()}</td>
+        <td>${escapeHtml(event.guild?.name || 'Unknown')}</td>
+        <td>${new Date(event.startTime).toLocaleString()}</td>
         <td>${event._count.participants}</td>
         <td><span class="badge ${event.status}">${event.status}</span></td>
+        <td>
+          <a href="/api/events/${event.id}" target="_blank" class="btn btn-sm btn-primary">View</a>
+        </td>
       </tr>
     `).join('');
 
@@ -192,6 +202,9 @@ async function searchTemplates() {
         <td>${escapeHtml(template.guild.name)}</td>
         <td>${template.config.roles ? template.config.roles.join(', ') : '-'}</td>
         <td>${new Date(template.createdAt).toLocaleDateString()}</td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="viewTemplate('${template.id}')">View</button>
+        </td>
       </tr>
     `).join('');
 
@@ -245,3 +258,50 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+// View template details
+async function viewTemplate(templateId) {
+  try {
+    const template = await API.get(`/api/admin/templates/${templateId}`);
+    
+    // Create modal content
+    const roles = template.config?.roles || [];
+    const rolesHtml = roles.map(r => `
+      <div style="margin: 0.5rem 0; padding: 0.5rem; background: var(--bg-hover); border-radius: 4px;">
+        <strong>${r.emoji || ''} ${escapeHtml(r.name)}</strong><br>
+        Limit: ${r.limit || 'Unlimited'}
+      </div>
+    `).join('');
+    
+    const content = `
+      <h2>${escapeHtml(template.name)}</h2>
+      <p><strong>Server:</strong> ${escapeHtml(template.guild?.name || 'Unknown')}</p>
+      <p><strong>Description:</strong> ${escapeHtml(template.description || 'No description')}</p>
+      <p><strong>Created:</strong> ${new Date(template.createdAt).toLocaleString()}</p>
+      <h3>Roles (${roles.length})</h3>
+      ${rolesHtml || '<p>No roles configured</p>'}
+    `;
+    
+    showModal('Template Details', content);
+  } catch (error) {
+    console.error('Failed to view template:', error);
+    alert('Failed to load template details');
+  }
+}
+
+// Show modal helper
+function showModal(title, content) {
+  const modal = document.getElementById('loginModal');
+  const modalContent = modal.querySelector('.modal-content');
+  modalContent.innerHTML = `
+    <h2>${title}</h2>
+    <div style="max-height: 400px; overflow-y: auto;">${content}</div>
+    <button class="btn btn-secondary btn-block" onclick="closeModal()">Close</button>
+  `;
+  modal.classList.add('active');
+}
+
+function closeModal() {
+  location.reload();
+}
+

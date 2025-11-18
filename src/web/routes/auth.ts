@@ -92,7 +92,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       // Get user info
       const user = await getDiscordUser(tokenData.access_token);
 
-      // Store user in session (same format as password auth)
+      // Store user in session using direct assignment
       (request as any).session.user = {
         id: user.id,
         username: user.username,
@@ -129,7 +129,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
    * Clear session
    */
   fastify.get('/auth/logout', async (request, reply) => {
-    (request as any).session.destroy();
+    request.session.destroy();
     logger.info('User logged out');
     reply.redirect('/');
   });
@@ -139,7 +139,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
    * Clear session (API endpoint)
    */
   fastify.post('/auth/logout', async (request, reply) => {
-    (request as any).session.destroy();
+    request.session.destroy();
     logger.info('User logged out via API');
     reply.send({ success: true });
   });

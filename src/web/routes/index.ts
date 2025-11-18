@@ -12,6 +12,11 @@ export async function registerRoutes(server: FastifyInstance): Promise<void> {
   // Auth routes (no prefix)
   await registerAuthRoutes(server);
 
+  // Event view route (direct, not under /api)
+  server.register(async (routes) => {
+    await routes.register(eventsRoutes, { prefix: '/events' });
+  });
+
   // API prefix
   server.register(async (api) => {
     await api.register(eventsRoutes, { prefix: '/events' });

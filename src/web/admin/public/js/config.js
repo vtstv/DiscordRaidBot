@@ -8,7 +8,9 @@ window.AppConfig = {
 // Load config from server
 async function loadConfig() {
   try {
-    const response = await fetch('/api/admin/config');
+    const response = await fetch('/api/admin/config', {
+      credentials: 'include' // Important for session cookies
+    });
     if (response.ok) {
       const config = await response.json();
       window.AppConfig = { ...window.AppConfig, ...config };

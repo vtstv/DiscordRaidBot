@@ -15,12 +15,13 @@ const logger = getModuleLogger('auth-middleware');
  */
 function getAuthSession(request: FastifyRequest): AuthSession | null {
   const session = (request as any).session;
-  if (!session?.user) return null;
+  const user = session?.user;
+  if (!user) return null;
 
   try {
     // Build AuthSession from Fastify session
     return {
-      user: session.user,
+      user,
       accessToken: session.accessToken || '',
       refreshToken: session.refreshToken || '',
       expiresAt: session.expiresAt || Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days default
