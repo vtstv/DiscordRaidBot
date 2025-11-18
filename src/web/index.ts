@@ -13,7 +13,6 @@ import { config } from '../config/env.js';
 import { getModuleLogger } from '../utils/logger.js';
 import { connectDatabase, disconnectDatabase } from '../database/db.js';
 import { registerRoutes } from './routes/index.js';
-import { dashboardHTML } from './dashboard-template.js';
 
 const logger = getModuleLogger('web');
 const __filename = fileURLToPath(import.meta.url);
@@ -65,12 +64,6 @@ export async function startWebServer(): Promise<void> {
       },
       saveUninitialized: false,
       rolling: true, // Refresh session on each request
-    });
-
-    // Register static files for admin panel
-    await server.register(fastifyStatic, {
-      root: path.join(__dirname, '..', '..', 'src', 'web', 'admin', 'public'),
-      prefix: '/a/',
     });
 
     // Register static files for React frontend

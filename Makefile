@@ -52,6 +52,22 @@ docker-down: ## Stop Docker containers
 docker-logs: ## Show Docker logs
 	docker-compose logs -f
 
+docker-build: ## Build Docker images for current platform
+	docker-compose build
+
+docker-build-multi: ## Build multi-platform images (amd64 + arm64)
+	docker buildx build --platform linux/amd64,linux/arm64 --tag raidbot:latest --load .
+
+docker-build-arm64: ## Build ARM64 image only
+	docker buildx build --platform linux/arm64 --tag raidbot:arm64 --load .
+
+docker-build-amd64: ## Build AMD64 image only
+	docker buildx build --platform linux/amd64 --tag raidbot:amd64 --load .
+
+buildx-setup: ## Setup buildx builder for multi-platform builds
+	docker buildx create --name multiplatform-builder --use || docker buildx use multiplatform-builder
+	docker buildx inspect --bootstrap
+
 docker-build: ## Build Docker image
 	docker-compose build
 

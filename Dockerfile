@@ -1,5 +1,9 @@
 # Build stage
-FROM node:18-alpine AS build
+FROM --platform=$BUILDPLATFORM node:18-alpine AS build
+
+# Build arguments for cross-compilation
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 
 WORKDIR /app
 
@@ -25,9 +29,6 @@ COPY src ./src
 COPY src/web/frontend ./src/web/frontend
 COPY vite.frontend.config.ts ./
 
-# Copy admin panel static files
-COPY src/web/admin/public ./src/web/admin/public
-
 # Build React frontend (doesn't depend on Prisma)
 RUN npm run build:frontend
 
@@ -41,6 +42,10 @@ RUN chmod +x /start.sh /healthcheck.sh
 
 # Runtime stage
 FROM node:18-alpine AS runtime
+
+# Platform info for debugging
+ARG TARGETPLATFORM
+RUN echo "Building for platform: $TARGETPLATFORM"
 
 WORKDIR /app
 
@@ -65,9 +70,6 @@ COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy React frontend build
 COPY --from=build /app/dist/web/frontend ./dist/web/frontend
-
-# Copy admin panel static files
-COPY --from=build /app/src/web/admin/public ./src/web/admin/public
 
 # Copy TypeScript source (will be run via tsx)
 COPY --from=build /app/src ./src
