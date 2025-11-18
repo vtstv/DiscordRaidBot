@@ -6,6 +6,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  EmbedBuilder,
 } from 'discord.js';
 import getPrismaClient from '../database/db.js';
 import { getModuleLogger } from '../utils/logger.js';
@@ -135,13 +136,16 @@ export async function createEventMessage(event: any) {
   // Footer
   content += `\n---\n_ID: \`${event.id.substring(0, 8)}\`_`;
 
-  // Image from template (at the bottom)
-  if (roleConfig?.imageUrl) {
-    content += `\n\n${roleConfig.imageUrl}`;
-  }
-
   // Interactive components
   const components: any[] = [];
+
+  // Create image embed if template has imageUrl
+  const embeds: any[] = [];
+  if (roleConfig?.imageUrl) {
+    const imageEmbed = new EmbedBuilder()
+      .setImage(roleConfig.imageUrl);
+    embeds.push(imageEmbed);
+  }
 
   if (event.status === 'scheduled' || event.status === 'active') {
     // Create role buttons if template has roles
@@ -251,7 +255,7 @@ export async function createEventMessage(event: any) {
     }
   }
 
-  return { content, components };
+  return { content, components, embeds };
 }
 
 /**
