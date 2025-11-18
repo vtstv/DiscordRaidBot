@@ -20,6 +20,8 @@ model Guild {
   commandPrefix String   @default("!")  // Prefix for text commands (e.g., !, $, #)
   approvalChannels String[] @default([])  // Channels that require approval for participants
   reminderIntervals String[] @default(["1h", "15m"])
+  autoDeleteHours Int?      // Hours after archiving to auto-delete event message (null = never delete)
+  threadChannels String[] @default([])  // Channels where threads should be auto-created for events
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -73,9 +75,11 @@ model Event {
   createdBy       String    // Discord user ID
   editorRoleId    String?   // Role ID that can edit this event
   requireApproval Boolean   @default(false)  // If true, participants need approval from creator
+  createThread    Boolean   @default(false)  // If true, create a thread for this event
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   archivedAt      DateTime?
+  deletedAt       DateTime? // When event message was auto-deleted
 
   guild           Guild         @relation(fields: [guildId], references: [id], onDelete: Cascade)
   template        Template?     @relation(fields: [templateId], references: [id], onDelete: SetNull)

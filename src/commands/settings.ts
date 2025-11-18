@@ -7,6 +7,7 @@ import {
   ChatInputCommandInteraction,
   PermissionFlagsBits,
   ChannelType,
+  TextChannel,
 } from 'discord.js';
 import getPrismaClient from '../database/db.js';
 import { getModuleLogger } from '../utils/logger.js';
@@ -134,6 +135,43 @@ const command: Command = {
             .addChannelTypes(ChannelType.GuildText)
             .setRequired(false)
         )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('auto-delete')
+        .setDescription('Set hours after archiving to auto-delete event messages')
+        .addIntegerOption(option =>
+          option
+            .setName('hours')
+            .setDescription('Hours after archiving (0 or empty = never delete)')
+            .setRequired(false)
+            .setMinValue(0)
+            .setMaxValue(720) // Max 30 days
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('thread-channels')
+        .setDescription('Manage channels where threads are auto-created for events')
+        .addStringOption(option =>
+          option
+            .setName('action')
+            .setDescription('Add or remove channel')
+            .setRequired(true)
+            .addChoices(
+              { name: 'Add', value: 'add' },
+              { name: 'Remove', value: 'remove' },
+              { name: 'List', value: 'list' },
+              { name: 'Clear', value: 'clear' }
+            )
+        )
+        .addChannelOption(option =>
+          option
+            .setName('channel')
+            .setDescription('Channel to add/remove')
+            .addChannelTypes(ChannelType.GuildText)
+            .setRequired(false)
+        )
     ),
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -164,6 +202,12 @@ const command: Command = {
         break;
       case 'approval-channels':
         await handleApprovalChannels(interaction);
+        break;
+      case 'auto-delete':
+        await handleAutoDelete(interaction);
+        break;
+      case 'thread-channels':
+        await handleThreadChannels(interaction);
         break;
       case 'timezone':
         await handleTimezone(interaction);
@@ -201,13 +245,25 @@ async function handleView(interaction: ChatInputCommandInteraction): Promise<voi
   const locale = guild.locale || 'en';
   const languageName = locale === 'ru' ? 'Русский (Russian)' : 'English';
 
+  // Auto-delete setting
+  const autoDeleteText = guild.autoDeleteHours 
+    ? `${guild.autoDeleteHours} hour(s) after archiving`
+    : 'Disabled';
+
+  // Thread channels
+  const threadChannelsText = guild.threadChannels.length > 0
+    ? guild.threadChannels.map(id => `<#${id}>`).join(', ')
+    : 'None configured';
+
   await interaction.editReply(
     `**Server Settings**\n\n` +
     `🌐 **Language:** ${languageName}\n` +
     `🌍 **Timezone:** ${guild.timezone}\n` +
     `📋 **Log Channel:** ${logChannel}\n` +
     `📦 **Archive Channel:** ${archiveChannel}\n` +
-    `⏰ **Reminder Intervals:** ${reminders}`
+    `⏰ **Reminder Intervals:** ${reminders}\n` +
+    `🗑️ **Auto-delete messages:** ${autoDeleteText}\n` +
+    `💬 **Auto-create threads in:** ${threadChannelsText}`
   );
 }
 
@@ -522,6 +578,135 @@ async function handleApprovalChannels(interaction: ChatInputCommandInteraction):
       });
       logger.info({ guildId }, 'All approval channels cleared');
       await interaction.editReply('✅ All approval channel settings have been cleared.');
+      break;
+  }
+}
+
+async function handleAutoDelete(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply();
+
+  const guildId = interaction.guild!.id;
+  const hours = interaction.options.getInteger('hours');
+
+  // hours === null means disable auto-delete
+  // hours === 0 means disable auto-delete
+  // hours > 0 means enable with that value
+  const autoDeleteHours = (hours === null || hours === 0) ? null : hours;
+
+  await prisma.guild.upsert({
+    where: { id: guildId },
+    create: {
+      id: guildId,
+      name: interaction.guild!.name,
+      autoDeleteHours,
+    },
+    update: {
+      autoDeleteHours,
+    },
+  });
+
+  logger.info({ guildId, autoDeleteHours }, 'Auto-delete hours updated');
+
+  if (autoDeleteHours === null) {
+    await interaction.editReply(
+      '✅ **Auto-delete disabled**\n\n' +
+      'Archived event messages will remain in channels permanently.'
+    );
+  } else {
+    await interaction.editReply(
+      `✅ **Auto-delete enabled: ${autoDeleteHours} hours**\n\n` +
+      `Event messages will be automatically deleted ${autoDeleteHours} hour(s) after archiving.\n\n` +
+      `Note: Events are archived 1 hour after their start time.`
+    );
+  }
+}
+
+async function handleThreadChannels(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply();
+
+  const guildId = interaction.guild!.id;
+  const action = interaction.options.getString('action', true);
+  const channel = interaction.options.getChannel('channel') as TextChannel | null;
+
+  const guild = await prisma.guild.findUnique({
+    where: { id: guildId },
+    select: { threadChannels: true },
+  });
+
+  let currentChannels = guild?.threadChannels || [];
+
+  switch (action) {
+    case 'add':
+      if (!channel) {
+        throw new ValidationError('Please specify a channel to add');
+      }
+      if (currentChannels.includes(channel.id)) {
+        await interaction.editReply(`❌ Channel ${channel} already has auto-thread creation enabled.`);
+        return;
+      }
+      currentChannels.push(channel.id);
+      await prisma.guild.upsert({
+        where: { id: guildId },
+        create: {
+          id: guildId,
+          name: interaction.guild!.name,
+          threadChannels: currentChannels,
+        },
+        update: {
+          threadChannels: currentChannels,
+        },
+      });
+      logger.info({ guildId, channelId: channel.id }, 'Thread channel added');
+      await interaction.editReply(
+        `✅ Auto-thread creation enabled for ${channel}\n\n` +
+        `Events posted in this channel will automatically create discussion threads.`
+      );
+      break;
+
+    case 'remove':
+      if (!channel) {
+        throw new ValidationError('Please specify a channel to remove');
+      }
+      if (!currentChannels.includes(channel.id)) {
+        await interaction.editReply(`❌ Channel ${channel} does not have auto-thread creation enabled.`);
+        return;
+      }
+      currentChannels = currentChannels.filter((id: string) => id !== channel.id);
+      await prisma.guild.update({
+        where: { id: guildId },
+        data: { threadChannels: currentChannels },
+      });
+      logger.info({ guildId, channelId: channel.id }, 'Thread channel removed');
+      await interaction.editReply(`✅ Auto-thread creation disabled for ${channel}`);
+      break;
+
+    case 'list':
+      if (currentChannels.length === 0) {
+        await interaction.editReply(
+          '📋 No channels configured for auto-thread creation.\n\n' +
+          'Use `/settings thread-channels action:Add` to enable auto-threads for specific channels.\n\n' +
+          'Note: You can also enable threads per-event when creating an event.'
+        );
+        return;
+      }
+      const channelMentions = currentChannels.map((id: string) => `<#${id}>`).join(', ');
+      await interaction.editReply(
+        `📋 **Channels with auto-thread creation:**\n\n${channelMentions}\n\n` +
+        `Events in these channels will automatically create discussion threads.`
+      );
+      break;
+
+    case 'clear':
+      if (currentChannels.length === 0) {
+        await interaction.editReply('❌ No thread channels to clear.');
+        return;
+      }
+      await prisma.guild.update({
+        where: { id: guildId },
+        data: { threadChannels: [] },
+      });
+      logger.info({ guildId }, 'All thread channels cleared');
+      await interaction.editReply('✅ All thread channel settings have been cleared.');
       break;
   }
 }

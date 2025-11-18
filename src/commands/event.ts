@@ -80,6 +80,12 @@ const command: Command = {
             .setDescription('Require creator approval for participants (overrides channel settings)')
             .setRequired(false)
         )
+        .addBooleanOption(option =>
+          option
+            .setName('create-thread')
+            .setDescription('Create discussion thread for this event (overrides channel settings)')
+            .setRequired(false)
+        )
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -150,6 +156,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
   const maxParticipants = interaction.options.getInteger('max-participants');
   const duration = interaction.options.getInteger('duration');
   const requireApprovalOverride = interaction.options.getBoolean('require-approval');
+  const createThreadOverride = interaction.options.getBoolean('create-thread');
 
   // Input validation
   if (title.length < 1 || title.length > 256) {
@@ -198,12 +205,19 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
   const channelRequiresApproval = guild.approvalChannels?.includes(channel.id) || false;
   const requireApproval = requireApprovalOverride !== null ? requireApprovalOverride : channelRequiresApproval;
 
+  // Check if thread should be created: channel in threadChannels OR explicit override
+  const channelHasAutoThread = guild.threadChannels?.includes(channel.id) || false;
+  const createThread = createThreadOverride !== null ? createThreadOverride : channelHasAutoThread;
+
   logger.debug({
     channelId: channel.id,
     channelRequiresApproval,
     requireApprovalOverride,
     finalRequireApproval: requireApproval,
-  }, 'Approval settings for event');
+    channelHasAutoThread,
+    createThreadOverride,
+    finalCreateThread: createThread,
+  }, 'Settings for event');
 
   // Create event
   const event = await prisma.event.create({
@@ -221,6 +235,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
       createdBy: interaction.user.id,
       status: 'scheduled',
       requireApproval,
+      createThread,
     },
   });
 
@@ -236,9 +251,9 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
     const messageData = await createEventMessage(event);
     const message = await eventChannel.send(messageData);
 
-    // Create thread for event discussion
+    // Create thread for event discussion if enabled
     let threadId: string | undefined;
-    if (eventChannel.isThread() === false && 'threads' in eventChannel) {
+    if (createThread && eventChannel.isThread() === false && 'threads' in eventChannel) {
       try {
         const thread = await message.startThread({
           name: `💬 ${title}`,
