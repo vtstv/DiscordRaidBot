@@ -17,13 +17,14 @@ interface JoinEventParams {
   username: string;
   role?: string;
   spec?: string;
+  userRoleIds?: string[]; // Discord role IDs of the user
 }
 
 /**
  * Add a user to an event
  */
 export async function joinEvent(params: JoinEventParams): Promise<{ success: boolean; message: string; waitlisted?: boolean }> {
-  const { eventId, userId, username, role, spec } = params;
+  const { eventId, userId, username, role, spec, userRoleIds = [] } = params;
 
   // Get event with participants
   const event = await prisma.event.findUnique({
@@ -43,6 +44,17 @@ export async function joinEvent(params: JoinEventParams): Promise<{ success: boo
     throw new ValidationError('This event is not accepting signups');
   }
 
+  // Check if signup deadline has passed
+  if (event.deadline !== null && event.deadline !== undefined) {
+    const now = new Date();
+    const deadlineTime = new Date(event.startTime);
+    deadlineTime.setHours(deadlineTime.getHours() - event.deadline);
+    
+    if (now >= deadlineTime) {
+      throw new ValidationError('The signup deadline for this event has passed');
+    }
+  }
+
   // Check if already signed up
   const existing = event.participants.find(p => p.userId === userId);
   if (existing) {
@@ -51,12 +63,32 @@ export async function joinEvent(params: JoinEventParams): Promise<{ success: boo
 
   const roleConfig = event.roleConfig as any;
   
+  // Check if user has allowed role (if restrictions exist)
+  const hasAllowedRole = event.allowedRoles && event.allowedRoles.length > 0
+    ? userRoleIds.some(roleId => event.allowedRoles.includes(roleId))
+    : true; // If no restrictions, everyone is allowed
+  
   // Check if event requires approval
   let status: 'confirmed' | 'waitlist' | 'pending' = event.requireApproval ? 'pending' : 'confirmed';
   let position: number | null = null;
 
-  // Only check limits if not requiring approval (approval will be checked later)
-  if (!event.requireApproval) {
+  // If user doesn't have allowed role, force to waitlist or deny
+  if (!hasAllowedRole && event.allowedRoles && event.allowedRoles.length > 0) {
+    if (!event.benchOverflow) {
+      // Deny signup completely
+      return { 
+        success: false, 
+        message: 'You do not have the required role(s) to sign up for this event' 
+      };
+    }
+    // Force to waitlist
+    status = 'waitlist';
+    const waitlistCount = event.participants.filter(p => p.status === 'waitlist').length;
+    position = waitlistCount + 1;
+  }
+
+  // Only check limits if not requiring approval AND user has allowed role
+  if (!event.requireApproval && hasAllowedRole && status !== 'waitlist') {
     // Check if event is full
     const confirmedCount = event.participants.filter(p => p.status === 'confirmed').length;
     
@@ -457,3 +489,128 @@ async function reindexWaitlist(eventId: string): Promise<void> {
     });
   }
 }
+
+/**
+ * Promote a specific participant from waitlist to confirmed
+ */
+export async function promoteParticipant(
+  eventId: string,
+  userId: string,
+  promoterId: string
+): Promise<{ success: boolean; message: string }> {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: {
+      participants: {
+        where: { status: { in: ['confirmed', 'waitlist'] } },
+      },
+    },
+  });
+
+  if (!event) {
+    throw new ValidationError('Event not found');
+  }
+
+  const participant = await prisma.participant.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+  });
+
+  if (!participant || participant.status !== 'waitlist') {
+    return { success: false, message: 'Participant is not on the waitlist' };
+  }
+
+  // Check if there's space in the event
+  const confirmedCount = event.participants.filter((p: any) => p.status === 'confirmed').length;
+  
+  if (event.maxParticipants && confirmedCount >= event.maxParticipants) {
+    return { success: false, message: 'Event is full. Cannot promote from waitlist.' };
+  }
+
+  // Check role limits if applicable
+  const roleConfig = event.roleConfig as any;
+  if (roleConfig && participant.role) {
+    const roleLimit = roleConfig.limits?.[participant.role];
+    if (roleLimit) {
+      const roleCount = event.participants.filter(
+        (p: any) => p.role === participant.role && p.status === 'confirmed'
+      ).length;
+
+      if (roleCount >= roleLimit) {
+        return { 
+          success: false, 
+          message: `The ${participant.role} role is full. Cannot promote.` 
+        };
+      }
+    }
+  }
+
+  // Promote participant
+  await prisma.participant.update({
+    where: { id: participant.id },
+    data: {
+      status: 'confirmed',
+      position: null,
+    },
+  });
+
+  // Reindex waitlist positions
+  await reindexWaitlist(eventId);
+
+  // Update event message
+  await updateEventMessage(eventId);
+
+  // Log action
+  await logAction({
+    guildId: event.guildId,
+    eventId,
+    action: 'promote_participant',
+    userId: promoterId,
+    username: 'Promoter',
+    details: { promotedUserId: userId, promotedUsername: participant.username },
+  });
+
+  logger.info({ eventId, userId, promoterId }, 'Participant promoted from waitlist');
+
+  return {
+    success: true,
+    message: `✅ <@${userId}> has been promoted from the bench to the roster!`,
+  };
+}
+
+/**
+ * Promote next participant from waitlist (first in queue)
+ */
+export async function promoteNext(
+  eventId: string,
+  promoterId: string
+): Promise<{ success: boolean; message: string }> {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: {
+      participants: {
+        where: { status: { in: ['confirmed', 'waitlist'] } },
+      },
+    },
+  });
+
+  if (!event) {
+    throw new ValidationError('Event not found');
+  }
+
+  // Get first person in waitlist
+  const waitlist = await prisma.participant.findMany({
+    where: { eventId, status: 'waitlist' },
+    orderBy: { position: 'asc' },
+    take: 1,
+  });
+
+  if (waitlist.length === 0) {
+    return { success: false, message: 'No participants on the waitlist' };
+  }
+
+  const nextParticipant = waitlist[0];
+
+  // Use the promoteParticipant function
+  return promoteParticipant(eventId, nextParticipant.userId, promoterId);
+}
+

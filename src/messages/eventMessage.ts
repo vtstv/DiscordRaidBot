@@ -72,6 +72,14 @@ export async function createEventMessage(event: any) {
     content += `⏱️ **${t('event.plannedDuration')}:** ${durationText.trim()}\n`;
   }
 
+  // Deadline if specified
+  if (event.deadline !== null && event.deadline !== undefined) {
+    const deadlineTime = DateTime.fromJSDate(event.startTime, { zone: event.timezone })
+      .minus({ hours: event.deadline });
+    const deadlineUnix = Math.floor(deadlineTime.toMillis() / 1000);
+    content += `⏰ **Signup Deadline:** <t:${deadlineUnix}:F> (<t:${deadlineUnix}:R>)\n`;
+  }
+
   content += '\n';
 
   // Participant information by roles
@@ -120,6 +128,21 @@ export async function createEventMessage(event: any) {
       }
     } else {
       content += `_${t('event.noParticipants')}_\n`;
+    }
+  }
+
+  // Bench/Waitlist section
+  const waitlist = await prisma.participant.findMany({
+    where: { eventId: event.id, status: 'waitlist' },
+    orderBy: { position: 'asc' },
+    select: { userId: true, username: true, role: true, position: true },
+  });
+
+  if (waitlist.length > 0) {
+    content += `\n**🪑 Bench (${waitlist.length})**\n`;
+    for (const p of waitlist) {
+      const roleInfo = p.role ? ` [${p.role}]` : '';
+      content += `${p.position}. <@${p.userId}>${roleInfo}\n`;
     }
   }
 
@@ -206,6 +229,17 @@ export async function createEventMessage(event: any) {
         );
       }
 
+      // Add promote button if there are waitlisted participants
+      if (waitlist.length > 0) {
+        actionRow.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`event_promote:${event.id}`)
+            .setLabel('Promote')
+            .setStyle(ButtonStyle.Success)
+            .setEmoji('⬆️')
+        );
+      }
+
       actionRow.addComponents(
         new ButtonBuilder()
           .setCustomId(`event_edit:${event.id}`)
@@ -240,6 +274,17 @@ export async function createEventMessage(event: any) {
             .setLabel(t('buttons.approve'))
             .setStyle(ButtonStyle.Success)
             .setEmoji('✅')
+        );
+      }
+
+      // Add promote button if there are waitlisted participants
+      if (waitlist.length > 0) {
+        buttonRow.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`event_promote:${event.id}`)
+            .setLabel('Promote')
+            .setStyle(ButtonStyle.Success)
+            .setEmoji('⬆️')
         );
       }
 

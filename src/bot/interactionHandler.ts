@@ -176,10 +176,15 @@ async function handleButton(interaction: ButtonInteraction): Promise<void> {
       await interaction.deferReply({ ephemeral: true });
       try {
         const eventId = params[0];
+        // Get user's roles from the guild member
+        const member = await interaction.guild!.members.fetch(interaction.user.id);
+        const userRoleIds = member.roles.cache.map(r => r.id);
+        
         const result = await joinEvent({
           eventId,
           userId: interaction.user.id,
           username: getUserDisplayName(interaction.user),
+          userRoleIds,
         });
 
         const emoji = result.success ? '✅' : '❌';
@@ -194,12 +199,16 @@ async function handleButton(interaction: ButtonInteraction): Promise<void> {
       try {
         const eventId = params[0];
         const role = params[1];
+        // Get user's roles from the guild member
+        const member = await interaction.guild!.members.fetch(interaction.user.id);
+        const userRoleIds = member.roles.cache.map(r => r.id);
         
         const result = await joinEvent({
           eventId,
           userId: interaction.user.id,
           username: getUserDisplayName(interaction.user),
           role,
+          userRoleIds,
         });
 
         const emoji = result.success ? '✅' : '❌';
@@ -361,6 +370,128 @@ async function handleButton(interaction: ButtonInteraction): Promise<void> {
       } catch (error: any) {
         logger.error({ error, eventId: params[0], userId: params[1] }, 'Failed to approve user');
         await interaction.editReply(`❌ ${error.message || 'Failed to approve participant'}`);
+      }
+      break;
+
+    case 'event_promote':
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const eventId = params[0];
+        const getPrismaClient = (await import('../database/db.js')).default;
+        const prisma = getPrismaClient();
+        const member = interaction.member instanceof GuildMember ? interaction.member : undefined;
+        
+        // Check if user can promote
+        const hasPermission = await canEditEvent(
+          interaction.user.id,
+          eventId,
+          member
+        );
+
+        if (!hasPermission) {
+          await interaction.editReply('❌ Only the event creator or administrators can promote participants.');
+          break;
+        }
+
+        // Get waitlisted participants
+        const waitlistedParticipants = await prisma.participant.findMany({
+          where: { eventId, status: 'waitlist' },
+          orderBy: { position: 'asc' },
+          select: { userId: true, username: true, role: true, position: true },
+        });
+
+        if (waitlistedParticipants.length === 0) {
+          await interaction.editReply('❌ No waitlisted participants to promote.');
+          break;
+        }
+
+        // Create buttons for promotion
+        const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = await import('discord.js');
+        
+        // Build participant list text
+        let participantList = `⬆️ **Promote from Bench** (${waitlistedParticipants.length} on bench)\n\n`;
+        participantList += waitlistedParticipants.map((p: any) => {
+          const roleInfo = p.role ? ` [${p.role}]` : '';
+          return `${p.position}. <@${p.userId}>${roleInfo}`;
+        }).join('\n');
+
+        const components: any[] = [];
+
+        // Add individual promote buttons (up to 20 participants, 4 per row)
+        let currentRow: any = null;
+        for (let i = 0; i < Math.min(waitlistedParticipants.length, 20); i++) {
+          if (i % 4 === 0) {
+            if (currentRow) components.push(currentRow);
+            currentRow = new ActionRowBuilder<any>();
+          }
+          
+          const p = waitlistedParticipants[i];
+          currentRow.addComponents(
+            new ButtonBuilder()
+              .setCustomId(`promote_user:${eventId}:${p.userId}`)
+              .setLabel(`${p.position}`)
+              .setStyle(ButtonStyle.Primary)
+          );
+        }
+        if (currentRow) components.push(currentRow);
+
+        // Add "Promote Next" button at the end
+        const promoteNextRow = new ActionRowBuilder<any>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`promote_next:${eventId}`)
+            .setLabel('Promote Next in Queue')
+            .setStyle(ButtonStyle.Success)
+            .setEmoji('⬆️')
+        );
+        components.push(promoteNextRow);
+
+        await interaction.editReply({
+          content: participantList,
+          components,
+        });
+      } catch (error: any) {
+        logger.error({ error, eventId: params[0] }, 'Failed to show promote menu');
+        await interaction.editReply(`❌ ${error.message || 'Failed to show promote menu'}`);
+      }
+      break;
+
+    case 'promote_user':
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const eventId = params[0];
+        const userId = params[1];
+        
+        const { promoteParticipant } = await import('../services/participation.js');
+        
+        const result = await promoteParticipant(
+          eventId,
+          userId,
+          interaction.user.id
+        );
+
+        await interaction.editReply(`${result.success ? '✅' : '❌'} ${result.message}`);
+      } catch (error: any) {
+        logger.error({ error, eventId: params[0], userId: params[1] }, 'Failed to promote user');
+        await interaction.editReply(`❌ ${error.message || 'Failed to promote participant'}`);
+      }
+      break;
+
+    case 'promote_next':
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const eventId = params[0];
+        
+        const { promoteNext } = await import('../services/participation.js');
+        
+        const result = await promoteNext(
+          eventId,
+          interaction.user.id
+        );
+
+        await interaction.editReply(`${result.success ? '✅' : '❌'} ${result.message}`);
+      } catch (error: any) {
+        logger.error({ error, eventId: params[0] }, 'Failed to promote next');
+        await interaction.editReply(`❌ ${error.message || 'Failed to promote next participant'}`);
       }
       break;
 

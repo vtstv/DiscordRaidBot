@@ -86,6 +86,26 @@ const command: Command = {
             .setDescription('Create discussion thread for this event (overrides channel settings)')
             .setRequired(false)
         )
+        .addStringOption(option =>
+          option
+            .setName('allowed-roles')
+            .setDescription('Roles allowed to sign up (comma-separated names or "all" for everyone)')
+            .setRequired(false)
+        )
+        .addBooleanOption(option =>
+          option
+            .setName('bench-overflow')
+            .setDescription('Bench users without allowed roles (true) or deny signup (false)')
+            .setRequired(false)
+        )
+        .addIntegerOption(option =>
+          option
+            .setName('deadline')
+            .setDescription('Hours before event start to close signups (negative = after start)')
+            .setMinValue(-168) // Max 7 days after
+            .setMaxValue(168)  // Max 7 days before
+            .setRequired(false)
+        )
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -157,6 +177,9 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
   const duration = interaction.options.getInteger('duration');
   const requireApprovalOverride = interaction.options.getBoolean('require-approval');
   const createThreadOverride = interaction.options.getBoolean('create-thread');
+  const allowedRolesInput = interaction.options.getString('allowed-roles');
+  const benchOverflow = interaction.options.getBoolean('bench-overflow') ?? true; // Default to true
+  const deadline = interaction.options.getInteger('deadline'); // Hours before event to close signups
 
   // Input validation
   if (title.length < 1 || title.length > 256) {
@@ -209,6 +232,24 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
   const channelHasAutoThread = guild.threadChannels?.includes(channel.id) || false;
   const createThread = createThreadOverride !== null ? createThreadOverride : channelHasAutoThread;
 
+  // Parse allowed roles
+  let allowedRoles: string[] = [];
+  if (allowedRolesInput && allowedRolesInput.toLowerCase().trim() !== 'all') {
+    // Parse comma-separated role names
+    const roleNames = allowedRolesInput.split(',').map(r => r.trim()).filter(r => r.length > 0);
+    
+    // Convert role names to IDs
+    const guildRoles = await interaction.guild!.roles.fetch();
+    for (const roleName of roleNames) {
+      const role = guildRoles.find(r => r.name.toLowerCase() === roleName.toLowerCase());
+      if (!role) {
+        throw new ValidationError(`Role "${roleName}" not found on this server`);
+      }
+      allowedRoles.push(role.id);
+    }
+  }
+  // If allowedRolesInput is null or "all", allowedRoles stays empty (meaning all roles allowed)
+
   logger.debug({
     channelId: channel.id,
     channelRequiresApproval,
@@ -217,6 +258,9 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
     channelHasAutoThread,
     createThreadOverride,
     finalCreateThread: createThread,
+    allowedRolesInput,
+    allowedRoles,
+    benchOverflow,
   }, 'Settings for event');
 
   // Create event
@@ -236,6 +280,9 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
       status: 'scheduled',
       requireApproval,
       createThread,
+      allowedRoles,
+      benchOverflow,
+      deadline,
     },
   });
 
