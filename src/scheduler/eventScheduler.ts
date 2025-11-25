@@ -35,6 +35,7 @@ export function startScheduler(): void {
       await checkArchiving();
       await checkEventStart();
       await checkMessageDeletion();
+      await cleanupOldLogs();
     } catch (error) {
       logger.error({ error }, 'Scheduler task failed');
     }
@@ -102,6 +103,21 @@ async function checkReminders(): Promise<void> {
  */
 async function sendReminder(event: any, interval: string): Promise<void> {
   try {
+    // Check if reminder was already sent
+    const existingReminder = await prisma.reminder.findUnique({
+      where: {
+        eventId_interval: {
+          eventId: event.id,
+          interval: interval,
+        },
+      },
+    });
+
+    if (existingReminder) {
+      logger.debug({ eventId: event.id, interval }, 'Reminder already sent, skipping');
+      return;
+    }
+
     const client = getClient();
     if (!client) return;
 
@@ -126,12 +142,22 @@ async function sendReminder(event: any, interval: string): Promise<void> {
       )
       .setTimestamp();
 
-    await channel.send({
+    const message = await channel.send({
       content: mentions || 'No participants yet',
       embeds: [embed],
     });
 
-    logger.info({ eventId: event.id, interval }, 'Reminder sent');
+    // Save reminder to database
+    await prisma.reminder.create({
+      data: {
+        eventId: event.id,
+        interval: interval,
+        messageId: message.id,
+        channelId: event.channelId,
+      },
+    });
+
+    logger.info({ eventId: event.id, interval, messageId: message.id }, 'Reminder sent');
   } catch (error) {
     logger.error({ error, eventId: event.id }, 'Failed to send reminder');
   }
@@ -159,11 +185,53 @@ async function checkEventStart(): Promise<void> {
         data: { status: 'active' },
       });
 
+      // Delete all reminder messages for this event
+      await deleteReminderMessages(event.id);
+
       await updateEventMessage(event.id);
       logger.info({ eventId: event.id }, 'Event marked as active');
     } catch (error) {
       logger.error({ error, eventId: event.id }, 'Failed to mark event as active');
     }
+  }
+}
+
+/**
+ * Delete all reminder messages for an event
+ */
+async function deleteReminderMessages(eventId: string): Promise<void> {
+  try {
+    const client = getClient();
+    if (!client) return;
+
+    const reminders = await prisma.reminder.findMany({
+      where: { eventId },
+    });
+
+    for (const reminder of reminders) {
+      try {
+        const channel = await client.channels.fetch(reminder.channelId);
+        if (channel && channel.isTextBased() && !channel.isDMBased()) {
+          const message = await channel.messages.fetch(reminder.messageId);
+          await message.delete();
+          logger.info({ eventId, messageId: reminder.messageId }, 'Reminder message deleted');
+        }
+      } catch (error: any) {
+        // Message might already be deleted
+        if (error.code !== 10008) { // 10008 = Unknown Message
+          logger.error({ error, eventId, messageId: reminder.messageId }, 'Failed to delete reminder message');
+        }
+      }
+    }
+
+    // Remove reminders from database
+    await prisma.reminder.deleteMany({
+      where: { eventId },
+    });
+
+    logger.info({ eventId, count: reminders.length }, 'Reminder messages cleaned up');
+  } catch (error) {
+    logger.error({ error, eventId }, 'Failed to delete reminder messages');
   }
 }
 
@@ -357,5 +425,46 @@ async function deleteEventMessage(event: any): Promise<void> {
   } catch (error) {
     logger.error({ error, eventId: event.id }, 'Failed to delete event message');
     throw error;
+  }
+}
+
+/**
+ * Clean up old audit logs based on guild retention settings
+ */
+async function cleanupOldLogs(): Promise<void> {
+  const now = DateTime.now();
+
+  // Get all guilds with log retention configured
+  const guilds = await prisma.guild.findMany({
+    where: {
+      logRetentionDays: { not: null },
+    },
+    select: {
+      id: true,
+      logRetentionDays: true,
+    },
+  });
+
+  for (const guild of guilds) {
+    if (!guild.logRetentionDays) continue;
+
+    const cutoffDate = now.minus({ days: guild.logRetentionDays }).toJSDate();
+
+    try {
+      const result = await prisma.logEntry.deleteMany({
+        where: {
+          guildId: guild.id,
+          createdAt: {
+            lt: cutoffDate,
+          },
+        },
+      });
+
+      if (result.count > 0) {
+        logger.info({ guildId: guild.id, count: result.count, retentionDays: guild.logRetentionDays }, 'Cleaned up old audit logs');
+      }
+    } catch (error) {
+      logger.error({ error, guildId: guild.id }, 'Failed to cleanup old logs');
+    }
   }
 }

@@ -171,6 +171,47 @@ async function handleButton(interaction: ButtonInteraction): Promise<void> {
 
   const { joinEvent, leaveEvent } = await import('../services/participation.js');
 
+  // Check event status for join/leave actions
+  if (action === 'event_join' || action === 'event_join_role' || action === 'event_leave') {
+    const eventId = params[0];
+    const getPrismaClient = (await import('../database/db.js')).default;
+    const prisma = getPrismaClient();
+    
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { status: true, title: true },
+    });
+
+    if (!event) {
+      await interaction.reply({ content: '❌ Event not found.', ephemeral: true });
+      return;
+    }
+
+    if (event.status === 'active') {
+      await interaction.reply({ 
+        content: `❌ Registration is closed. Event "${event.title}" has already started.`, 
+        ephemeral: true 
+      });
+      return;
+    }
+
+    if (event.status === 'completed') {
+      await interaction.reply({ 
+        content: `❌ Event "${event.title}" has already been completed.`, 
+        ephemeral: true 
+      });
+      return;
+    }
+
+    if (event.status === 'cancelled') {
+      await interaction.reply({ 
+        content: `❌ Event "${event.title}" has been cancelled.`, 
+        ephemeral: true 
+      });
+      return;
+    }
+  }
+
   switch (action) {
     case 'event_join':
       await interaction.deferReply({ ephemeral: true });
