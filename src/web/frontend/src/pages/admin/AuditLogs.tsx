@@ -9,7 +9,7 @@ interface AuditLog {
   userName: string;
   guildId: string;
   guildName: string;
-  details: string;
+  details: string | any; // Can be string or object
   timestamp: string;
 }
 
@@ -216,7 +216,9 @@ export default function AuditLogs() {
                             {new Date(log.timestamp).toLocaleString()}
                           </span>
                         </div>
-                        <p className="text-white font-medium mb-1">{log.details}</p>
+                        <p className="text-white font-medium mb-1">
+                          {typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}
+                        </p>
                         <div className="flex items-center gap-4 text-sm text-gray-400">
                           <span>User: {log.userName || log.userId}</span>
                           <span>•</span>
