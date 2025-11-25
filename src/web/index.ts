@@ -76,7 +76,7 @@ export async function startWebServer(): Promise<void> {
     // Serve React static files (no prefix, files are accessed directly like /assets/...)
     await server.register(fastifyStatic, {
       root: frontendRoot,
-      decorateReply: false,
+      decorateReply: true, // Enable reply.sendFile()
     });
 
     // Health check

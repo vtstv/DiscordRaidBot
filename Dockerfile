@@ -1,9 +1,5 @@
 # Build stage
-FROM --platform=$BUILDPLATFORM node:18-alpine AS build
-
-# Build arguments for cross-compilation
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
@@ -43,10 +39,6 @@ RUN chmod +x /start.sh /healthcheck.sh
 # Runtime stage
 FROM node:18-alpine AS runtime
 
-# Platform info for debugging
-ARG TARGETPLATFORM
-RUN echo "Building for platform: $TARGETPLATFORM"
-
 WORKDIR /app
 
 # Install runtime dependencies
@@ -59,7 +51,8 @@ ENV NODE_ENV=production
 
 # Copy package files and install production dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+COPY --from=build /app/package-lock.json ./
+RUN npm ci --omit=dev
 
 # Copy Prisma schema
 COPY --from=build /app/prisma ./prisma

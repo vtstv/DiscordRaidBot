@@ -38,9 +38,6 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runtime
-      platforms:
-        - linux/amd64
-        - linux/arm64
     container_name: raidbot-bot
     restart: unless-stopped
     depends_on:
@@ -63,9 +60,6 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runtime
-      platforms:
-        - linux/amd64
-        - linux/arm64
     container_name: raidbot-web
     restart: unless-stopped
     depends_on:
