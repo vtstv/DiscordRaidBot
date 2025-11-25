@@ -114,12 +114,50 @@ async function handleGuildUpdate(_oldGuild: any, newGuild: any): Promise<void> {
 }
 
 /**
+ * Sync all current guilds to database on startup
+ */
+async function syncGuilds(client: Client<true>): Promise<void> {
+  try {
+    logger.info('Syncing guilds to database...');
+    const prisma = (await import('../database/db.js')).default();
+    
+    const guilds = Array.from(client.guilds.cache.values());
+    let synced = 0;
+    
+    for (const guild of guilds) {
+      try {
+        await prisma.guild.upsert({
+          where: { id: guild.id },
+          create: {
+            id: guild.id,
+            name: guild.name,
+          },
+          update: {
+            name: guild.name,
+          },
+        });
+        synced++;
+      } catch (error) {
+        logger.error({ error, guildId: guild.id, guildName: guild.name }, 'Failed to sync guild');
+      }
+    }
+    
+    logger.info(`Synced ${synced}/${guilds.length} guilds to database`);
+  } catch (error) {
+    logger.error({ error }, 'Failed to sync guilds');
+  }
+}
+
+/**
  * Handle bot ready event
  */
 async function handleReady(client: Client): Promise<void> {
   const readyClient = client as Client<true>;
   logger.info(`Bot ready! Logged in as ${readyClient.user.tag}`);
   logger.info(`Serving ${readyClient.guilds.cache.size} guilds`);
+
+  // Sync all current guilds to database
+  await syncGuilds(readyClient);
 
   // Register slash commands globally
   await registerCommands(readyClient);

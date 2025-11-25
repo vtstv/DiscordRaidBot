@@ -88,6 +88,11 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       archiveChannelId?: string;
       managerRoleId?: string;
       commandPrefix?: string;
+      approvalChannels?: string[];
+      reminderIntervals?: string[];
+      autoDeleteHours?: number;
+      logRetentionDays?: number;
+      threadChannels?: string[];
     };
   }>('/:guildId/settings', async (request, reply) => {
     // Add guildId to request for middleware
@@ -104,6 +109,11 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
     if (request.body.archiveChannelId !== undefined) updateData.archiveChannelId = request.body.archiveChannelId;
     if (request.body.managerRoleId !== undefined) updateData.managerRoleId = request.body.managerRoleId;
     if (request.body.commandPrefix !== undefined) updateData.commandPrefix = request.body.commandPrefix;
+    if (request.body.approvalChannels !== undefined) updateData.approvalChannels = request.body.approvalChannels;
+    if (request.body.reminderIntervals !== undefined) updateData.reminderIntervals = request.body.reminderIntervals;
+    if (request.body.autoDeleteHours !== undefined) updateData.autoDeleteHours = request.body.autoDeleteHours;
+    if (request.body.logRetentionDays !== undefined) updateData.logRetentionDays = request.body.logRetentionDays;
+    if (request.body.threadChannels !== undefined) updateData.threadChannels = request.body.threadChannels;
 
     try {
       const guild = await prisma.guild.update({

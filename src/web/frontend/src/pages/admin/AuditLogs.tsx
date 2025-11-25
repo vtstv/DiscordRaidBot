@@ -62,14 +62,14 @@ export default function AuditLogs() {
 
   const getActionColor = (action: string) => {
     const colors: Record<string, string> = {
-      'EVENT_CREATE': 'bg-green-500/20 text-green-300',
-      'EVENT_UPDATE': 'bg-blue-500/20 text-blue-300',
-      'EVENT_DELETE': 'bg-red-500/20 text-red-300',
-      'TEMPLATE_CREATE': 'bg-purple-500/20 text-purple-300',
-      'TEMPLATE_UPDATE': 'bg-indigo-500/20 text-indigo-300',
-      'TEMPLATE_DELETE': 'bg-orange-500/20 text-orange-300',
-      'USER_JOIN': 'bg-cyan-500/20 text-cyan-300',
-      'USER_LEAVE': 'bg-pink-500/20 text-pink-300',
+      'create_event': 'bg-green-500/20 text-green-300',
+      'edit_event': 'bg-blue-500/20 text-blue-300',
+      'delete_event': 'bg-red-500/20 text-red-300',
+      'create_template': 'bg-purple-500/20 text-purple-300',
+      'edit_template': 'bg-indigo-500/20 text-indigo-300',
+      'delete_template': 'bg-orange-500/20 text-orange-300',
+      'signup': 'bg-cyan-500/20 text-cyan-300',
+      'leave': 'bg-pink-500/20 text-pink-300',
     };
     return colors[action] || 'bg-gray-500/20 text-gray-300';
   };
@@ -108,15 +108,15 @@ export default function AuditLogs() {
                 }}
                 className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
-                <option value="all">All Actions</option>
-                <option value="EVENT_CREATE">Event Create</option>
-                <option value="EVENT_UPDATE">Event Update</option>
-                <option value="EVENT_DELETE">Event Delete</option>
-                <option value="TEMPLATE_CREATE">Template Create</option>
-                <option value="TEMPLATE_UPDATE">Template Update</option>
-                <option value="TEMPLATE_DELETE">Template Delete</option>
-                <option value="USER_JOIN">User Join</option>
-                <option value="USER_LEAVE">User Leave</option>
+                <option value="all" className="bg-gray-800 text-white">All Actions</option>
+                <option value="create_event" className="bg-gray-800 text-white">Create Event</option>
+                <option value="edit_event" className="bg-gray-800 text-white">Edit Event</option>
+                <option value="delete_event" className="bg-gray-800 text-white">Delete Event</option>
+                <option value="create_template" className="bg-gray-800 text-white">Create Template</option>
+                <option value="edit_template" className="bg-gray-800 text-white">Edit Template</option>
+                <option value="delete_template" className="bg-gray-800 text-white">Delete Template</option>
+                <option value="signup" className="bg-gray-800 text-white">User Signup</option>
+                <option value="leave" className="bg-gray-800 text-white">User Leave</option>
               </select>
             </div>
 

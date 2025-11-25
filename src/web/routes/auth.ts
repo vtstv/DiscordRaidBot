@@ -13,8 +13,10 @@ import {
 } from '../auth/discord-oauth.js';
 import { config } from '../../config/env.js';
 import { getModuleLogger } from '../../utils/logger.js';
+import getPrismaClient from '../../database/db.js';
 
 const logger = getModuleLogger('auth-routes');
+const prisma = getPrismaClient();
 
 // Admin user IDs from environment
 const ADMIN_IDS = (config.ADMIN_USER_IDS || '').split(',').filter(id => id.trim());
@@ -232,7 +234,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
 
   /**
    * GET /auth/guilds
-   * Get user's admin guilds
+   * Get user's admin guilds (filtered to only guilds where bot is present)
    */
   fastify.get('/auth/guilds', async (request, reply) => {
     const user = (request as any).session?.user;
@@ -246,6 +248,20 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
 
     const adminGuilds = (request as any).session?.adminGuilds || [];
     
-    reply.send({ guilds: adminGuilds });
+    // Filter to only guilds where bot is present (in database)
+    const guildIds = adminGuilds.map((g: any) => g.id);
+    const dbGuilds = await prisma.guild.findMany({
+      where: {
+        id: { in: guildIds }
+      },
+      select: {
+        id: true,
+      },
+    });
+    
+    const dbGuildIds = new Set(dbGuilds.map(g => g.id));
+    const guildsWithBot = adminGuilds.filter((g: any) => dbGuildIds.has(g.id));
+    
+    reply.send({ guilds: guildsWithBot });
   });
 }

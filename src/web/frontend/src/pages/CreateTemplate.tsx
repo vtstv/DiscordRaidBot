@@ -8,6 +8,7 @@ interface TemplateFormData {
   description: string;
   maxParticipants: number;
   allowedRoles: string;
+  roleLimits: string; // Format: "Role:limit, Role:limit"
   emojiMapping: string;
   imageUrl: string;
 }
@@ -20,6 +21,7 @@ const PRESETS = [
       description: 'Standard 25-player raid group',
       maxParticipants: 25,
       allowedRoles: 'Tank, Healer, DPS',
+      roleLimits: 'Tank:2, Healer:5, DPS:18',
       emojiMapping: 'Tank:🛡️, Healer:❤️, DPS:⚔️',
       imageUrl: '',
     },
@@ -31,6 +33,7 @@ const PRESETS = [
       description: '5-player dungeon run',
       maxParticipants: 5,
       allowedRoles: 'Tank, Healer, DPS',
+      roleLimits: 'Tank:1, Healer:1, DPS:3',
       emojiMapping: 'Tank:🛡️, Healer:❤️, DPS:⚔️',
       imageUrl: '',
     },
@@ -42,6 +45,7 @@ const PRESETS = [
       description: '3v3 Arena team',
       maxParticipants: 3,
       allowedRoles: 'DPS, Healer',
+      roleLimits: 'DPS:2, Healer:1',
       emojiMapping: 'DPS:⚔️, Healer:❤️',
       imageUrl: '',
     },
@@ -53,6 +57,7 @@ const PRESETS = [
       description: '',
       maxParticipants: 0,
       allowedRoles: '',
+      roleLimits: '',
       emojiMapping: '',
       imageUrl: '',
     },
@@ -70,6 +75,7 @@ export default function CreateTemplate() {
     description: '',
     maxParticipants: 0,
     allowedRoles: '',
+    roleLimits: '',
     emojiMapping: '',
     imageUrl: '',
   });
@@ -82,11 +88,20 @@ export default function CreateTemplate() {
       api.getTemplate(templateId)
         .then(template => {
           const config = template.config as any;
+          // Parse role limits from config
+          const roleLimitsStr = config.limits && typeof config.limits === 'object'
+            ? Object.entries(config.limits)
+                .filter(([key]) => key !== 'total')
+                .map(([role, limit]) => `${role}:${limit}`)
+                .join(', ')
+            : '';
+          
           setFormData({
             name: template.name,
             description: template.description || '',
             maxParticipants: config.limits?.total || 0,
             allowedRoles: config.roles?.join(', ') || '',
+            roleLimits: roleLimitsStr,
             emojiMapping: config.emojiMap 
               ? Object.entries(config.emojiMap).map(([role, emoji]) => `${role}:${emoji}`).join(', ')
               : '',
@@ -128,6 +143,16 @@ export default function CreateTemplate() {
       const limits: Record<string, number> = {};
       if (formData.maxParticipants > 0) {
         limits.total = formData.maxParticipants;
+      }
+      
+      // Parse role limits
+      if (formData.roleLimits) {
+        formData.roleLimits.split(',').forEach(pair => {
+          const [role, limit] = pair.split(':').map(s => s.trim());
+          if (role && limit) {
+            limits[role] = parseInt(limit);
+          }
+        });
       }
 
       const response = await fetch(isEditMode ? `/api/templates/${templateId}` : '/api/templates', {
@@ -261,6 +286,21 @@ export default function CreateTemplate() {
                 placeholder="Tank, Healer, DPS (comma-separated)"
               />
               <p className="text-sm text-gray-400 mt-1">Comma-separated list of roles</p>
+            </div>
+
+            {/* Role Limits */}
+            <div>
+              <label className="block text-sm font-medium text-purple-200 mb-2">
+                Role Limits (Optional)
+              </label>
+              <input
+                type="text"
+                value={formData.roleLimits}
+                onChange={(e) => setFormData({ ...formData, roleLimits: e.target.value })}
+                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Tank:2, Healer:5, DPS:18"
+              />
+              <p className="text-sm text-gray-400 mt-1">Format: Role:limit, Role:limit (comma-separated pairs)</p>
             </div>
 
             {/* Emoji Mapping */}

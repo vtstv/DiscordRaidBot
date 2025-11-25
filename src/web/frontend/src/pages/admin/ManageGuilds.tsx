@@ -120,10 +120,10 @@ export default function ManageGuilds() {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="w-full md:w-auto px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
-                <option value="name">Sort by Name</option>
-                <option value="members">Sort by Members</option>
-                <option value="events">Sort by Events</option>
-                <option value="joined">Sort by Join Date</option>
+                <option value="name" className="bg-gray-800 text-white">Sort by Name</option>
+                <option value="members" className="bg-gray-800 text-white">Sort by Members</option>
+                <option value="events" className="bg-gray-800 text-white">Sort by Events</option>
+                <option value="joined" className="bg-gray-800 text-white">Sort by Join Date</option>
               </select>
             </div>
           </div>

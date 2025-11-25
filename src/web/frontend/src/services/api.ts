@@ -64,6 +64,11 @@ export interface GuildSettings {
   archiveChannelId?: string;
   managerRoleId?: string;
   commandPrefix?: string;
+  approvalChannels?: string[];
+  reminderIntervals?: string[];
+  autoDeleteHours?: number;
+  logRetentionDays?: number;
+  threadChannels?: string[];
 }
 
 class ApiService {
