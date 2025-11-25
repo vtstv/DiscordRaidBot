@@ -89,10 +89,31 @@ async function checkReminders(): Promise<void> {
       const intervalMs = parseDuration(intervalStr);
       if (!intervalMs) continue;
 
-      // Check if we're within the reminder window (±1 minute for tolerance)
-      const tolerance = 60000; // 1 minute in ms
-      if (Math.abs(timeUntilStart - intervalMs) < tolerance) {
+      // Check if we're within the reminder window (±90 seconds for tolerance)
+      // This gives more leeway since scheduler runs every minute
+      const tolerance = 90000; // 90 seconds in ms
+      const timeDiff = Math.abs(timeUntilStart - intervalMs);
+      
+      if (timeDiff < tolerance) {
+        logger.debug({ 
+          eventId: event.id, 
+          interval: intervalStr, 
+          timeUntilStart, 
+          intervalMs, 
+          timeDiff,
+          shouldSend: true 
+        }, 'Reminder window matched');
         await sendReminder(event, intervalStr);
+      } else {
+        logger.debug({ 
+          eventId: event.id, 
+          interval: intervalStr, 
+          timeUntilStart, 
+          intervalMs, 
+          timeDiff,
+          tolerance,
+          shouldSend: false 
+        }, 'Reminder window not matched');
       }
     }
   }

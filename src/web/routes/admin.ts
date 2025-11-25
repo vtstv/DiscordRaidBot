@@ -500,15 +500,15 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       if (guildId) where.guildId = guildId;
       if (userId) where.userId = userId;
       if (dateFrom || dateTo) {
-        where.timestamp = {};
-        if (dateFrom) where.timestamp.gte = dateFrom;
-        if (dateTo) where.timestamp.lte = dateTo;
+        where.createdAt = {};
+        if (dateFrom) where.createdAt.gte = dateFrom;
+        if (dateTo) where.createdAt.lte = dateTo;
       }
 
       const [logs, total] = await Promise.all([
         prisma.logEntry.findMany({
           where,
-          orderBy: { timestamp: 'desc' },
+          orderBy: { createdAt: 'desc' },
           skip: (page - 1) * limit,
           take: limit,
           include: {
@@ -525,11 +525,11 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
           id: log.id,
           action: log.action,
           userId: log.userId,
-          userName: log.userId,
+          userName: log.username,
           guildId: log.guildId,
           guildName: log.guild.name,
           details: log.details || '',
-          timestamp: log.timestamp,
+          timestamp: log.createdAt,
         })),
         totalPages: Math.ceil(total / limit),
       };
