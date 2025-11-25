@@ -141,12 +141,12 @@ model LogEntry {
 
 model Reminder {
   id          String   @id @default(uuid())
-  eventId     String
+  eventId     String   @map("eventid")
   interval    String   // e.g., "1h", "15m"
-  messageId   String   // Discord message ID of the reminder
-  channelId   String   // Discord channel ID where reminder was sent
+  messageId   String   @map("messageid")
+  channelId   String   @map("channelid")
   
-  sentAt      DateTime @default(now())
+  sentAt      DateTime @default(now()) @map("sentat")
 
   @@unique([eventId, interval])
   @@index([eventId])
