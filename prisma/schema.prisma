@@ -21,7 +21,7 @@ model Guild {
   approvalChannels String[] @default([])  // Channels that require approval for participants
   reminderIntervals String[] @default(["1h", "15m"])
   autoDeleteHours Int?      // Hours after archiving to auto-delete event message (null = never delete)
-  logRetentionDays Int?     // Days to keep audit logs (null = keep forever)
+  logRetentionDays Int? @map("logretentiondays")     // Days to keep audit logs (null = keep forever)
   threadChannels String[] @default([])  // Channels where threads should be auto-created for events
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
