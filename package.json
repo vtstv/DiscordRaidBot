@@ -1,6 +1,6 @@
 {
   "name": "discord-raid-bot",
-  "version": "1.0.0",
+  "version": "1.2.4",
   "description": "Discord event management bot with raid scheduling capabilities",
   "main": "dist/bot/index.js",
   "type": "module",

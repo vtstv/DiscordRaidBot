@@ -20,6 +20,8 @@ export default function Events() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   useEffect(() => {
     if (guildId) {
@@ -27,9 +29,17 @@ export default function Events() {
     }
   }, [guildId]);
 
-  const filteredEvents = filter === 'all' 
-    ? events 
-    : events.filter(e => e.status === filter);
+  const filteredEvents = events.filter(e => {
+    // Filter by status
+    if (filter !== 'all' && e.status !== filter) return false;
+    
+    // Filter by date range
+    const eventDate = new Date(e.startTime);
+    if (startDate && eventDate < new Date(startDate)) return false;
+    if (endDate && eventDate > new Date(endDate + 'T23:59:59')) return false;
+    
+    return true;
+  });
 
   if (loading) {
     return (
@@ -66,20 +76,64 @@ export default function Events() {
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap gap-2 mb-6">
-            {['all', 'scheduled', 'active', 'completed'].map(status => (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6 transition-colors duration-200">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Filters</h3>
+            
+            {/* Status Filter */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+              <div className="flex flex-wrap gap-2">
+                {['all', 'scheduled', 'active', 'completed', 'cancelled'].map(status => (
+                  <button
+                    key={status}
+                    onClick={() => setFilter(status)}
+                    className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                      filter === status
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Date Range Filter */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Date</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">End Date</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                />
+              </div>
+            </div>
+            
+            {/* Clear Filters */}
+            {(startDate || endDate || filter !== 'all') && (
               <button
-                key={status}
-                onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-xl font-medium transition-all ${
-                  filter === status
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-                }`}
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  setFilter('all');
+                }}
+                className="mt-4 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
               >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
+                Clear Filters
               </button>
-            ))}
+            )}
           </div>
 
           {/* Events Grid */}
