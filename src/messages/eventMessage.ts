@@ -26,7 +26,7 @@ export async function createEventMessage(event: any) {
   const participants = await prisma.participant.findMany({
     where: { eventId: event.id, status: 'confirmed' },
     orderBy: { joinedAt: 'asc' },
-    select: { userId: true, username: true, role: true, spec: true, joinedAt: true },
+    select: { userId: true, username: true, role: true, spec: true, joinedAt: true, note: true },
   });
 
   const pending = await prisma.participant.findMany({
@@ -108,7 +108,10 @@ export async function createEventMessage(event: any) {
       compositionLine += `${emoji} ${role} (${limit ? current + '/' + limit : current}):\n`;
       
       if (roleGroups[role].length > 0) {
-        compositionLine += roleGroups[role].map((p: any, i: number) => `${i + 1}. <@${p.userId}>`).join('\n');
+        compositionLine += roleGroups[role].map((p: any, i: number) => {
+          const note = p.note ? ` - _${p.note}_` : '';
+          return `${i + 1}. <@${p.userId}>${note}`;
+        }).join('\n');
       } else {
         compositionLine += `_${t('event.empty')}_`;
       }
@@ -124,7 +127,9 @@ export async function createEventMessage(event: any) {
 
     if (participants.length > 0) {
       for (let i = 0; i < participants.length; i++) {
-        content += `${i + 1}. <@${(participants[i] as any).userId}>\n`;
+        const p = participants[i] as any;
+        const note = p.note ? ` - _${p.note}_` : '';
+        content += `${i + 1}. <@${p.userId}>${note}\n`;
       }
     } else {
       content += `_${t('event.noParticipants')}_\n`;
@@ -245,7 +250,7 @@ export async function createEventMessage(event: any) {
 
       actionRow.addComponents(
         new ButtonBuilder()
-          .setCustomId(`event_edit:${event.id}`)
+          .setCustomId(`event_menu:${event.id}`)
           .setLabel(t('buttons.edit'))
           .setStyle(ButtonStyle.Secondary)
       );
@@ -286,7 +291,7 @@ export async function createEventMessage(event: any) {
       }
       buttonRow.addComponents(
         new ButtonBuilder()
-          .setCustomId(`event_edit:${event.id}`)
+          .setCustomId(`event_menu:${event.id}`)
           .setLabel(t('buttons.edit'))
           .setStyle(ButtonStyle.Secondary)
       );

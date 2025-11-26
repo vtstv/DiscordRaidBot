@@ -7,6 +7,56 @@ import { api, GuildSettings, DiscordRole, DiscordChannel } from '../services/api
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
 
+// Timezone list - same as Discord bot
+const COMMON_TIMEZONES = [
+  // Americas
+  { name: 'Pacific Time - Los Angeles', value: 'America/Los_Angeles' },
+  { name: 'Mountain Time - Denver', value: 'America/Denver' },
+  { name: 'Central Time - Chicago', value: 'America/Chicago' },
+  { name: 'Eastern Time - New York', value: 'America/New_York' },
+  { name: 'Atlantic Time - Halifax', value: 'America/Halifax' },
+  { name: 'Brazil Time - São Paulo', value: 'America/Sao_Paulo' },
+  { name: 'Argentina - Buenos Aires', value: 'America/Argentina/Buenos_Aires' },
+  // Europe
+  { name: 'Western Europe - London', value: 'Europe/London' },
+  { name: 'Central Europe - Berlin', value: 'Europe/Berlin' },
+  { name: 'Eastern Europe - Bucharest', value: 'Europe/Bucharest' },
+  { name: 'Russia - Moscow', value: 'Europe/Moscow' },
+  { name: 'Turkey - Ankara', value: 'Europe/Istanbul' },
+  // Asia
+  { name: 'India - Kolkata', value: 'Asia/Kolkata' },
+  { name: 'Bangladesh - Dhaka', value: 'Asia/Dhaka' },
+  { name: 'China - Shanghai', value: 'Asia/Shanghai' },
+  { name: 'Japan - Tokyo', value: 'Asia/Tokyo' },
+  { name: 'Korea - Seoul', value: 'Asia/Seoul' },
+  { name: 'Singapore', value: 'Asia/Singapore' },
+  { name: 'Thailand - Bangkok', value: 'Asia/Bangkok' },
+  { name: 'UAE - Dubai', value: 'Asia/Dubai' },
+  // Australia & Pacific
+  { name: 'Australia - Sydney', value: 'Australia/Sydney' },
+  { name: 'Australia - Melbourne', value: 'Australia/Melbourne' },
+  { name: 'Australia - Perth', value: 'Australia/Perth' },
+  { name: 'New Zealand - Auckland', value: 'Pacific/Auckland' },
+  // UTC offsets
+  { name: 'UTC', value: 'UTC' },
+  { name: 'GMT', value: 'GMT' },
+];
+
+function getCurrentTime(timezone: string): string {
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    return formatter.format(now);
+  } catch {
+    return '';
+  }
+}
+
 // Icon components
 const ChevronLeftIcon = () => (
   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,16 +201,20 @@ export default function Settings() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                           Timezone
-                          <InfoIcon onClick={() => alert('IANA timezone format (e.g., Europe/London, America/New_York, Asia/Tokyo)')} />
+                          <InfoIcon onClick={() => alert('Select your server timezone. Events will be displayed in this timezone.')} />
                         </label>
                         <div className="flex gap-2">
-                          <input 
-                            type="text" 
-                            value={settings.timezone || ''} 
+                          <select
+                            value={settings.timezone || 'UTC'} 
                             onChange={e => setSettings({...settings, timezone: e.target.value})}
-                            className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                            placeholder="Central Europe - Berlin (13:05)"
-                          />
+                            className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                          >
+                            {COMMON_TIMEZONES.map(tz => (
+                              <option key={tz.value} value={tz.value}>
+                                {tz.name} | Current time: {getCurrentTime(tz.value)}
+                              </option>
+                            ))}
+                          </select>
                           <button
                             type="button"
                             onClick={() => setSettings({...settings, timezone: 'UTC'})}

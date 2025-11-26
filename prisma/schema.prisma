@@ -23,6 +23,7 @@ model Guild {
   autoDeleteHours Int?      // Hours after archiving to auto-delete event message (null = never delete)
   logRetentionDays Int? @map("logretentiondays")     // Days to keep audit logs (null = keep forever)
   threadChannels String[] @default([])  // Channels where threads should be auto-created for events
+  noteChannels String[] @default([]) @map("notechannels")  // Channels where participant notes are enabled (empty = all channels)
   
   // Statistics settings
   statsEnabled Boolean @default(false) @map("statsenabled")
@@ -32,6 +33,10 @@ model Guild {
   statsAutoRoleEnabled Boolean @default(false) @map("statsautoroleenabled")
   statsTop10RoleId String? @map("statstop10roleid")  // Role for top 10 participants
   statsMinEvents Int @default(3) @map("statsminevents")  // Minimum events to appear in leaderboard
+  
+  // Participant notes settings
+  allowParticipantNotes Boolean @default(true) @map("allowparticipantnotes")  // Allow participants to add notes
+  participantNoteMaxLength Int @default(30) @map("participantnotemaxlength")  // Max characters for participant notes
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -92,6 +97,8 @@ model Event {
   allowedRoles    String[]  @default([])     // Discord role IDs allowed to sign up (empty = all allowed)
   benchOverflow   Boolean   @default(true)   // If true, users without allowed roles go to bench; if false, signup denied
   deadline        Int?                       // Hours before event start to close signups (negative = after start, null = closes at start)
+  allowNotes      Boolean?  @map("allownotes")  // Override for participant notes (null = use guild setting)
+  
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   archivedAt      DateTime?
@@ -119,7 +126,8 @@ model Participant {
   position    Int?     // Position in waitlist or signup order
   noShow      Boolean  @default(false) @map("noshow")  // Mark if user didn't attend
   
-  notes       String?
+  note        String?  @db.VarChar(100)  // Participant's personal note (max controlled by guild settings)
+  notes       String?  // Admin notes (deprecated, use 'note' for participant notes)
   joinedAt    DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

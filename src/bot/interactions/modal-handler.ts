@@ -4,6 +4,7 @@
 import { ModalSubmitInteraction } from 'discord.js';
 import { getModuleLogger } from '../../utils/logger.js';
 import { handleEventEditSubmit } from './event-edit.js';
+import { handleEditNoteSubmit } from './participant-note.js';
 
 const logger = getModuleLogger('modal-handler');
 
@@ -16,6 +17,10 @@ export async function handleModal(interaction: ModalSubmitInteraction): Promise<
     switch (action) {
       case 'event_edit':
         await handleEventEditSubmit(interaction, params[0]);
+        break;
+      
+      case 'participant_edit_note':
+        await handleEditNoteSubmit(interaction, params[0]);
         break;
 
       default:

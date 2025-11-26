@@ -15,6 +15,8 @@ import {
   handlePromoteNext
 } from './event-signup.js';
 import { handleEventEdit } from './event-edit.js';
+import { handleEventMenu } from './event-menu.js';
+import { handleViewDetails, handleEditNote } from './participant-note.js';
 import { handleStatsViewPersonal, handleStatsRefresh } from './stats.js';
 import getPrismaClient from '../../database/db.js';
 
@@ -106,8 +108,17 @@ export async function handleButton(interaction: ButtonInteraction): Promise<void
         case 'promote_next':
           await handlePromoteNext(interaction, eventId);
           break;
+        case 'event_menu':
+          await handleEventMenu(interaction, eventId);
+          break;
         case 'event_edit':
           await handleEventEdit(interaction, eventId);
+          break;
+        case 'event_view_details':
+          await handleViewDetails(interaction, eventId);
+          break;
+        case 'event_edit_note':
+          await handleEditNote(interaction, eventId);
           break;
         default:
           logger.warn({ customId: interaction.customId }, 'Unknown event button action');

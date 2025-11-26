@@ -226,3 +226,103 @@ export async function handleThreadChannels(interaction: ChatInputCommandInteract
       break;
   }
 }
+
+export async function handleNoteChannels(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply();
+
+  const guildId = interaction.guild!.id;
+  const action = interaction.options.getString('action', true);
+  const channel = interaction.options.getChannel('channel') as TextChannel | null;
+  const prisma = getPrismaClient();
+
+  const guild = await prisma.guild.findUnique({
+    where: { id: guildId },
+    select: { noteChannels: true, allowParticipantNotes: true },
+  });
+
+  let currentChannels = guild?.noteChannels || [];
+  const globalNotesEnabled = guild?.allowParticipantNotes ?? true;
+
+  switch (action) {
+    case 'add':
+      if (!channel) {
+        throw new ValidationError('Please specify a channel to add');
+      }
+      if (currentChannels.includes(channel.id)) {
+        await interaction.editReply(`❌ Channel ${channel} already has participant notes enabled.`);
+        return;
+      }
+      currentChannels.push(channel.id);
+      await prisma.guild.upsert({
+        where: { id: guildId },
+        create: {
+          id: guildId,
+          name: interaction.guild!.name,
+          noteChannels: currentChannels,
+        },
+        update: {
+          noteChannels: currentChannels,
+        },
+      });
+      logger.info({ guildId, channelId: channel.id }, 'Note channel added');
+      await interaction.editReply(
+        `✅ Participant notes enabled for ${channel}\n\n` +
+        `Participants can add notes when signing up for events in this channel.`
+      );
+      break;
+
+    case 'remove':
+      if (!channel) {
+        throw new ValidationError('Please specify a channel to remove');
+      }
+      if (!currentChannels.includes(channel.id)) {
+        await interaction.editReply(`❌ Channel ${channel} does not have participant notes enabled.`);
+        return;
+      }
+      currentChannels = currentChannels.filter((id: string) => id !== channel.id);
+      await prisma.guild.update({
+        where: { id: guildId },
+        data: { noteChannels: currentChannels },
+      });
+      logger.info({ guildId, channelId: channel.id }, 'Note channel removed');
+      await interaction.editReply(`✅ Participant notes disabled for ${channel}`);
+      break;
+
+    case 'list':
+      if (currentChannels.length === 0) {
+        const status = globalNotesEnabled 
+          ? '✅ Participant notes are **enabled globally** (all channels)\n\n'
+          : '❌ Participant notes are **disabled globally**\n\n';
+        await interaction.editReply(
+          `📋 **Participant Notes Configuration**\n\n${status}` +
+          'Use `/settings note-channels action:Add` to enable notes for specific channels.\n\n' +
+          'Note: Event creators can override this setting when creating an event.'
+        );
+        return;
+      }
+      const channelMentions = currentChannels.map((id: string) => `<#${id}>`).join(', ');
+      const globalStatus = globalNotesEnabled
+        ? 'If a channel is not in this list, global setting (enabled) applies.'
+        : 'Notes are only enabled in channels listed below.';
+      await interaction.editReply(
+        `📋 **Channels with participant notes enabled:**\n\n${channelMentions}\n\n${globalStatus}`
+      );
+      break;
+
+    case 'clear':
+      if (currentChannels.length === 0) {
+        await interaction.editReply('❌ No note channels to clear.');
+        return;
+      }
+      await prisma.guild.update({
+        where: { id: guildId },
+        data: { noteChannels: [] },
+      });
+      logger.info({ guildId }, 'All note channels cleared');
+      const newStatus = globalNotesEnabled
+        ? 'Participant notes are now enabled for **all channels** (global setting).'
+        : 'Participant notes are now disabled for all channels (use event override to enable).';
+      await interaction.editReply(`✅ All note channel settings have been cleared.\n\n${newStatus}`);
+      break;
+  }
+}

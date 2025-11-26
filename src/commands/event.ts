@@ -86,6 +86,12 @@ const command: Command = {
             .setDescription('Create discussion thread for this event (overrides channel settings)')
             .setRequired(false)
         )
+        .addBooleanOption(option =>
+          option
+            .setName('allow-notes')
+            .setDescription('Allow participant notes for this event (overrides server settings)')
+            .setRequired(false)
+        )
         .addStringOption(option =>
           option
             .setName('allowed-roles')
@@ -135,6 +141,54 @@ const command: Command = {
             .setRequired(true)
             .setAutocomplete(true)
         )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('add-user')
+        .setDescription('Add a user to an event (admin/creator only)')
+        .addStringOption(option =>
+          option
+            .setName('event-id')
+            .setDescription('Event ID')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addUserOption(option =>
+          option
+            .setName('user')
+            .setDescription('User to add to the event')
+            .setRequired(true)
+        )
+        .addStringOption(option =>
+          option
+            .setName('role')
+            .setDescription('Role/class for the user')
+            .setRequired(false)
+        )
+        .addStringOption(option =>
+          option
+            .setName('spec')
+            .setDescription('Specialization for the user')
+            .setRequired(false)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('remove-user')
+        .setDescription('Remove a user from an event (admin/creator only)')
+        .addStringOption(option =>
+          option
+            .setName('event-id')
+            .setDescription('Event ID')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addUserOption(option =>
+          option
+            .setName('user')
+            .setDescription('User to remove from the event')
+            .setRequired(true)
+        )
     ),
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -153,6 +207,12 @@ const command: Command = {
         break;
       case 'cancel':
         await handleCancel(interaction);
+        break;
+      case 'add-user':
+        await handleAddUser(interaction);
+        break;
+      case 'remove-user':
+        await handleRemoveUser(interaction);
         break;
     }
   },
@@ -177,6 +237,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
   const duration = interaction.options.getInteger('duration');
   const requireApprovalOverride = interaction.options.getBoolean('require-approval');
   const createThreadOverride = interaction.options.getBoolean('create-thread');
+  const allowNotesOverride = interaction.options.getBoolean('allow-notes');
   const allowedRolesInput = interaction.options.getString('allowed-roles');
   const benchOverflow = interaction.options.getBoolean('bench-overflow') ?? true; // Default to true
   const deadline = interaction.options.getInteger('deadline'); // Hours before event to close signups
@@ -232,6 +293,14 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
   const channelHasAutoThread = guild.threadChannels?.includes(channel.id) || false;
   const createThread = createThreadOverride !== null ? createThreadOverride : channelHasAutoThread;
 
+  // Determine if notes are allowed: explicit override OR channel in noteChannels OR global setting
+  let allowNotes: boolean | null = null;
+  if (allowNotesOverride !== null) {
+    // Explicit override provided
+    allowNotes = allowNotesOverride;
+  }
+  // Otherwise leave as null to use guild default logic in runtime
+
   // Parse allowed roles
   let allowedRoles: string[] = [];
   if (allowedRolesInput && allowedRolesInput.toLowerCase().trim() !== 'all') {
@@ -258,6 +327,8 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
     channelHasAutoThread,
     createThreadOverride,
     finalCreateThread: createThread,
+    allowNotesOverride,
+    finalAllowNotes: allowNotes,
     allowedRolesInput,
     allowedRoles,
     benchOverflow,
@@ -280,6 +351,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
       status: 'scheduled',
       requireApproval,
       createThread,
+      allowNotes,
       allowedRoles,
       benchOverflow,
       deadline,
@@ -416,6 +488,165 @@ async function handleCancel(interaction: ChatInputCommandInteraction): Promise<v
   logger.info({ eventId, guildId }, 'Event cancelled');
 
   await interaction.editReply(`✅ Event **${event.title}** has been cancelled.`);
+}
+
+async function handleAddUser(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+
+  const guildId = interaction.guild!.id;
+  const eventId = interaction.options.getString('event-id', true);
+  const targetUser = interaction.options.getUser('user', true);
+  const role = interaction.options.getString('role');
+  const spec = interaction.options.getString('spec');
+
+  // Check permissions
+  const hasPermission = await hasManagementPermissions(interaction);
+  
+  // Also check if user is event creator
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, guildId },
+    include: { guild: true },
+  });
+
+  if (!event) {
+    throw new NotFoundError('Event');
+  }
+
+  const isCreator = event.createdBy === interaction.user.id;
+
+  if (!hasPermission && !isCreator) {
+    throw new CommandError('You do not have permission to add users to this event. Only the event creator, administrators, or users with the manager role can add users.');
+  }
+
+  // Check if user is already a participant
+  const existingParticipant = await prisma.participant.findUnique({
+    where: {
+      eventId_userId: {
+        eventId: event.id,
+        userId: targetUser.id,
+      },
+    },
+  });
+
+  if (existingParticipant) {
+    await interaction.editReply(`❌ ${targetUser.username} is already participating in this event.`);
+    return;
+  }
+
+  // Add user to event
+  await prisma.participant.create({
+    data: {
+      eventId: event.id,
+      userId: targetUser.id,
+      username: targetUser.username,
+      role: role || undefined,
+      spec: spec || undefined,
+      status: 'confirmed',
+    },
+  });
+
+  // Update event message
+  await updateEventMessage(event.id);
+
+  // Log action
+  await logAction({
+    guildId,
+    eventId: event.id,
+    action: 'add_user',
+    userId: interaction.user.id,
+    username: getUserDisplayName(interaction.user),
+    details: {
+      targetUserId: targetUser.id,
+      targetUsername: targetUser.username,
+      role,
+      spec,
+    },
+  });
+
+  logger.info(
+    { eventId, guildId, targetUserId: targetUser.id },
+    'User added to event by admin/creator'
+  );
+
+  await interaction.editReply(
+    `✅ Added **${targetUser.username}** to event **${event.title}**${role ? ` as ${role}` : ''}${spec ? ` (${spec})` : ''}.`
+  );
+}
+
+async function handleRemoveUser(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+
+  const guildId = interaction.guild!.id;
+  const eventId = interaction.options.getString('event-id', true);
+  const targetUser = interaction.options.getUser('user', true);
+
+  // Check permissions
+  const hasPermission = await hasManagementPermissions(interaction);
+  
+  // Also check if user is event creator
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, guildId },
+  });
+
+  if (!event) {
+    throw new NotFoundError('Event');
+  }
+
+  const isCreator = event.createdBy === interaction.user.id;
+
+  if (!hasPermission && !isCreator) {
+    throw new CommandError('You do not have permission to remove users from this event. Only the event creator, administrators, or users with the manager role can remove users.');
+  }
+
+  // Check if user is a participant
+  const participant = await prisma.participant.findUnique({
+    where: {
+      eventId_userId: {
+        eventId: event.id,
+        userId: targetUser.id,
+      },
+    },
+  });
+
+  if (!participant) {
+    await interaction.editReply(`❌ ${targetUser.username} is not participating in this event.`);
+    return;
+  }
+
+  // Remove user from event
+  await prisma.participant.delete({
+    where: {
+      eventId_userId: {
+        eventId: event.id,
+        userId: targetUser.id,
+      },
+    },
+  });
+
+  // Update event message
+  await updateEventMessage(event.id);
+
+  // Log action
+  await logAction({
+    guildId,
+    eventId: event.id,
+    action: 'remove_user',
+    userId: interaction.user.id,
+    username: getUserDisplayName(interaction.user),
+    details: {
+      targetUserId: targetUser.id,
+      targetUsername: targetUser.username,
+    },
+  });
+
+  logger.info(
+    { eventId, guildId, targetUserId: targetUser.id },
+    'User removed from event by admin/creator'
+  );
+
+  await interaction.editReply(
+    `✅ Removed **${targetUser.username}** from event **${event.title}**.`
+  );
 }
 
 export default command;

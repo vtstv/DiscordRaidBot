@@ -17,7 +17,7 @@ import { handleLanguage, handleTimezone } from './settings/handlers/locale.js';
 import { handleLogChannel, handleArchiveChannel } from './settings/handlers/channels.js';
 import { handleReminders } from './settings/handlers/reminders.js';
 import { handleManagerRole, handlePrefix } from './settings/handlers/roles.js';
-import { handleApprovalChannels, handleAutoDelete, handleThreadChannels } from './settings/handlers/advanced.js';
+import { handleApprovalChannels, handleAutoDelete, handleThreadChannels, handleNoteChannels } from './settings/handlers/advanced.js';
 
 const logger = getModuleLogger('settings-command');
 
@@ -177,6 +177,30 @@ const command: Command = {
             .addChannelTypes(ChannelType.GuildText)
             .setRequired(false)
         )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('note-channels')
+        .setDescription('Manage channels where participant notes are enabled')
+        .addStringOption(option =>
+          option
+            .setName('action')
+            .setDescription('Add or remove channel')
+            .setRequired(true)
+            .addChoices(
+              { name: 'Add', value: 'add' },
+              { name: 'Remove', value: 'remove' },
+              { name: 'List', value: 'list' },
+              { name: 'Clear', value: 'clear' }
+            )
+        )
+        .addChannelOption(option =>
+          option
+            .setName('channel')
+            .setDescription('Channel to add/remove')
+            .addChannelTypes(ChannelType.GuildText)
+            .setRequired(false)
+        )
     ),
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -225,6 +249,9 @@ const command: Command = {
         break;
       case 'thread-channels':
         await handleThreadChannels(interaction);
+        break;
+      case 'note-channels':
+        await handleNoteChannels(interaction);
         break;
     }
   },
