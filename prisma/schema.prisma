@@ -23,12 +23,23 @@ model Guild {
   autoDeleteHours Int?      // Hours after archiving to auto-delete event message (null = never delete)
   logRetentionDays Int? @map("logretentiondays")     // Days to keep audit logs (null = keep forever)
   threadChannels String[] @default([])  // Channels where threads should be auto-created for events
+  
+  // Statistics settings
+  statsEnabled Boolean @default(false) @map("statsenabled")
+  statsChannelId String? @map("statschannelid")
+  statsMessageId String? @map("statsmessageid")  // Message ID of pinned stats embed
+  statsUpdateInterval String @default("daily") @map("statsupdateinterval")  // daily, weekly, monthly
+  statsAutoRoleEnabled Boolean @default(false) @map("statsautoroleenabled")
+  statsTop10RoleId String? @map("statstop10roleid")  // Role for top 10 participants
+  statsMinEvents Int @default(3) @map("statsminevents")  // Minimum events to appear in leaderboard
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   templates Template[]
   events    Event[]
   logEntries LogEntry[]
+  statistics ParticipantStatistics[]
 
   @@map("guilds")
 }
@@ -106,6 +117,7 @@ model Participant {
   spec        String?  // Specific specialization
   status      String   @default("confirmed") // confirmed, tentative, declined, waitlist, pending
   position    Int?     // Position in waitlist or signup order
+  noShow      Boolean  @default(false) @map("noshow")  // Mark if user didn't attend
   
   notes       String?
   joinedAt    DateTime @default(now())
@@ -153,3 +165,25 @@ model Reminder {
   @@map("reminders")
 }
 
+model ParticipantStatistics {
+  id                    String   @id @default(uuid())
+  userId                String   @map("userid")
+  guildId               String   @map("guildid")
+  
+  totalEventsJoined     Int      @default(0) @map("totaleventsjoin")
+  totalEventsCompleted  Int      @default(0) @map("totaleventscomp")
+  totalNoShows          Int      @default(0) @map("totalnoshows")
+  score                 Int      @default(0)  // Calculated: joined*1 + completed*3 - noshow*2
+  rank                  Int?     // Position in guild leaderboard (null if below min threshold)
+  
+  lastActivityAt        DateTime @default(now()) @map("lastactivityat")
+  createdAt             DateTime @default(now()) @map("createdat")
+  updatedAt             DateTime @updatedAt @map("updatedat")
+
+  guild                 Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, guildId])
+  @@index([guildId, score])
+  @@index([guildId, rank])
+  @@map("participant_statistics")
+}

@@ -10,6 +10,7 @@ import { loadCommands, getCommands } from './commandLoader.js';
 import { handleInteraction } from './interactionHandler.js';
 import { handlePrefixCommand } from './prefixCommandHandler.js';
 import { startScheduler, stopScheduler } from '../scheduler/eventScheduler.js';
+import { startStatsScheduler, stopStatsScheduler } from '../scheduler/statsScheduler.js';
 
 const logger = getModuleLogger('bot');
 
@@ -165,6 +166,10 @@ async function handleReady(client: Client): Promise<void> {
   // Start scheduler
   startScheduler();
   logger.info('Event scheduler started');
+
+  // Start stats scheduler
+  startStatsScheduler();
+  logger.info('Stats scheduler started');
 }
 
 /**
@@ -204,6 +209,7 @@ export async function shutdown(): Promise<void> {
   logger.info('Shutting down bot...');
 
   stopScheduler();
+  stopStatsScheduler();
 
   if (client) {
     client.destroy();

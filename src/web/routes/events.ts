@@ -5,6 +5,7 @@
 import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
 import { requireGuildManager } from '../auth/middleware.js';
+import { enrichParticipantData, getDiscordUserInfo } from '../../utils/discord-enrichment.js';
 
 const prisma = getPrismaClient();
 
@@ -41,8 +42,10 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
   // Get event details by ID only
   server.get<{
     Params: { id: string };
+    Querystring: { enrich?: string };
   }>('/:id', async (request, reply) => {
     const { id } = request.params;
+    const { enrich } = request.query;
 
     const event = await prisma.event.findUnique({
       where: { id },
@@ -100,19 +103,52 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
       `);
     }
 
+    // Enrich participants with Discord data if requested
+    if (enrich === 'true') {
+      const enrichedParticipants = event.participants.length > 0
+        ? await enrichParticipantData(event.participants, event.guildId)
+        : [];
+      
+      // Enrich createdBy user info
+      const creatorInfo = await getDiscordUserInfo(event.createdBy, event.guildId);
+      
+      return {
+        ...event,
+        participants: enrichedParticipants,
+        createdByUser: creatorInfo,
+      };
+    }
+
     return event;
   });
 
   // Get event participants
   server.get<{
     Params: { id: string };
-  }>('/:id/participants', async (request, _reply) => {
+    Querystring: { enrich?: string };
+  }>('/:id/participants', async (request, reply) => {
     const { id } = request.params;
+    const { enrich } = request.query;
+
+    const event = await prisma.event.findUnique({
+      where: { id },
+      select: { guildId: true },
+    });
+
+    if (!event) {
+      return reply.code(404).send({ error: 'Event not found' });
+    }
 
     const participants = await prisma.participant.findMany({
       where: { eventId: id },
       orderBy: { joinedAt: 'asc' },
     });
+
+    // Enrich with Discord data if requested
+    if (enrich === 'true') {
+      const enriched = await enrichParticipantData(participants, event.guildId);
+      return enriched;
+    }
 
     return participants;
   });

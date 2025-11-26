@@ -108,7 +108,21 @@ export default function EventDetails() {
 
               <div className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-4">
                 <h3 className="text-sm font-medium text-purple-300 mb-1">Created By</h3>
-                <p className="text-white font-mono text-sm font-semibold">{event.createdBy}</p>
+                {event.createdByUser ? (
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={event.createdByUser.avatar} 
+                      alt={event.createdByUser.displayName}
+                      className="w-8 h-8 rounded-full border-2 border-purple-500/50"
+                    />
+                    <div>
+                      <p className="text-white font-semibold text-sm">{event.createdByUser.displayName}</p>
+                      <p className="text-xs text-gray-400">@{event.createdByUser.username}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-white font-mono text-sm font-semibold">{event.createdBy}</p>
+                )}
               </div>
             </div>
 
@@ -119,11 +133,25 @@ export default function EventDetails() {
                 <div className="space-y-2">
                   {event.participants.map((participant: any) => (
                     <div key={participant.id} className="bg-indigo-900/30 border border-indigo-500/30 rounded-lg p-3 flex items-center justify-between hover:bg-indigo-900/40 transition-colors">
-                      <div>
-                        <p className="text-white font-medium">{participant.userId}</p>
-                        {participant.role && (
-                          <p className="text-sm text-indigo-300">{participant.role}</p>
+                      <div className="flex items-center gap-3">
+                        {participant.discordAvatar && (
+                          <img 
+                            src={participant.discordAvatar} 
+                            alt={participant.discordDisplayName || participant.discordUsername || participant.userId}
+                            className="w-10 h-10 rounded-full border-2 border-indigo-500/50"
+                          />
                         )}
+                        <div>
+                          <p className="text-white font-medium">
+                            {participant.discordDisplayName || participant.discordUsername || participant.username || participant.userId}
+                          </p>
+                          {participant.discordUsername && participant.discordUsername !== participant.discordDisplayName && (
+                            <p className="text-xs text-gray-400">@{participant.discordUsername}</p>
+                          )}
+                          {participant.role && (
+                            <p className="text-sm text-indigo-300">{participant.role}</p>
+                          )}
+                        </div>
                       </div>
                       {participant.status && (
                         <span className={`px-2 py-1 rounded text-xs ${

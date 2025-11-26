@@ -10,6 +10,7 @@ import { getClient } from '../bot/index.js';
 import { parseDuration } from '../utils/time.js';
 import { EmbedBuilder } from 'discord.js';
 import { updateEventMessage } from '../messages/eventMessage.js';
+import { processEventCompletion } from '../services/statistics.js';
 
 const logger = getModuleLogger('scheduler');
 const prisma = getPrismaClient();
@@ -306,6 +307,13 @@ async function archiveEvent(event: any): Promise<void> {
       archivedAt: DateTime.now().toJSDate(),
     },
   });
+
+  // Process statistics for all confirmed participants
+  try {
+    await processEventCompletion(event.id);
+  } catch (error) {
+    logger.error({ error, eventId: event.id }, 'Failed to process event completion statistics');
+  }
 
   // Update the original event message
   await updateEventMessage(event.id);

@@ -171,6 +171,17 @@ async function handleButton(interaction: ButtonInteraction): Promise<void> {
 
   const { joinEvent, leaveEvent } = await import('../services/participation.js');
 
+  // Handle stats buttons
+  if (action === 'stats_view_personal') {
+    await handleStatsViewPersonal(interaction);
+    return;
+  }
+
+  if (action === 'stats_refresh') {
+    await handleStatsRefresh(interaction);
+    return;
+  }
+
   // Check event status for join/leave actions
   if (action === 'event_join' || action === 'event_join_role' || action === 'event_leave') {
     const eventId = params[0];
@@ -766,6 +777,56 @@ async function handleEventEditSubmit(interaction: ModalSubmitInteraction, eventI
   });
 
   await interaction.editReply('✅ Event updated successfully!');
+}
+
+/**
+ * Handle stats personal view button
+ */
+async function handleStatsViewPersonal(interaction: ButtonInteraction): Promise<void> {
+  if (!interaction.guildId) {
+    await interaction.reply({ content: '❌ This command can only be used in a server.', ephemeral: true });
+    return;
+  }
+
+  await interaction.deferReply({ ephemeral: true });
+
+  const { createPersonalStatsEmbed } = await import('../embeds/statsEmbed.js');
+  const getPrismaClient = (await import('../database/db.js')).default;
+  const prisma = getPrismaClient();
+
+  const guild = await prisma.guild.findUnique({
+    where: { id: interaction.guildId },
+  });
+
+  if (!guild || !guild.statsEnabled) {
+    await interaction.editReply('❌ Statistics system is not enabled on this server.');
+    return;
+  }
+
+  const embed = await createPersonalStatsEmbed(interaction.user.id, interaction.guildId);
+  await interaction.editReply({ embeds: [embed] });
+}
+
+/**
+ * Handle stats refresh button
+ */
+async function handleStatsRefresh(interaction: ButtonInteraction): Promise<void> {
+  if (!interaction.guildId) {
+    await interaction.reply({ content: '❌ This command can only be used in a server.', ephemeral: true });
+    return;
+  }
+
+  await interaction.deferUpdate();
+
+  const { createStatsEmbed } = await import('../embeds/statsEmbed.js');
+  const { recalculateRanks } = await import('../services/statistics.js');
+
+  // Recalculate ranks before showing updated leaderboard
+  await recalculateRanks(interaction.guildId);
+
+  const { embed, components } = await createStatsEmbed(interaction.guildId, 10);
+  
+  await interaction.editReply({ embeds: [embed], components });
 }
 
 /**

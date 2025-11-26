@@ -199,6 +199,100 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Statistics Settings */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-purple-600 mb-4">📊 Participant Statistics</h2>
+            
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  id="statsEnabled"
+                  checked={settings.statsEnabled || false} 
+                  onChange={e => setSettings({...settings, statsEnabled: e.target.checked})}
+                  className="w-5 h-5 text-purple-600 bg-gray-50 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                />
+                <label htmlFor="statsEnabled" className="ml-3 text-sm font-medium text-gray-700">
+                  Enable Statistics Tracking
+                </label>
+              </div>
+              <p className="text-sm text-gray-500">Track participant attendance, completions, and no-shows. Shows leaderboard with medals 🥇🥈🥉</p>
+
+              {settings.statsEnabled && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Stats Channel ID</label>
+                    <input 
+                      type="text" 
+                      value={settings.statsChannelId || ''} 
+                      onChange={e => setSettings({...settings, statsChannelId: e.target.value})}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
+                      placeholder="1234567890"
+                    />
+                    <p className="text-sm text-gray-500 mt-1">Channel where leaderboard will be posted and updated automatically</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Update Interval</label>
+                    <select 
+                      value={settings.statsUpdateInterval || 'daily'} 
+                      onChange={e => setSettings({...settings, statsUpdateInterval: e.target.value})}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                    <p className="text-sm text-gray-500 mt-1">How often to update the leaderboard in the stats channel</p>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input 
+                      type="checkbox" 
+                      id="statsAutoRoleEnabled"
+                      checked={settings.statsAutoRoleEnabled || false} 
+                      onChange={e => setSettings({...settings, statsAutoRoleEnabled: e.target.checked})}
+                      className="w-5 h-5 text-purple-600 bg-gray-50 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                    />
+                    <label htmlFor="statsAutoRoleEnabled" className="ml-3 text-sm font-medium text-gray-700">
+                      Enable Auto-Role for Top 10
+                    </label>
+                  </div>
+                  <p className="text-sm text-gray-500">Automatically assign a special role to top 10 participants</p>
+
+                  {settings.statsAutoRoleEnabled && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Top 10 Role ID</label>
+                        <input 
+                          type="text" 
+                          value={settings.statsTop10RoleId || ''} 
+                          onChange={e => setSettings({...settings, statsTop10RoleId: e.target.value})}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
+                          placeholder="1234567890"
+                        />
+                        <p className="text-sm text-gray-500 mt-1">Role to assign to top 10 participants (updates hourly)</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Events for Auto-Role</label>
+                        <input 
+                          type="number" 
+                          min="1"
+                          value={settings.statsMinEvents || 5} 
+                          onChange={e => setSettings({...settings, statsMinEvents: e.target.value ? parseInt(e.target.value) : 5})}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
+                          placeholder="5"
+                        />
+                        <p className="text-sm text-gray-500 mt-1">Minimum completed events required to qualify for top 10 role</p>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
           <button 
             type="submit" 
             className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl"

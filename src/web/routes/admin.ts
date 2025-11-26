@@ -602,7 +602,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
           const result = await prisma.event.deleteMany({
             where: {
               status: 'completed',
-              endTime: { lt: cutoffDate },
+              archivedAt: { lt: cutoffDate },
             },
           });
           affectedCount = result.count;
@@ -630,7 +630,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
           await prisma.guild.updateMany({
             data: {
               timezone: 'UTC',
-              language: 'en',
+              locale: 'en',
             },
           });
           affectedCount = guilds.length;

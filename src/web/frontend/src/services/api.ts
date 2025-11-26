@@ -40,7 +40,19 @@ export interface Event {
     userId: string;
     role?: string;
     status?: string;
+    // Enriched fields from Discord
+    username?: string;
+    discordUsername?: string;
+    discordDisplayName?: string;
+    discordAvatar?: string;
   }>;
+  // Enriched creator info
+  createdByUser?: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatar: string;
+  };
 }
 
 export interface Template {
@@ -69,6 +81,13 @@ export interface GuildSettings {
   autoDeleteHours?: number;
   logRetentionDays?: number;
   threadChannels?: string[];
+  // Statistics settings
+  statsEnabled?: boolean;
+  statsChannelId?: string;
+  statsUpdateInterval?: string;
+  statsAutoRoleEnabled?: boolean;
+  statsTop10RoleId?: string;
+  statsMinEvents?: number;
 }
 
 class ApiService {
@@ -139,8 +158,9 @@ class ApiService {
     return this.request(`/api/events?${params}`);
   }
 
-  async getEvent(guildId: string, eventId: string): Promise<Event> {
-    return this.request(`/api/events/${eventId}`);
+  async getEvent(guildId: string, eventId: string, enrich: boolean = true): Promise<Event> {
+    const params = enrich ? '?enrich=true' : '';
+    return this.request(`/api/events/${eventId}${params}`);
   }
 
   async createEvent(event: any): Promise<Event> {

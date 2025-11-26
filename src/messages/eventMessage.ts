@@ -268,7 +268,7 @@ export async function createEventMessage(event: any) {
 
       // Add approve button if there are pending participants
       if (event.requireApproval && pending.length > 0) {
-        actionRow.addComponents(
+        buttonRow.addComponents(
           new ButtonBuilder()
             .setCustomId(`event_approve:${event.id}`)
             .setLabel(t('buttons.approve'))
@@ -277,7 +277,7 @@ export async function createEventMessage(event: any) {
       }
       // Add promote button if there are waitlisted participants
       if (waitlist.length > 0) {
-        actionRow.addComponents(
+        buttonRow.addComponents(
           new ButtonBuilder()
             .setCustomId(`event_promote:${event.id}`)
             .setLabel('Promote')

@@ -7,6 +7,7 @@ import { getModuleLogger } from '../utils/logger.js';
 import { ValidationError } from '../utils/errors.js';
 import { updateEventMessage } from '../messages/eventMessage.js';
 import { logAction } from './auditLog.js';
+import { updateParticipantStats } from './statistics.js';
 
 const logger = getModuleLogger('participation');
 const prisma = getPrismaClient();
@@ -127,6 +128,15 @@ export async function joinEvent(params: JoinEventParams): Promise<{ success: boo
       position,
     },
   });
+
+  // Update statistics: increment joined count
+  if (status === 'confirmed' || status === 'waitlist') {
+    await updateParticipantStats({
+      userId,
+      guildId: event.guildId,
+      incrementJoined: true,
+    });
+  }
 
   logger.info({ 
     eventId, 
