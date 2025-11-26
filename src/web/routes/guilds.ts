@@ -5,7 +5,7 @@
 import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
 import { requireGuildAdmin } from '../auth/middleware.js';
-import { getUserGuilds } from '../auth/discord-oauth.js';
+import { getUserGuilds, getGuildRoles, getGuildChannels } from '../auth/discord-oauth.js';
 import { getModuleLogger } from '../../utils/logger.js';
 
 const logger = getModuleLogger('guilds-routes');
@@ -163,6 +163,46 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
     } catch (error) {
       logger.error({ error }, 'Failed to get guild stats');
       return reply.code(500).send({ error: 'Failed to get statistics' });
+    }
+  });
+
+  // Get guild roles
+  server.get<{
+    Params: { guildId: string };
+  }>('/:guildId/roles', async (request, reply) => {
+    // Add guildId to request for middleware
+    (request as any).params = { guildId: request.params.guildId };
+    await requireGuildAdmin(request as any, reply);
+    if (reply.sent) return;
+
+    const { guildId } = request.params;
+
+    try {
+      const roles = await getGuildRoles(guildId);
+      return roles;
+    } catch (error) {
+      logger.error({ error, guildId }, 'Failed to get guild roles');
+      return reply.code(500).send({ error: 'Failed to get roles' });
+    }
+  });
+
+  // Get guild channels
+  server.get<{
+    Params: { guildId: string };
+  }>('/:guildId/channels', async (request, reply) => {
+    // Add guildId to request for middleware
+    (request as any).params = { guildId: request.params.guildId };
+    await requireGuildAdmin(request as any, reply);
+    if (reply.sent) return;
+
+    const { guildId } = request.params;
+
+    try {
+      const channels = await getGuildChannels(guildId);
+      return channels;
+    } catch (error) {
+      logger.error({ error, guildId }, 'Failed to get guild channels');
+      return reply.code(500).send({ error: 'Failed to get channels' });
     }
   });
 }

@@ -14,6 +14,10 @@ COPY package*.json ./
 COPY tsconfig.json ./
 COPY prisma ./prisma/
 
+# Copy PostCSS and Tailwind config
+COPY postcss.config.js ./
+COPY tailwind.config.js ./
+
 # Install all dependencies and generate Prisma Client
 RUN npm ci
 RUN npx prisma generate

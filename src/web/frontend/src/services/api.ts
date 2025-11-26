@@ -90,6 +90,22 @@ export interface GuildSettings {
   statsMinEvents?: number;
 }
 
+export interface DiscordRole {
+  id: string;
+  name: string;
+  color: number;
+  position: number;
+  managed: boolean;
+}
+
+export interface DiscordChannel {
+  id: string;
+  name: string;
+  type: number;
+  position: number;
+  parent_id?: string;
+}
+
 class ApiService {
   private baseUrl = '';
 
@@ -149,6 +165,14 @@ class ApiService {
 
   async getGuildStats(guildId: string): Promise<any> {
     return this.request(`/api/guilds/${guildId}/stats`);
+  }
+
+  async getGuildRoles(guildId: string): Promise<DiscordRole[]> {
+    return this.request(`/api/guilds/${guildId}/roles`);
+  }
+
+  async getGuildChannels(guildId: string): Promise<DiscordChannel[]> {
+    return this.request(`/api/guilds/${guildId}/channels`);
   }
 
   // Events

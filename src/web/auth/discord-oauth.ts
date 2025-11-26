@@ -183,6 +183,50 @@ export function getAvatarUrl(userId: string, avatarHash: string | null): string 
 }
 
 /**
+ * Get guild roles
+ */
+export async function getGuildRoles(guildId: string): Promise<any[]> {
+  try {
+    const response = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}/roles`, {
+      headers: {
+        Authorization: `Bot ${config.DISCORD_TOKEN}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return (await response.json()) as any[];
+  } catch (error) {
+    logger.error({ error, guildId }, 'Failed to get guild roles');
+    return [];
+  }
+}
+
+/**
+ * Get guild channels
+ */
+export async function getGuildChannels(guildId: string): Promise<any[]> {
+  try {
+    const response = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}/channels`, {
+      headers: {
+        Authorization: `Bot ${config.DISCORD_TOKEN}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return (await response.json()) as any[];
+  } catch (error) {
+    logger.error({ error, guildId }, 'Failed to get guild channels');
+    return [];
+  }
+}
+
+/**
  * Refresh access token
  */
 export async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {

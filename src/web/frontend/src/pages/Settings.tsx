@@ -3,18 +3,28 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { api, GuildSettings } from '../services/api';
+import { api, GuildSettings, DiscordRole, DiscordChannel } from '../services/api';
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
 
 export default function Settings() {
   const { guildId } = useParams<{ guildId: string }>();
   const [settings, setSettings] = useState<GuildSettings | null>(null);
+  const [roles, setRoles] = useState<DiscordRole[]>([]);
+  const [channels, setChannels] = useState<DiscordChannel[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (guildId) {
-      api.getGuildSettings(guildId).then(setSettings).finally(() => setLoading(false));
+      Promise.all([
+        api.getGuildSettings(guildId),
+        api.getGuildRoles(guildId),
+        api.getGuildChannels(guildId),
+      ]).then(([settingsData, rolesData, channelsData]) => {
+        setSettings(settingsData);
+        setRoles(rolesData.filter(r => !r.managed).sort((a, b) => b.position - a.position));
+        setChannels(channelsData.filter(c => c.type === 0 || c.type === 5).sort((a, b) => a.position - b.position));
+      }).finally(() => setLoading(false));
     }
   }, [guildId]);
 
@@ -88,51 +98,85 @@ export default function Settings() {
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Log Channel ID</label>
-                <input 
-                  type="text" 
+                <label className="block text-sm font-medium text-gray-700 mb-2">Log Channel</label>
+                <select 
                   value={settings.logChannelId || ''} 
-                  onChange={e => setSettings({...settings, logChannelId: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
-                  placeholder="1234567890"
-                />
+                  onChange={e => setSettings({...settings, logChannelId: e.target.value || undefined})}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
+                >
+                  <option value="">-- No log channel --</option>
+                  {channels.map(channel => (
+                    <option key={channel.id} value={channel.id}>
+                      #{channel.name}
+                    </option>
+                  ))}
+                </select>
                 <p className="text-sm text-gray-500 mt-1">Channel for audit logs and event notifications</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Archive Channel ID</label>
-                <input 
-                  type="text" 
+                <label className="block text-sm font-medium text-gray-700 mb-2">Archive Channel</label>
+                <select 
                   value={settings.archiveChannelId || ''} 
-                  onChange={e => setSettings({...settings, archiveChannelId: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
-                  placeholder="1234567890"
-                />
+                  onChange={e => setSettings({...settings, archiveChannelId: e.target.value || undefined})}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
+                >
+                  <option value="">-- No archive channel --</option>
+                  {channels.map(channel => (
+                    <option key={channel.id} value={channel.id}>
+                      #{channel.name}
+                    </option>
+                  ))}
+                </select>
                 <p className="text-sm text-gray-500 mt-1">Channel where completed events are archived</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Approval Channels</label>
-                <input 
-                  type="text" 
-                  value={(settings.approvalChannels || []).join(', ')} 
-                  onChange={e => setSettings({...settings, approvalChannels: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
-                  placeholder="1234567890, 0987654321"
-                />
-                <p className="text-sm text-gray-500 mt-1">Channels requiring approval for participants (comma-separated IDs)</p>
+                <div className="space-y-2">
+                  {channels.map(channel => (
+                    <label key={channel.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
+                      <input 
+                        type="checkbox"
+                        checked={(settings.approvalChannels || []).includes(channel.id)}
+                        onChange={e => {
+                          const current = settings.approvalChannels || [];
+                          const updated = e.target.checked
+                            ? [...current, channel.id]
+                            : current.filter(id => id !== channel.id);
+                          setSettings({...settings, approvalChannels: updated});
+                        }}
+                        className="w-4 h-4 text-purple-600 bg-gray-50 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                      />
+                      <span className="text-sm text-gray-700">#{channel.name}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500 mt-1">Channels requiring approval for participants</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Thread Channels</label>
-                <input 
-                  type="text" 
-                  value={(settings.threadChannels || []).join(', ')} 
-                  onChange={e => setSettings({...settings, threadChannels: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
-                  placeholder="1234567890, 0987654321"
-                />
-                <p className="text-sm text-gray-500 mt-1">Channels where event threads auto-create (comma-separated IDs)</p>
+                <div className="space-y-2">
+                  {channels.map(channel => (
+                    <label key={channel.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
+                      <input 
+                        type="checkbox"
+                        checked={(settings.threadChannels || []).includes(channel.id)}
+                        onChange={e => {
+                          const current = settings.threadChannels || [];
+                          const updated = e.target.checked
+                            ? [...current, channel.id]
+                            : current.filter(id => id !== channel.id);
+                          setSettings({...settings, threadChannels: updated});
+                        }}
+                        className="w-4 h-4 text-purple-600 bg-gray-50 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                      />
+                      <span className="text-sm text-gray-700">#{channel.name}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500 mt-1">Channels where event threads auto-create</p>
               </div>
             </div>
           </div>
@@ -142,14 +186,19 @@ export default function Settings() {
             <h2 className="text-2xl font-bold text-purple-600 mb-4">Permissions</h2>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Manager Role ID</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">Manager Role</label>
+              <select 
                 value={settings.managerRoleId || ''} 
-                onChange={e => setSettings({...settings, managerRoleId: e.target.value})}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
-                placeholder="1234567890"
-              />
+                onChange={e => setSettings({...settings, managerRoleId: e.target.value || undefined})}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
+              >
+                <option value="">-- No manager role --</option>
+                {roles.map(role => (
+                  <option key={role.id} value={role.id}>
+                    @{role.name}
+                  </option>
+                ))}
+              </select>
               <p className="text-sm text-gray-500 mt-1">Role that can manage bot (create events, templates, etc.)</p>
             </div>
           </div>
@@ -221,14 +270,19 @@ export default function Settings() {
               {settings.statsEnabled && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Stats Channel ID</label>
-                    <input 
-                      type="text" 
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Stats Channel</label>
+                    <select 
                       value={settings.statsChannelId || ''} 
-                      onChange={e => setSettings({...settings, statsChannelId: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
-                      placeholder="1234567890"
-                    />
+                      onChange={e => setSettings({...settings, statsChannelId: e.target.value || undefined})}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
+                    >
+                      <option value="">-- Select stats channel --</option>
+                      {channels.map(channel => (
+                        <option key={channel.id} value={channel.id}>
+                          #{channel.name}
+                        </option>
+                      ))}
+                    </select>
                     <p className="text-sm text-gray-500 mt-1">Channel where leaderboard will be posted and updated automatically</p>
                   </div>
 
@@ -263,14 +317,19 @@ export default function Settings() {
                   {settings.statsAutoRoleEnabled && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Top 10 Role ID</label>
-                        <input 
-                          type="text" 
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Top 10 Role</label>
+                        <select 
                           value={settings.statsTop10RoleId || ''} 
-                          onChange={e => setSettings({...settings, statsTop10RoleId: e.target.value})}
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
-                          placeholder="1234567890"
-                        />
+                          onChange={e => setSettings({...settings, statsTop10RoleId: e.target.value || undefined})}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
+                        >
+                          <option value="">-- Select role --</option>
+                          {roles.map(role => (
+                            <option key={role.id} value={role.id}>
+                              @{role.name}
+                            </option>
+                          ))}
+                        </select>
                         <p className="text-sm text-gray-500 mt-1">Role to assign to top 10 participants (updates hourly)</p>
                       </div>
 
