@@ -8,6 +8,7 @@ import {
   PermissionFlagsBits,
   ChannelType,
   TextChannel,
+  AutocompleteInteraction,
 } from 'discord.js';
 import getPrismaClient from '../database/db.js';
 import { getModuleLogger } from '../utils/logger.js';
@@ -17,6 +18,41 @@ import type { Command } from '../types/command.js';
 
 const logger = getModuleLogger('settings-command');
 const prisma = getPrismaClient();
+
+// Popular timezones for autocomplete
+const COMMON_TIMEZONES = [
+  // Americas
+  { name: 'Pacific Time - Los Angeles', value: 'America/Los_Angeles' },
+  { name: 'Mountain Time - Denver', value: 'America/Denver' },
+  { name: 'Central Time - Chicago', value: 'America/Chicago' },
+  { name: 'Eastern Time - New York', value: 'America/New_York' },
+  { name: 'Atlantic Time - Halifax', value: 'America/Halifax' },
+  { name: 'Brazil Time - São Paulo', value: 'America/Sao_Paulo' },
+  { name: 'Argentina - Buenos Aires', value: 'America/Argentina/Buenos_Aires' },
+  // Europe
+  { name: 'Western Europe - London', value: 'Europe/London' },
+  { name: 'Central Europe - Berlin', value: 'Europe/Berlin' },
+  { name: 'Eastern Europe - Bucharest', value: 'Europe/Bucharest' },
+  { name: 'Russia - Moscow', value: 'Europe/Moscow' },
+  { name: 'Turkey - Ankara', value: 'Europe/Istanbul' },
+  // Asia
+  { name: 'India - Kolkata', value: 'Asia/Kolkata' },
+  { name: 'Bangladesh - Dhaka', value: 'Asia/Dhaka' },
+  { name: 'China - Shanghai', value: 'Asia/Shanghai' },
+  { name: 'Japan - Tokyo', value: 'Asia/Tokyo' },
+  { name: 'Korea - Seoul', value: 'Asia/Seoul' },
+  { name: 'Singapore', value: 'Asia/Singapore' },
+  { name: 'Thailand - Bangkok', value: 'Asia/Bangkok' },
+  { name: 'UAE - Dubai', value: 'Asia/Dubai' },
+  // Australia & Pacific
+  { name: 'Australia - Sydney', value: 'Australia/Sydney' },
+  { name: 'Australia - Melbourne', value: 'Australia/Melbourne' },
+  { name: 'Australia - Perth', value: 'Australia/Perth' },
+  { name: 'New Zealand - Auckland', value: 'Pacific/Auckland' },
+  // UTC offsets
+  { name: 'UTC', value: 'UTC' },
+  { name: 'GMT', value: 'GMT' },
+];
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -50,8 +86,9 @@ const command: Command = {
         .addStringOption(option =>
           option
             .setName('timezone')
-            .setDescription('IANA timezone (e.g., America/New_York, Europe/London)')
+            .setDescription('Select timezone from list or type IANA timezone')
             .setRequired(true)
+            .setAutocomplete(true)
         )
     )
     .addSubcommand(subcommand =>
@@ -224,7 +261,46 @@ const command: Command = {
         break;
     }
   },
+
+  async autocomplete(interaction: AutocompleteInteraction): Promise<void> {
+    const focusedOption = interaction.options.getFocused(true);
+
+    if (focusedOption.name === 'timezone') {
+      const value = focusedOption.value.toLowerCase();
+      
+      // Filter timezones based on user input
+      const filtered = COMMON_TIMEZONES.filter(tz =>
+        tz.name.toLowerCase().includes(value) ||
+        tz.value.toLowerCase().includes(value)
+      ).slice(0, 25); // Discord limit
+
+      await interaction.respond(
+        filtered.map(tz => ({
+          name: `${tz.name} | Current time: ${getCurrentTime(tz.value)}`,
+          value: tz.value,
+        }))
+      );
+    }
+  },
 };
+
+/**
+ * Get current time in timezone for autocomplete display
+ */
+function getCurrentTime(timezone: string): string {
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    return formatter.format(now);
+  } catch {
+    return '--:--';
+  }
+}
 
 async function handleView(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply();

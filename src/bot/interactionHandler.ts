@@ -80,10 +80,24 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
  * Handle autocomplete interactions
  */
 async function handleAutocomplete(interaction: any): Promise<void> {
-  const { commandName, options } = interaction;
+  const { commandName } = interaction;
   
+  // Try to get command and use its autocomplete handler
+  const command = getCommand(commandName);
+  if (command?.autocomplete) {
+    try {
+      await command.autocomplete(interaction);
+      return;
+    } catch (error) {
+      logger.error({ error, commandName }, 'Error in command autocomplete handler');
+      await interaction.respond([]);
+      return;
+    }
+  }
+  
+  // Fallback to legacy event autocomplete
   if (commandName === 'event') {
-    const focusedOption = options.getFocused(true);
+    const focusedOption = interaction.options.getFocused(true);
     
     if (focusedOption.name === 'template') {
       const guildId = interaction.guild?.id;
