@@ -8,16 +8,16 @@ import {
   ChannelType,
   AutocompleteInteraction,
 } from 'discord.js';
-import { getModuleLogger } from '../utils/logger.js';
-import { CommandError } from '../utils/errors.js';
-import type { Command } from '../types/command.js';
-import { COMMON_TIMEZONES, getCurrentTime } from './settings/constants.js';
-import { handleView } from './settings/handlers/view.js';
-import { handleLanguage, handleTimezone } from './settings/handlers/locale.js';
-import { handleLogChannel, handleArchiveChannel } from './settings/handlers/channels.js';
-import { handleReminders } from './settings/handlers/reminders.js';
-import { handleManagerRole, handlePrefix } from './settings/handlers/roles.js';
-import { handleApprovalChannels, handleAutoDelete, handleThreadChannels } from './settings/handlers/advanced.js';
+import { getModuleLogger } from '../../utils/logger.js';
+import { CommandError } from '../../utils/errors.js';
+import type { Command } from '../../types/command.js';
+import { COMMON_TIMEZONES, getCurrentTime } from './constants.js';
+import { handleView } from './handlers/view.js';
+import { handleLanguage, handleTimezone } from './handlers/locale.js';
+import { handleLogChannel, handleArchiveChannel } from './handlers/channels.js';
+import { handleReminders } from './handlers/reminders.js';
+import { handleManagerRole, handlePrefix } from './handlers/roles.js';
+import { handleApprovalChannels, handleAutoDelete, handleThreadChannels } from './handlers/advanced.js';
 
 const logger = getModuleLogger('settings-command');
 

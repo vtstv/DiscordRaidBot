@@ -2,13 +2,13 @@
 // Admin panel routes - modular version
 
 import { FastifyInstance } from 'fastify';
-import { authRoutes } from './admin/auth.js';
-import { statsRoutes } from './admin/stats.js';
-import { guildRoutes } from './admin/guilds.js';
-import { eventRoutes } from './admin/events.js';
-import { templateRoutes } from './admin/templates.js';
-import { logRoutes } from './admin/logs.js';
-import { systemRoutes } from './admin/system.js';
+import { authRoutes } from './auth.js';
+import { statsRoutes } from './stats.js';
+import { guildRoutes } from './guilds.js';
+import { eventRoutes } from './events.js';
+import { templateRoutes } from './templates.js';
+import { logRoutes } from './logs.js';
+import { systemRoutes } from './system.js';
 
 export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // Register all route modules
