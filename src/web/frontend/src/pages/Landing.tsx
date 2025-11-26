@@ -9,7 +9,7 @@ export default function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-800 transition-colors duration-200">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 py-20 sm:py-32">
@@ -20,13 +20,13 @@ export default function Landing() {
               </svg>
             </div>
             
-            <h1 className="text-6xl font-extrabold text-gray-900 mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+            <h1 className="text-6xl font-extrabold text-gray-900 dark:text-white mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
               RaidBot
             </h1>
-            <p className="text-2xl text-gray-700 font-semibold mb-4 max-w-3xl mx-auto">
+            <p className="text-2xl text-gray-700 dark:text-gray-300 font-semibold mb-4 max-w-3xl mx-auto">
               Professional Discord Event Management System
             </p>
-            <p className="text-lg text-gray-600 mb-12 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
               Organize raids, events, and activities with ease. Manage participants,
               templates, and schedules all in one place.
             </p>
@@ -43,16 +43,16 @@ export default function Landing() {
               </button>
             ) : (
               <div className="flex flex-col items-center gap-6">
-                <div className="flex items-center gap-4 bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                <div className="flex items-center gap-4 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
                   {user.avatar && (
                     <img 
                       src={user.avatar} 
                       alt={user.username}
-                      className="w-16 h-16 rounded-full border-4 border-purple-200 shadow-md"
+                      className="w-16 h-16 rounded-full border-4 border-purple-200 dark:border-purple-900 shadow-md"
                     />
                   )}
                   <div className="text-left">
-                    <p className="text-2xl font-bold text-gray-900">Welcome, {user.username}!</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">Welcome, {user.username}!</p>
                     {isBotAdmin && (
                       <span className="inline-block mt-1 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-sm font-semibold rounded-full">
                         ⚡ Bot Administrator
@@ -79,7 +79,7 @@ export default function Landing() {
                   )}
                   
                   <button 
-                    className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 hover:shadow-lg transition-all"
+                    className="px-6 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-lg transition-all"
                     onClick={logout}
                   >
                     🚪 Logout
@@ -93,54 +93,54 @@ export default function Landing() {
 
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-4 py-20">
-        <h2 className="text-4xl font-bold text-center text-gray-900 mb-16">Powerful Features</h2>
+        <h2 className="text-4xl font-bold text-center text-gray-900 dark:text-white mb-16">Powerful Features</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-xl transition-all">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 hover:shadow-xl transition-all">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/50 dark:to-blue-800/50 rounded-2xl flex items-center justify-center mb-6">
               <span className="text-3xl">📅</span>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Event Scheduling</h3>
-            <p className="text-gray-600">Create and manage events with customizable dates, times, and participant limits</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Event Scheduling</h3>
+            <p className="text-gray-600 dark:text-gray-400">Create and manage events with customizable dates, times, and participant limits</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-xl transition-all">
-            <div className="w-14 h-14 bg-gradient-to-br from-green-100 to-green-200 rounded-2xl flex items-center justify-center mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 hover:shadow-xl transition-all">
+            <div className="w-14 h-14 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/50 dark:to-green-800/50 rounded-2xl flex items-center justify-center mb-6">
               <span className="text-3xl">👥</span>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Participant Management</h3>
-            <p className="text-gray-600">Track signups, manage roles, and organize participants efficiently</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Participant Management</h3>
+            <p className="text-gray-600 dark:text-gray-400">Track signups, manage roles, and organize participants efficiently</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-xl transition-all">
-            <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl flex items-center justify-center mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 hover:shadow-xl transition-all">
+            <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/50 dark:to-purple-800/50 rounded-2xl flex items-center justify-center mb-6">
               <span className="text-3xl">📋</span>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Event Templates</h3>
-            <p className="text-gray-600">Save time with reusable templates for recurring events</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Event Templates</h3>
+            <p className="text-gray-600 dark:text-gray-400">Save time with reusable templates for recurring events</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-xl transition-all">
-            <div className="w-14 h-14 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-2xl flex items-center justify-center mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 hover:shadow-xl transition-all">
+            <div className="w-14 h-14 bg-gradient-to-br from-yellow-100 to-yellow-200 dark:from-yellow-900/50 dark:to-yellow-800/50 rounded-2xl flex items-center justify-center mb-6">
               <span className="text-3xl">🔔</span>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Reminders</h3>
-            <p className="text-gray-600">Automatic reminders before events start to keep everyone informed</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Reminders</h3>
+            <p className="text-gray-600 dark:text-gray-400">Automatic reminders before events start to keep everyone informed</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-xl transition-all">
-            <div className="w-14 h-14 bg-gradient-to-br from-pink-100 to-pink-200 rounded-2xl flex items-center justify-center mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 hover:shadow-xl transition-all">
+            <div className="w-14 h-14 bg-gradient-to-br from-pink-100 to-pink-200 dark:from-pink-900/50 dark:to-pink-800/50 rounded-2xl flex items-center justify-center mb-6">
               <span className="text-3xl">⚙️</span>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Flexible Configuration</h3>
-            <p className="text-gray-600">Customize settings per server with role-based permissions</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Flexible Configuration</h3>
+            <p className="text-gray-600 dark:text-gray-400">Customize settings per server with role-based permissions</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-xl transition-all">
-            <div className="w-14 h-14 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-2xl flex items-center justify-center mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 hover:shadow-xl transition-all">
+            <div className="w-14 h-14 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/50 dark:to-indigo-800/50 rounded-2xl flex items-center justify-center mb-6">
               <span className="text-3xl">📊</span>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Statistics</h3>
-            <p className="text-gray-600">Track event participation and server activity with detailed stats</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Statistics</h3>
+            <p className="text-gray-600 dark:text-gray-400">Track event participation and server activity with detailed stats</p>
           </div>
         </div>
       </div>

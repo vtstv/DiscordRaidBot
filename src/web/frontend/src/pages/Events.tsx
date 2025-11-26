@@ -8,10 +8,10 @@ import Layout from '../components/Layout';
 import Footer from '../components/Footer';
 
 const statusColors = {
-  scheduled: 'bg-blue-100 text-blue-800',
-  active: 'bg-green-100 text-green-800',
-  completed: 'bg-gray-100 text-gray-800',
-  cancelled: 'bg-red-100 text-red-800',
+  scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  completed: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 };
 
 export default function Events() {
@@ -34,10 +34,10 @@ export default function Events() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center min-h-screen dark:bg-gray-900">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading events...</p>
+            <p className="text-gray-600 dark:text-gray-400">Loading events...</p>
           </div>
         </div>
       </Layout>
@@ -46,13 +46,13 @@ export default function Events() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Events</h1>
-              <p className="text-gray-600">{filteredEvents.length} events found</p>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Events</h1>
+              <p className="text-gray-600 dark:text-gray-400">{filteredEvents.length} events found</p>
             </div>
             <button
               onClick={() => navigate(`/guild/${guildId}/events/create`)}
@@ -74,7 +74,7 @@ export default function Events() {
                 className={`px-4 py-2 rounded-xl font-medium transition-all ${
                   filter === status
                     ? 'bg-purple-600 text-white shadow-md'
-                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
                 }`}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -84,12 +84,12 @@ export default function Events() {
 
           {/* Events Grid */}
           {filteredEvents.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
-              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center transition-colors duration-200">
+              <svg className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No events found</h3>
-              <p className="text-gray-600 mb-6">Get started by creating your first event</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No events found</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">Get started by creating your first event</p>
               <button
                 onClick={() => navigate(`/guild/${guildId}/events/create`)}
                 className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
@@ -103,20 +103,20 @@ export default function Events() {
                 <div
                   key={event.id}
                   onClick={() => navigate(`/guild/${guildId}/events/${event.id}`)}
-                  className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all cursor-pointer hover:scale-[1.01]"
+                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all cursor-pointer hover:scale-[1.01]"
                 >
                   <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-bold text-gray-900">{event.title}</h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[event.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{event.title}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[event.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>
                           {event.status}
                         </span>
                       </div>
                       {event.description && (
-                        <p className="text-gray-600 mb-3 line-clamp-2">{event.description}</p>
+                        <p className="text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">{event.description}</p>
                       )}
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -138,7 +138,7 @@ export default function Events() {
                       </div>
                     </div>
                     <div className="flex items-center">
-                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>

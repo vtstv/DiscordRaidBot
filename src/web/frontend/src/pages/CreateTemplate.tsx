@@ -183,12 +183,12 @@ export default function CreateTemplate() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-6 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-6 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <button
             onClick={() => navigate(`/guild/${guildId}/templates`)}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -197,17 +197,17 @@ export default function CreateTemplate() {
           </button>
 
           <div className="mb-6">
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">
               {isEditMode ? 'Edit Template' : 'Create New Template'}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               {isEditMode ? 'Update your event template settings' : 'Create a reusable template for events'}
             </p>
           </div>
 
           {/* Preset Buttons */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6 transition-colors duration-200">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Quick Presets
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -216,7 +216,7 @@ export default function CreateTemplate() {
                   key={preset.name}
                   type="button"
                   onClick={() => setFormData(preset.data)}
-                  className="px-4 py-3 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-300 rounded-xl text-gray-700 font-medium hover:border-purple-400 hover:shadow-md transition-all"
+                  className="px-4 py-3 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-md transition-all"
                 >
                   {preset.name}
                 </button>
@@ -225,9 +225,9 @@ export default function CreateTemplate() {
           </div>
 
           {/* Form Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 sm:p-8 transition-colors duration-200">
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 flex items-start gap-3">
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-300 flex items-start gap-3">
                 <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -239,7 +239,7 @@ export default function CreateTemplate() {
               {/* Name and Description Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Template Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -247,22 +247,22 @@ export default function CreateTemplate() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     placeholder="Mythic+ Run"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
                     Max Participants
-                    <span className="text-xs text-gray-500">(0 = unlimited)</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">(0 = unlimited)</span>
                   </label>
                   <input
                     type="number"
                     min="0"
                     value={formData.maxParticipants}
                     onChange={(e) => setFormData({ ...formData, maxParticipants: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     placeholder="5"
                   />
                 </div>
@@ -270,78 +270,78 @@ export default function CreateTemplate() {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Description
                 </label>
                 <textarea
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
                   placeholder="Standard Mythic+ dungeon run template"
                 />
               </div>
 
               {/* Allowed Roles */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Allowed Roles
                 </label>
                 <input
                   type="text"
                   value={formData.allowedRoles}
                   onChange={(e) => setFormData({ ...formData, allowedRoles: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="Tank, Healer, DPS"
                 />
-                <p className="text-xs text-gray-500 mt-2">Comma-separated list of roles</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Comma-separated list of roles</p>
               </div>
 
               {/* Role Limits */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Role Limits (Optional)
                 </label>
                 <input
                   type="text"
                   value={formData.roleLimits}
                   onChange={(e) => setFormData({ ...formData, roleLimits: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="Tank:2, Healer:5, DPS:18"
                 />
-                <p className="text-xs text-gray-500 mt-2">Format: Role:limit, Role:limit (comma-separated pairs)</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Format: Role:limit, Role:limit (comma-separated pairs)</p>
               </div>
 
               {/* Emoji Mapping */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Emoji Mapping
                 </label>
                 <input
                   type="text"
                   value={formData.emojiMapping}
                   onChange={(e) => setFormData({ ...formData, emojiMapping: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="Tank:🛡️, Healer:❤️, DPS:⚔️"
                 />
-                <p className="text-xs text-gray-500 mt-2">Format: Role:Emoji, Role:Emoji (comma-separated pairs)</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Format: Role:Emoji, Role:Emoji (comma-separated pairs)</p>
               </div>
 
               {/* Image URL */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Image URL (Optional)
                 </label>
                 <input
                   type="url"
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="https://example.com/image.png"
                 />
-                <p className="text-xs text-gray-500 mt-2">Add a banner image to event embeds created from this template</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Add a banner image to event embeds created from this template</p>
                 {formData.imageUrl && (
-                  <div className="mt-3 rounded-xl overflow-hidden border border-gray-200">
+                  <div className="mt-3 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
                     <img 
                       src={formData.imageUrl} 
                       alt="Preview" 
@@ -359,7 +359,7 @@ export default function CreateTemplate() {
                 <button
                   type="button"
                   onClick={() => navigate(`/guild/${guildId}/templates`)}
-                  className="w-full sm:w-auto px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all"
+                  className="w-full sm:w-auto px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
                 >
                   Cancel
                 </button>
@@ -385,16 +385,16 @@ export default function CreateTemplate() {
           </div>
 
           {/* Help Box */}
-          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-6">
+          <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 transition-colors duration-200">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Template Tips</h3>
-                <ul className="text-gray-600 space-y-1 text-sm">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Template Tips</h3>
+                <ul className="text-gray-600 dark:text-gray-400 space-y-1 text-sm">
                   <li>• Templates can be reused for multiple events</li>
                   <li>• Allowed roles help participants choose their position</li>
                   <li>• Emoji mapping makes signups more visual and engaging</li>

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { GuildProvider } from './contexts/GuildContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { loadConfig, getConfig } from './config';
 import { api } from './services/api';
 
@@ -89,7 +90,9 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <GuildProvider>
-          <AppRoutes />
+          <ThemeProvider>
+            <AppRoutes />
+          </ThemeProvider>
         </GuildProvider>
       </AuthProvider>
     </BrowserRouter>

@@ -27,6 +27,17 @@
   background-color: var(--bg);
 }
 
+.dark {
+  --bg: #36393f;
+  --bg-secondary: #2f3136;
+  --bg-tertiary: #202225;
+  --text: #dcddde;
+  --text-secondary: #b9bbbe;
+  --border: #202225;
+  
+  color-scheme: dark;
+}
+
 * {
   margin: 0;
   padding: 0;
