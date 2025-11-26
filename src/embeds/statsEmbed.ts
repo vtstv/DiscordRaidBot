@@ -5,6 +5,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import getPrismaClient from '../database/db.js';
 import { getLeaderboard } from '../services/statistics.js';
+import { getTranslator } from '../i18n/index.js';
 
 const prisma = getPrismaClient();
 
@@ -18,6 +19,8 @@ export async function createStatsEmbed(guildId: string, topN: number = 10): Prom
   embed: EmbedBuilder;
   components: ActionRowBuilder<ButtonBuilder>[];
 }> {
+  const { t } = await getTranslator(guildId);
+  
   const guild = await prisma.guild.findUnique({
     where: { id: guildId },
     select: { statsMinEvents: true },
@@ -31,15 +34,15 @@ export async function createStatsEmbed(guildId: string, topN: number = 10): Prom
 
   const embed = new EmbedBuilder()
     .setColor(0x5865f2)
-    .setTitle('🏆 Event Participation Leaderboard')
-    .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    .setTitle(t('stats.leaderboardTitle'))
+    .setDescription(t('stats.leaderboardSeparator'))
     .setTimestamp()
-    .setFooter({ text: `Min. ${guild.statsMinEvents} events to qualify • Last updated` });
+    .setFooter({ text: t('stats.leaderboardFooter', { minEvents: guild.statsMinEvents.toString() }) });
 
   if (leaderboard.length === 0) {
     embed.addFields({
-      name: 'No participants yet',
-      value: `Participate in at least ${guild.statsMinEvents} events to appear on the leaderboard!`,
+      name: t('stats.noParticipants'),
+      value: t('stats.noParticipantsDescription', { minEvents: guild.statsMinEvents.toString() }),
     });
   } else {
     const leaderboardText = leaderboard
@@ -48,7 +51,10 @@ export async function createStatsEmbed(guildId: string, topN: number = 10): Prom
         const medal = rank <= 3 ? MEDAL_EMOJIS[index] : `${rank}️⃣`;
         const stars = rank <= 3 ? ` ${STAR_EMOJIS[index]}` : '';
         
-        return `${medal} <@${stat.userId}>    **${stat.totalEventsCompleted}** completed • ${stat.totalNoShows} no-shows${stars}`;
+        return `${medal} <@${stat.userId}>    ${t('stats.completedAndNoShows', { 
+          completed: stat.totalEventsCompleted.toString(),
+          noShows: stat.totalNoShows.toString() 
+        })}${stars}`;
       })
       .join('\n');
 
@@ -59,7 +65,7 @@ export async function createStatsEmbed(guildId: string, topN: number = 10): Prom
 
     embed.addFields({
       name: '\u200B',
-      value: `📊 Scoring: +3 per completed event, -2 per no-show`,
+      value: `📊 ${t('stats.scoringSystem')}`,
       inline: false,
     });
   }
@@ -67,12 +73,12 @@ export async function createStatsEmbed(guildId: string, topN: number = 10): Prom
   const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId('stats_view_personal')
-      .setLabel('My Stats')
+      .setLabel(t('stats.viewPersonalButton').replace('📊 ', ''))
       .setEmoji('📈')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('stats_refresh')
-      .setLabel('Refresh')
+      .setLabel(t('stats.refreshButton').replace('🔄 ', ''))
       .setEmoji('🔄')
       .setStyle(ButtonStyle.Secondary)
   );
@@ -87,6 +93,8 @@ export async function createStatsEmbed(guildId: string, topN: number = 10): Prom
  * Create personal stats embed (ephemeral)
  */
 export async function createPersonalStatsEmbed(userId: string, guildId: string): Promise<EmbedBuilder> {
+  const { t } = await getTranslator(guildId);
+  
   const stats = await prisma.participantStatistics.findUnique({
     where: {
       userId_guildId: { userId, guildId },
@@ -100,29 +108,29 @@ export async function createPersonalStatsEmbed(userId: string, guildId: string):
 
   const embed = new EmbedBuilder()
     .setColor(0x00ff00)
-    .setTitle('📈 Your Event Statistics')
+    .setTitle(t('stats.personalStatsTitle'))
     .setTimestamp();
 
   if (!stats || !guild) {
-    embed.setDescription('You haven\'t participated in any events yet!');
+    embed.setDescription(t('stats.noPersonalStats'));
     return embed;
   }
 
   const qualifies = stats.totalEventsCompleted >= guild.statsMinEvents;
-  const rankText = stats.rank && qualifies ? `#${stats.rank}` : 'Not ranked';
+  const rankText = stats.rank && qualifies ? t('stats.rankValue', { rank: stats.rank.toString() }) : t('stats.notRanked');
 
   embed.addFields(
-    { name: 'Events Completed', value: `${stats.totalEventsCompleted}`, inline: true },
-    { name: 'No-Shows', value: `${stats.totalNoShows}`, inline: true },
-    { name: 'Score', value: `${stats.score} points`, inline: true },
-    { name: 'Rank', value: rankText, inline: true },
+    { name: t('stats.eventsCompleted'), value: `${stats.totalEventsCompleted}`, inline: true },
+    { name: t('stats.noShows'), value: `${stats.totalNoShows}`, inline: true },
+    { name: t('stats.score'), value: t('stats.scorePoints', { score: stats.score.toString() }), inline: true },
+    { name: t('stats.rank'), value: rankText, inline: true },
     { name: '\u200B', value: '\u200B', inline: true },
     { name: '\u200B', value: '\u200B', inline: true }
   );
 
   if (!qualifies) {
     embed.setFooter({
-      text: `Complete ${guild.statsMinEvents - stats.totalEventsCompleted} more events to qualify for ranking!`,
+      text: t('stats.qualifyMessage', { remaining: (guild.statsMinEvents - stats.totalEventsCompleted).toString() }),
     });
   }
 
@@ -132,19 +140,22 @@ export async function createPersonalStatsEmbed(userId: string, guildId: string):
 /**
  * Create stats setup success embed
  */
-export function createStatsSetupEmbed(
+export async function createStatsSetupEmbed(
+  guildId: string,
   channelId: string,
   interval: string,
   autoRoleEnabled: boolean,
   roleId?: string
-): EmbedBuilder {
+): Promise<EmbedBuilder> {
+  const { t } = await getTranslator(guildId);
+  
   const embed = new EmbedBuilder()
     .setColor(0x00ff00)
-    .setTitle('✅ Statistics System Configured')
+    .setTitle(t('stats.setupTitle'))
     .addFields(
-      { name: 'Stats Channel', value: `<#${channelId}>`, inline: true },
-      { name: 'Update Interval', value: interval, inline: true },
-      { name: 'Auto-Roles', value: autoRoleEnabled ? 'Enabled' : 'Disabled', inline: true }
+      { name: t('stats.statsChannel'), value: `<#${channelId}>`, inline: true },
+      { name: t('stats.updateInterval'), value: t(`stats.${interval}`), inline: true },
+      { name: t('stats.autoRole'), value: autoRoleEnabled ? t('stats.enabled') : t('stats.disabled'), inline: true }
     );
 
   if (autoRoleEnabled && roleId) {

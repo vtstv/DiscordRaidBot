@@ -13,6 +13,7 @@ import getPrismaClient from '../database/db.js';
 import { createStatsEmbed, createPersonalStatsEmbed, createStatsSetupEmbed } from '../embeds/statsEmbed.js';
 import { markNoShow } from '../services/statistics.js';
 import { getModuleLogger } from '../utils/logger.js';
+import { getTranslator } from '../i18n/index.js';
 
 const logger = getModuleLogger('stats-commands');
 const prisma = getPrismaClient();
@@ -105,9 +106,12 @@ const command: Command = {
     const subcommand = interaction.options.getSubcommand();
 
     if (!interaction.guildId) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      const { t } = await getTranslator('0'); // Fallback to English for DMs
+      await interaction.reply({ content: t('errors.serverOnly'), ephemeral: true });
       return;
     }
+
+    const { t } = await getTranslator(interaction.guildId);
 
     try {
       switch (subcommand) {
@@ -126,7 +130,7 @@ const command: Command = {
       }
     } catch (error) {
       logger.error({ error, subcommand }, 'Error executing stats command');
-      const message = error instanceof Error ? error.message : 'An error occurred';
+      const message = error instanceof Error ? error.message : t('errors.failed');
       
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({ content: `❌ ${message}`, ephemeral: true });
@@ -139,13 +143,14 @@ const command: Command = {
 
 async function handleView(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
+  const { t } = await getTranslator(interaction.guildId!);
 
   const guild = await prisma.guild.findUnique({
     where: { id: interaction.guildId! },
   });
 
   if (!guild || !guild.statsEnabled) {
-    await interaction.editReply('❌ Statistics system is not enabled on this server.');
+    await interaction.editReply(t('stats.statsDisabled'));
     return;
   }
 
@@ -155,13 +160,14 @@ async function handleView(interaction: ChatInputCommandInteraction): Promise<voi
 
 async function handleLeaderboard(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply();
+  const { t } = await getTranslator(interaction.guildId!);
 
   const guild = await prisma.guild.findUnique({
     where: { id: interaction.guildId! },
   });
 
   if (!guild || !guild.statsEnabled) {
-    await interaction.editReply('❌ Statistics system is not enabled on this server.');
+    await interaction.editReply(t('stats.statsDisabled'));
     return;
   }
 
@@ -172,14 +178,15 @@ async function handleLeaderboard(interaction: ChatInputCommandInteraction): Prom
 }
 
 async function handleSetup(interaction: ChatInputCommandInteraction): Promise<void> {
+  const { t } = await getTranslator(interaction.guildId!);
   const member = interaction.member;
   if (!member || !('permissions' in member)) {
-    await interaction.reply({ content: '❌ Could not verify permissions.', ephemeral: true });
+    await interaction.reply({ content: t('errors.noPermission'), ephemeral: true });
     return;
   }
 
   if (typeof member.permissions === 'string' || !member.permissions.has(PermissionFlagsBits.ManageGuild)) {
-    await interaction.reply({ content: '❌ You need Manage Server permission to configure statistics.', ephemeral: true });
+    await interaction.reply({ content: t('stats.insufficientPermissions'), ephemeral: true });
     return;
   }
 
@@ -192,14 +199,14 @@ async function handleSetup(interaction: ChatInputCommandInteraction): Promise<vo
   const minEvents = interaction.options.getInteger('min_events') ?? 3;
 
   if (channelResolved.type !== ChannelType.GuildText) {
-    await interaction.editReply('❌ Please select a text channel.');
+    await interaction.editReply(t('errors.invalidChannel'));
     return;
   }
 
   // Fetch the actual channel to get full TextChannel type
   const channel = await interaction.guild!.channels.fetch(channelResolved.id);
   if (!channel || !channel.isTextBased() || channel.isDMBased()) {
-    await interaction.editReply('❌ Could not access text channel.');
+    await interaction.editReply(t('errors.invalidChannel'));
     return;
   }
 
@@ -227,7 +234,8 @@ async function handleSetup(interaction: ChatInputCommandInteraction): Promise<vo
     },
   });
 
-  const setupEmbed = createStatsSetupEmbed(
+  const setupEmbed = await createStatsSetupEmbed(
+    interaction.guildId!,
     channel.id,
     interval,
     autoRoles,
@@ -248,14 +256,15 @@ async function handleSetup(interaction: ChatInputCommandInteraction): Promise<vo
 }
 
 async function handleMarkNoShow(interaction: ChatInputCommandInteraction): Promise<void> {
+  const { t } = await getTranslator(interaction.guildId!);
   const member = interaction.member;
   if (!member || !('permissions' in member)) {
-    await interaction.reply({ content: '❌ Could not verify permissions.', ephemeral: true });
+    await interaction.reply({ content: t('errors.noPermission'), ephemeral: true });
     return;
   }
 
   if (typeof member.permissions === 'string' || !member.permissions.has(PermissionFlagsBits.ManageEvents)) {
-    await interaction.reply({ content: '❌ You need Manage Events permission to mark no-shows.', ephemeral: true });
+    await interaction.reply({ content: t('stats.insufficientPermissions'), ephemeral: true });
     return;
   }
 
@@ -269,24 +278,24 @@ async function handleMarkNoShow(interaction: ChatInputCommandInteraction): Promi
   });
 
   if (!event) {
-    await interaction.editReply('❌ Event not found.');
+    await interaction.editReply(t('stats.eventNotFound'));
     return;
   }
 
   if (event.guildId !== interaction.guildId) {
-    await interaction.editReply('❌ Event does not belong to this server.');
+    await interaction.editReply(t('stats.eventNotFound'));
     return;
   }
 
   if (event.status !== 'completed') {
-    await interaction.editReply('❌ Event must be completed before marking no-shows.');
+    await interaction.editReply(t('stats.eventNotFound'));
     return;
   }
 
   await markNoShow(eventId, user.id);
 
   await interaction.editReply(
-    `✅ Marked ${user.tag} as no-show for event "${event.title}". Their statistics have been updated.`
+    t('stats.noShowMarked', { username: user.tag, eventTitle: event.title })
   );
 
   logger.info(

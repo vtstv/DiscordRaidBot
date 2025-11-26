@@ -38,7 +38,8 @@ const command: Command = {
             .setRequired(true)
             .addChoices(
               { name: 'English', value: 'en' },
-              { name: 'Русский (Russian)', value: 'ru' }
+              { name: 'Русский (Russian)', value: 'ru' },
+              { name: 'Deutsch (German)', value: 'de' }
             )
         )
     )
@@ -243,7 +244,12 @@ async function handleView(interaction: ChatInputCommandInteraction): Promise<voi
   const archiveChannel = guild.archiveChannelId ? `<#${guild.archiveChannelId}>` : 'Not set';
   const reminders = guild.reminderIntervals.join(', ');
   const locale = guild.locale || 'en';
-  const languageName = locale === 'ru' ? 'Русский (Russian)' : 'English';
+  const languageNames: Record<string, string> = {
+    en: 'English',
+    ru: 'Русский (Russian)',
+    de: 'Deutsch (German)'
+  };
+  const languageName = languageNames[locale] || 'English';
 
   // Auto-delete setting
   const autoDeleteText = guild.autoDeleteHours 
@@ -271,7 +277,7 @@ async function handleLanguage(interaction: ChatInputCommandInteraction): Promise
   await interaction.deferReply();
 
   const guildId = interaction.guild!.id;
-  const locale = interaction.options.getString('locale', true) as 'en' | 'ru';
+  const locale = interaction.options.getString('locale', true) as 'en' | 'ru' | 'de';
 
   await prisma.guild.upsert({
     where: { id: guildId },
@@ -285,7 +291,12 @@ async function handleLanguage(interaction: ChatInputCommandInteraction): Promise
     },
   });
 
-  const languageName = locale === 'ru' ? 'Русский (Russian)' : 'English';
+  const languageNames: Record<string, string> = {
+    en: 'English',
+    ru: 'Русский (Russian)',
+    de: 'Deutsch (German)'
+  };
+  const languageName = languageNames[locale] || 'English';
   
   logger.info({ guildId, locale }, 'Guild language updated');
 
