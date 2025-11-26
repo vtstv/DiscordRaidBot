@@ -173,6 +173,16 @@ export function hasAdminPermissions(permissions: string): boolean {
 }
 
 /**
+ * Build Discord avatar URL from user data
+ */
+export function getAvatarUrl(userId: string, avatarHash: string | null): string | null {
+  if (!avatarHash) return null;
+  
+  const extension = avatarHash.startsWith('a_') ? 'gif' : 'png';
+  return `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.${extension}?size=128`;
+}
+
+/**
  * Refresh access token
  */
 export async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {

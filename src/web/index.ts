@@ -57,10 +57,11 @@ export async function startWebServer(): Promise<void> {
     await server.register(session, {
       secret: config.WEB_SESSION_SECRET,
       cookie: {
-        secure: false, // Set to true in production with HTTPS
+        secure: config.NODE_ENV === 'production', // HTTPS only in production
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         sameSite: 'lax',
+        path: '/',
       },
       saveUninitialized: false,
       rolling: true, // Refresh session on each request

@@ -108,8 +108,14 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       (request as any).session.user = {
         id: user.id,
         username: user.username,
-        avatar: user.avatar,
+        avatar: getAvatarUrl(user.id, user.avatar),
       };
+
+      function getAvatarUrl(userId: string, avatarHash: string | null): string | null {
+        if (!avatarHash) return null;
+        const extension = avatarHash.startsWith('a_') ? 'gif' : 'png';
+        return `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.${extension}?size=128`;
+      }
 
       // Also store tokens for API calls
       (request as any).session.accessToken = tokenData.access_token;
