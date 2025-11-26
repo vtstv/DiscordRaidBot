@@ -22,13 +22,13 @@ export default function PanelSelect() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+      <div className="max-w-6xl w-full">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
             Welcome, {user.username}!
           </h1>
-          <p className="text-xl text-purple-200">
+          <p className="text-xl text-gray-700">
             As a bot administrator, you have access to both panels. Choose where you want to go:
           </p>
         </div>
@@ -37,10 +37,10 @@ export default function PanelSelect() {
           {/* Bot Admin Panel */}
           <div
             onClick={() => navigate('/a')}
-            className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-pointer group"
+            className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer group"
           >
             <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-xl">
                 <svg
                   className="w-10 h-10 text-white"
                   fill="none"
@@ -61,29 +61,29 @@ export default function PanelSelect() {
                   />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-3">Bot Admin Panel</h2>
-              <p className="text-purple-200 mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Bot Admin Panel</h2>
+              <p className="text-gray-600 mb-6">
                 Global bot administration: manage all servers, system settings, and statistics
               </p>
-              <ul className="text-left text-purple-100 space-y-2 mb-6">
+              <ul className="text-left text-gray-700 space-y-3 mb-6">
                 <li className="flex items-start">
-                  <span className="text-green-400 mr-2">✓</span>
+                  <span className="text-green-600 mr-2 font-bold">✓</span>
                   <span>All servers access</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-400 mr-2">✓</span>
+                  <span className="text-green-600 mr-2 font-bold">✓</span>
                   <span>Global search and analytics</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-400 mr-2">✓</span>
+                  <span className="text-green-600 mr-2 font-bold">✓</span>
                   <span>System configuration</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-400 mr-2">✓</span>
+                  <span className="text-green-600 mr-2 font-bold">✓</span>
                   <span>Bulk operations</span>
                 </li>
               </ul>
-              <div className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-full font-semibold group-hover:shadow-lg group-hover:shadow-pink-500/50 transition-shadow">
+              <div className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl font-semibold group-hover:shadow-lg transition-shadow">
                 Open Bot Admin →
               </div>
             </div>
@@ -92,10 +92,10 @@ export default function PanelSelect() {
           {/* Guild Admin Panel */}
           <div
             onClick={() => navigate('/servers')}
-            className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-pointer group"
+            className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer group"
           >
             <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-xl">
                 <svg
                   className="w-10 h-10 text-white"
                   fill="none"
@@ -110,29 +110,29 @@ export default function PanelSelect() {
                   />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-3">Guild Admin Panel</h2>
-              <p className="text-purple-200 mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Guild Admin Panel</h2>
+              <p className="text-gray-600 mb-6">
                 Manage your Discord servers: events, templates, and server-specific settings
               </p>
-              <ul className="text-left text-purple-100 space-y-2 mb-6">
+              <ul className="text-left text-gray-700 space-y-3 mb-6">
                 <li className="flex items-start">
-                  <span className="text-green-400 mr-2">✓</span>
+                  <span className="text-green-600 mr-2 font-bold">✓</span>
                   <span>Your servers only</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-400 mr-2">✓</span>
+                  <span className="text-green-600 mr-2 font-bold">✓</span>
                   <span>Event management</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-400 mr-2">✓</span>
+                  <span className="text-green-600 mr-2 font-bold">✓</span>
                   <span>Template creation</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-400 mr-2">✓</span>
+                  <span className="text-green-600 mr-2 font-bold">✓</span>
                   <span>Server settings</span>
                 </li>
               </ul>
-              <div className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full font-semibold group-hover:shadow-lg group-hover:shadow-purple-500/50 transition-shadow">
+              <div className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold group-hover:shadow-lg transition-shadow">
                 Choose Server →
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function PanelSelect() {
         <div className="text-center mt-8">
           <button
             onClick={() => navigate('/')}
-            className="text-purple-300 hover:text-white transition-colors"
+            className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
           >
             ← Back to Home
           </button>

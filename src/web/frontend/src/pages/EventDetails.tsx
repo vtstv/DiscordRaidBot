@@ -1,21 +1,41 @@
 // Copyright (c) 2025 Murr (https://github.com/vtstv)
 // path: src/web/frontend/src/pages/EventDetails.tsx
-// Event details page
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, Event } from '../services/api';
 import Layout from '../components/Layout';
+import Footer from '../components/Footer';
 
 export default function EventDetails() {
   const { guildId, eventId } = useParams<{ guildId: string; eventId: string }>();
   const navigate = useNavigate();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  
+  // Inline editing states
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState({
+    title: '',
+    description: '',
+    maxParticipants: 0,
+    startTime: '',
+  });
 
   useEffect(() => {
     if (guildId && eventId) {
-      api.getEvent(guildId, eventId).then(setEvent).finally(() => setLoading(false));
+      api.getEvent(guildId, eventId)
+        .then(evt => {
+          setEvent(evt);
+          setEditValues({
+            title: evt.title,
+            description: evt.description || '',
+            maxParticipants: evt.maxParticipants || 0,
+            startTime: new Date(evt.startTime).toISOString().slice(0, 16),
+          });
+        })
+        .finally(() => setLoading(false));
     }
   }, [guildId, eventId]);
 
@@ -30,146 +50,411 @@ export default function EventDetails() {
     }
   };
 
-  if (loading) return <Layout><div className="loading">Loading event...</div></Layout>;
-  if (!event) return <Layout><div>Event not found</div></Layout>;
+  const saveField = async (field: keyof typeof editValues) => {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guildId,
+          [field]: field === 'startTime' ? new Date(editValues[field]).toISOString() : editValues[field],
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update');
+
+      const updatedEvent = await api.getEvent(guildId!, eventId!);
+      setEvent(updatedEvent);
+      setEditingField(null);
+    } catch (error) {
+      alert(`Failed to update ${field}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    if (!event) return;
+    setEditValues({
+      title: event.title,
+      description: event.description || '',
+      maxParticipants: event.maxParticipants || 0,
+      startTime: new Date(event.startTime).toISOString().slice(0, 16),
+    });
+    setEditingField(null);
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading event details...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!event) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Event not found</h2>
+            <p className="text-gray-600 mb-6">This event may have been deleted</p>
+            <button
+              onClick={() => navigate(`/guild/${guildId}/events`)}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              Back to Events
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  const statusConfig = {
+    scheduled: { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+    active: { bg: 'bg-green-100', text: 'text-green-800', icon: 'M5 13l4 4L19 7' },
+    completed: { bg: 'bg-gray-100', text: 'text-gray-800', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+    cancelled: { bg: 'bg-red-100', text: 'text-red-800', icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z' },
+  };
+
+  const status = statusConfig[event.status as keyof typeof statusConfig] || statusConfig.scheduled;
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto">
-        <button
-          onClick={() => navigate(`/guild/${guildId}/events`)}
-          className="mb-6 text-purple-300 hover:text-white transition-colors flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Events
-        </button>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+        <div className="max-w-6xl mx-auto px-4">
+          {/* Back Button */}
+          <button
+            onClick={() => navigate(`/guild/${guildId}/events`)}
+            className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Events
+          </button>
 
-        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/30 shadow-2xl">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">{event.title}</h1>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                event.status === 'active' ? 'bg-green-500/30 text-green-200 border border-green-500/50' :
-                event.status === 'scheduled' ? 'bg-blue-500/30 text-blue-200 border border-blue-500/50' :
-                event.status === 'completed' ? 'bg-gray-500/30 text-gray-200 border border-gray-500/50' :
-                'bg-red-500/30 text-red-200 border border-red-500/50'
-              }`}>
-                {event.status}
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => navigate(`/guild/${guildId}/events/${eventId}/edit`)}
-                className="px-4 py-2 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-500/30 transition-colors"
-              >
-                Edit
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 bg-red-500/20 text-red-300 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            {/* Description */}
-            {event.description && (
-              <div className="bg-purple-900/20 border border-purple-500/20 rounded-lg p-4">
-                <h2 className="text-lg font-semibold text-purple-200 mb-2">Description</h2>
-                <p className="text-gray-200">{event.description}</p>
-              </div>
-            )}
-
-            {/* Event Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-blue-300 mb-1">Start Time</h3>
-                <p className="text-white font-semibold">{new Date(event.startTime).toLocaleString()}</p>
-              </div>
-
-              {event.endTime && (
-                <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-blue-300 mb-1">End Time</h3>
-                  <p className="text-white font-semibold">{new Date(event.endTime).toLocaleString()}</p>
+          {/* Header Card with Inline Editing */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`p-3 ${status.bg} rounded-xl`}>
+                    <svg className={`w-6 h-6 ${status.text}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={status.icon} />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    {/* Editable Title */}
+                    {editingField === 'title' ? (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={editValues.title}
+                          onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
+                          className="w-full text-3xl font-bold text-gray-900 border border-purple-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          autoFocus
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => saveField('title')}
+                            disabled={saving}
+                            className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 disabled:opacity-50"
+                          >
+                            {saving ? 'Saving...' : 'Save'}
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <h1
+                        onClick={() => setEditingField('title')}
+                        className="text-3xl font-bold text-gray-900 cursor-pointer hover:text-purple-600 transition-colors"
+                        title="Click to edit"
+                      >
+                        {event.title}
+                        <svg className="inline-block w-5 h-5 ml-2 opacity-0 hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </h1>
+                    )}
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mt-2 ${status.bg} ${status.text}`}>
+                      {event.status}
+                    </span>
+                  </div>
                 </div>
-              )}
 
-              <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-green-300 mb-1">Participants</h3>
-                <p className="text-white font-semibold">
-                  {event._count?.participants || 0}
-                  {event.maxParticipants && ` / ${event.maxParticipants}`}
-                </p>
-              </div>
-
-              <div className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-purple-300 mb-1">Created By</h3>
-                {event.createdByUser ? (
-                  <div className="flex items-center gap-2">
-                    <img 
-                      src={event.createdByUser.avatar} 
-                      alt={event.createdByUser.displayName}
-                      className="w-8 h-8 rounded-full border-2 border-purple-500/50"
+                {/* Editable Description */}
+                {editingField === 'description' ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={editValues.description}
+                      onChange={(e) => setEditValues({ ...editValues, description: e.target.value })}
+                      className="w-full text-gray-600 text-lg border border-purple-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                      rows={3}
+                      autoFocus
                     />
-                    <div>
-                      <p className="text-white font-semibold text-sm">{event.createdByUser.displayName}</p>
-                      <p className="text-xs text-gray-400">@{event.createdByUser.username}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => saveField('description')}
+                        disabled={saving}
+                        className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 disabled:opacity-50"
+                      >
+                        {saving ? 'Saving...' : 'Save'}
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-white font-mono text-sm font-semibold">{event.createdBy}</p>
+                  <p
+                    onClick={() => setEditingField('description')}
+                    className="text-gray-600 text-lg leading-relaxed cursor-pointer hover:text-purple-600 transition-colors group"
+                    title="Click to edit"
+                  >
+                    {event.description || <span className="italic text-gray-400">No description (click to add)</span>}
+                    <svg className="inline-block w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => navigate(`/guild/${guildId}/events/${eventId}/edit`)}
+                  className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:shadow-md transition-all font-medium"
+                >
+                  Full Edit
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-xl hover:bg-red-100 hover:shadow-md transition-all font-medium"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Event Details */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Time Information with Inline Editing */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Event Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Editable Start Time */}
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600">Start Time</p>
+                      {editingField === 'startTime' ? (
+                        <div className="space-y-2">
+                          <input
+                            type="datetime-local"
+                            value={editValues.startTime}
+                            onChange={(e) => setEditValues({ ...editValues, startTime: e.target.value })}
+                            className="w-full border border-purple-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            autoFocus
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => saveField('startTime')}
+                              disabled={saving}
+                              className="px-2 py-1 bg-green-500 text-white rounded text-xs font-medium hover:bg-green-600 disabled:opacity-50"
+                            >
+                              {saving ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-gray-300"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => setEditingField('startTime')}
+                          className="cursor-pointer hover:text-purple-600 transition-colors group"
+                          title="Click to edit"
+                        >
+                          <p className="font-semibold text-gray-900">{new Date(event.startTime).toLocaleDateString()}</p>
+                          <p className="text-sm text-gray-600 flex items-center gap-1">
+                            {new Date(event.startTime).toLocaleTimeString()}
+                            <svg className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Editable Max Participants */}
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600">Max Participants</p>
+                      {editingField === 'maxParticipants' ? (
+                        <div className="space-y-2">
+                          <input
+                            type="number"
+                            min="0"
+                            value={editValues.maxParticipants}
+                            onChange={(e) => setEditValues({ ...editValues, maxParticipants: parseInt(e.target.value) || 0 })}
+                            className="w-full border border-purple-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            autoFocus
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => saveField('maxParticipants')}
+                              disabled={saving}
+                              className="px-2 py-1 bg-green-500 text-white rounded text-xs font-medium hover:bg-green-600 disabled:opacity-50"
+                            >
+                              {saving ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-gray-300"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p
+                          onClick={() => setEditingField('maxParticipants')}
+                          className="font-semibold text-gray-900 cursor-pointer hover:text-purple-600 transition-colors group"
+                          title="Click to edit"
+                        >
+                          {event.maxParticipants || 'Unlimited'}
+                          <svg className="inline-block w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Participants */}
+              {event.participants && event.participants.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">
+                    Participants ({event.participants.length}{event.maxParticipants ? `/${event.maxParticipants}` : ''})
+                  </h2>
+                  <div className="space-y-2">
+                    {event.participants.map((participant: any) => (
+                      <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center gap-3">
+                          {participant.discordAvatar && (
+                            <img 
+                              src={participant.discordAvatar} 
+                              alt={participant.discordDisplayName || participant.discordUsername || participant.userId}
+                              className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
+                            />
+                          )}
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {participant.discordDisplayName || participant.discordUsername || participant.username || participant.userId}
+                            </p>
+                            {participant.role && (
+                              <p className="text-sm text-gray-600">{participant.role}</p>
+                            )}
+                          </div>
+                        </div>
+                        {participant.status && (
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            participant.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                            participant.status === 'waitlist' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {participant.status}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Stats */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Statistics</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      </div>
+                      <span className="text-gray-600">Participants</span>
+                    </div>
+                    <span className="text-2xl font-bold text-gray-900">
+                      {event._count?.participants || 0}
+                      {event.maxParticipants && <span className="text-lg text-gray-500">/{event.maxParticipants}</span>}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Creator Info */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Created By</h2>
+                {event.createdByUser ? (
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={event.createdByUser.avatar} 
+                      alt={event.createdByUser.displayName}
+                      className="w-12 h-12 rounded-full border-2 border-purple-200 shadow-sm"
+                    />
+                    <div>
+                      <p className="font-semibold text-gray-900">{event.createdByUser.displayName}</p>
+                      <p className="text-sm text-gray-600">@{event.createdByUser.username}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="font-mono text-sm text-gray-600">{event.createdBy}</p>
                 )}
               </div>
             </div>
-
-            {/* Participants List */}
-            {event.participants && event.participants.length > 0 && (
-              <div>
-                <h2 className="text-lg font-semibold text-white mb-4">Participants</h2>
-                <div className="space-y-2">
-                  {event.participants.map((participant: any) => (
-                    <div key={participant.id} className="bg-indigo-900/30 border border-indigo-500/30 rounded-lg p-3 flex items-center justify-between hover:bg-indigo-900/40 transition-colors">
-                      <div className="flex items-center gap-3">
-                        {participant.discordAvatar && (
-                          <img 
-                            src={participant.discordAvatar} 
-                            alt={participant.discordDisplayName || participant.discordUsername || participant.userId}
-                            className="w-10 h-10 rounded-full border-2 border-indigo-500/50"
-                          />
-                        )}
-                        <div>
-                          <p className="text-white font-medium">
-                            {participant.discordDisplayName || participant.discordUsername || participant.username || participant.userId}
-                          </p>
-                          {participant.discordUsername && participant.discordUsername !== participant.discordDisplayName && (
-                            <p className="text-xs text-gray-400">@{participant.discordUsername}</p>
-                          )}
-                          {participant.role && (
-                            <p className="text-sm text-indigo-300">{participant.role}</p>
-                          )}
-                        </div>
-                      </div>
-                      {participant.status && (
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          participant.status === 'confirmed' ? 'bg-green-500/20 text-green-300' :
-                          participant.status === 'waitlist' ? 'bg-yellow-500/20 text-yellow-300' :
-                          'bg-gray-500/20 text-gray-300'
-                        }`}>
-                          {participant.status}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
+      <Footer />
     </Layout>
   );
 }

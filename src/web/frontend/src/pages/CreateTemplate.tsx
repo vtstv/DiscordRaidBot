@@ -1,6 +1,10 @@
+// Copyright (c) 2025 Murr (https://github.com/vtstv)
+// path: src/web/frontend/src/pages/CreateTemplate.tsx
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import Layout from '../components/Layout';
 import Footer from '../components/Footer';
 
 interface TemplateFormData {
@@ -8,14 +12,14 @@ interface TemplateFormData {
   description: string;
   maxParticipants: number;
   allowedRoles: string;
-  roleLimits: string; // Format: "Role:limit, Role:limit"
+  roleLimits: string;
   emojiMapping: string;
   imageUrl: string;
 }
 
 const PRESETS = [
   {
-    name: 'Raid (25 players)',
+    name: 'Raid (25)',
     data: {
       name: 'Raid',
       description: 'Standard 25-player raid group',
@@ -27,7 +31,7 @@ const PRESETS = [
     },
   },
   {
-    name: 'Mythic+ (5 players)',
+    name: 'Mythic+ (5)',
     data: {
       name: 'Mythic+',
       description: '5-player dungeon run',
@@ -39,7 +43,7 @@ const PRESETS = [
     },
   },
   {
-    name: 'PvP Arena (3v3)',
+    name: 'Arena (3v3)',
     data: {
       name: 'Arena 3v3',
       description: '3v3 Arena team',
@@ -51,7 +55,7 @@ const PRESETS = [
     },
   },
   {
-    name: 'Custom Event',
+    name: 'Custom',
     data: {
       name: '',
       description: '',
@@ -80,7 +84,6 @@ export default function CreateTemplate() {
     imageUrl: '',
   });
 
-  // Load template data if editing
   useEffect(() => {
     if (templateId) {
       setIsEditMode(true);
@@ -88,7 +91,6 @@ export default function CreateTemplate() {
       api.getTemplate(templateId)
         .then(template => {
           const config = template.config as any;
-          // Parse role limits from config
           const roleLimitsStr = config.limits && typeof config.limits === 'object'
             ? Object.entries(config.limits)
                 .filter(([key]) => key !== 'total')
@@ -122,13 +124,11 @@ export default function CreateTemplate() {
     setLoading(true);
 
     try {
-      // Parse allowed roles
       const rolesArray = formData.allowedRoles
         .split(',')
         .map(r => r.trim())
         .filter(r => r);
 
-      // Parse emoji mapping
       const emojiMap: Record<string, string> = {};
       if (formData.emojiMapping) {
         formData.emojiMapping.split(',').forEach(pair => {
@@ -139,13 +139,11 @@ export default function CreateTemplate() {
         });
       }
 
-      // Build limits object
       const limits: Record<string, number> = {};
       if (formData.maxParticipants > 0) {
         limits.total = formData.maxParticipants;
       }
       
-      // Parse role limits
       if (formData.roleLimits) {
         formData.roleLimits.split(',').forEach(pair => {
           const [role, limit] = pair.split(':').map(s => s.trim());
@@ -184,43 +182,41 @@ export default function CreateTemplate() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 p-6">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
+    <Layout>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-6 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
           <button
             onClick={() => navigate(`/guild/${guildId}/templates`)}
-            className="text-purple-300 hover:text-white transition-colors mb-4 flex items-center gap-2"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Templates
+            <span>Back to Templates</span>
           </button>
-          <h1 className="text-3xl font-bold text-white">{isEditMode ? 'Edit Template' : 'Create New Template'}</h1>
-          <p className="text-purple-200 mt-2">{isEditMode ? 'Update your event template' : 'Create a reusable template for events'}</p>
-        </div>
 
-        {/* Form */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-          {error && (
-            <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
-              {error}
-            </div>
-          )}
-
-          {/* Presets */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-purple-200 mb-3">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+              {isEditMode ? 'Edit Template' : 'Create New Template'}
+            </h1>
+            <p className="text-gray-600">
+              {isEditMode ? 'Update your event template settings' : 'Create a reusable template for events'}
+            </p>
+          </div>
+
+          {/* Preset Buttons */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
               Quick Presets
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {PRESETS.map((preset) => (
                 <button
                   key={preset.name}
                   type="button"
                   onClick={() => setFormData(preset.data)}
-                  className="px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white hover:bg-white/10 transition-colors text-sm"
+                  className="px-4 py-3 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-300 rounded-xl text-gray-700 font-medium hover:border-purple-400 hover:shadow-md transition-all"
                 >
                   {preset.name}
                 </button>
@@ -228,164 +224,188 @@ export default function CreateTemplate() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium text-purple-200 mb-2">
-                Template Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Mythic+ Run"
-              />
-            </div>
+          {/* Form Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 flex items-start gap-3">
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{error}</span>
+              </div>
+            )}
 
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-purple-200 mb-2">
-                Description
-              </label>
-              <textarea
-                rows={3}
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Standard Mythic+ dungeon run template"
-              />
-            </div>
-
-            {/* Max Participants */}
-            <div>
-              <label className="block text-sm font-medium text-purple-200 mb-2">
-                Max Participants (0 = unlimited)
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={formData.maxParticipants}
-                onChange={(e) => setFormData({ ...formData, maxParticipants: parseInt(e.target.value) || 0 })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="5"
-              />
-            </div>
-
-            {/* Allowed Roles */}
-            <div>
-              <label className="block text-sm font-medium text-purple-200 mb-2">
-                Allowed Roles
-              </label>
-              <input
-                type="text"
-                value={formData.allowedRoles}
-                onChange={(e) => setFormData({ ...formData, allowedRoles: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Tank, Healer, DPS (comma-separated)"
-              />
-              <p className="text-sm text-gray-400 mt-1">Comma-separated list of roles</p>
-            </div>
-
-            {/* Role Limits */}
-            <div>
-              <label className="block text-sm font-medium text-purple-200 mb-2">
-                Role Limits (Optional)
-              </label>
-              <input
-                type="text"
-                value={formData.roleLimits}
-                onChange={(e) => setFormData({ ...formData, roleLimits: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Tank:2, Healer:5, DPS:18"
-              />
-              <p className="text-sm text-gray-400 mt-1">Format: Role:limit, Role:limit (comma-separated pairs)</p>
-            </div>
-
-            {/* Emoji Mapping */}
-            <div>
-              <label className="block text-sm font-medium text-purple-200 mb-2">
-                Emoji Mapping
-              </label>
-              <input
-                type="text"
-                value={formData.emojiMapping}
-                onChange={(e) => setFormData({ ...formData, emojiMapping: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Tank:🛡️, Healer:❤️, DPS:⚔️"
-              />
-              <p className="text-sm text-gray-400 mt-1">Format: Role:Emoji, Role:Emoji (comma-separated pairs)</p>
-            </div>
-
-            {/* Image URL */}
-            <div>
-              <label className="block text-sm font-medium text-purple-200 mb-2">
-                Image URL (Optional)
-              </label>
-              <input
-                type="url"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="https://example.com/image.png"
-              />
-              <p className="text-sm text-gray-400 mt-1">Add a banner image to event embeds created from this template</p>
-              {formData.imageUrl && (
-                <div className="mt-3 rounded-lg overflow-hidden border border-white/20">
-                  <img 
-                    src={formData.imageUrl} 
-                    alt="Preview" 
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="200"%3E%3Crect width="400" height="200" fill="%23333"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="sans-serif"%3EInvalid Image URL%3C/text%3E%3C/svg%3E';
-                    }}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Name and Description Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Template Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="Mythic+ Run"
                   />
                 </div>
-              )}
-            </div>
 
-            {/* Submit Buttons */}
-            <div className="flex gap-4 pt-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Template' : 'Create Template')}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate(`/guild/${guildId}/templates`)}
-                className="px-6 py-3 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 transition-colors border border-white/20"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                    Max Participants
+                    <span className="text-xs text-gray-500">(0 = unlimited)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.maxParticipants}
+                    onChange={(e) => setFormData({ ...formData, maxParticipants: parseInt(e.target.value) || 0 })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="5"
+                  />
+                </div>
+              </div>
 
-        {/* Help Box */}
-        <div className="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-blue-300 mb-2">Template Tips</h3>
-              <ul className="text-gray-300 space-y-1 text-sm">
-                <li>• Templates can be reused for multiple events</li>
-                <li>• Allowed roles help participants choose their position</li>
-                <li>• Emoji mapping makes signups more visual and engaging</li>
-                <li>• Set max participants to enforce group size limits</li>
-              </ul>
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
+                  placeholder="Standard Mythic+ dungeon run template"
+                />
+              </div>
+
+              {/* Allowed Roles */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Allowed Roles
+                </label>
+                <input
+                  type="text"
+                  value={formData.allowedRoles}
+                  onChange={(e) => setFormData({ ...formData, allowedRoles: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="Tank, Healer, DPS"
+                />
+                <p className="text-xs text-gray-500 mt-2">Comma-separated list of roles</p>
+              </div>
+
+              {/* Role Limits */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Role Limits (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.roleLimits}
+                  onChange={(e) => setFormData({ ...formData, roleLimits: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="Tank:2, Healer:5, DPS:18"
+                />
+                <p className="text-xs text-gray-500 mt-2">Format: Role:limit, Role:limit (comma-separated pairs)</p>
+              </div>
+
+              {/* Emoji Mapping */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Emoji Mapping
+                </label>
+                <input
+                  type="text"
+                  value={formData.emojiMapping}
+                  onChange={(e) => setFormData({ ...formData, emojiMapping: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="Tank:🛡️, Healer:❤️, DPS:⚔️"
+                />
+                <p className="text-xs text-gray-500 mt-2">Format: Role:Emoji, Role:Emoji (comma-separated pairs)</p>
+              </div>
+
+              {/* Image URL */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Image URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="https://example.com/image.png"
+                />
+                <p className="text-xs text-gray-500 mt-2">Add a banner image to event embeds created from this template</p>
+                {formData.imageUrl && (
+                  <div className="mt-3 rounded-xl overflow-hidden border border-gray-200">
+                    <img 
+                      src={formData.imageUrl} 
+                      alt="Preview" 
+                      className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="200"%3E%3Crect width="400" height="200" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%236b7280" font-family="sans-serif"%3EInvalid Image URL%3C/text%3E%3C/svg%3E';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/guild/${guildId}/templates`)}
+                  className="w-full sm:w-auto px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full sm:flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {isEditMode ? 'Updating...' : 'Creating...'}
+                    </span>
+                  ) : (
+                    isEditMode ? 'Update Template' : 'Create Template'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Help Box */}
+          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Template Tips</h3>
+                <ul className="text-gray-600 space-y-1 text-sm">
+                  <li>• Templates can be reused for multiple events</li>
+                  <li>• Allowed roles help participants choose their position</li>
+                  <li>• Emoji mapping makes signups more visual and engaging</li>
+                  <li>• Set max participants to enforce group size limits</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
-        <Footer />
       </div>
-    </div>
+      <Footer />
+    </Layout>
   );
 }

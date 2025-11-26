@@ -30,55 +30,122 @@ export default function Templates() {
     }
   };
 
-  if (loading) return <Layout><div className="loading">Loading templates...</div></Layout>;
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading templates...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <div className="flex justify-between items-center mb-6">
-        <h1>Templates</h1>
-        <button
-          onClick={() => navigate(`/guild/${guildId}/templates/create`)}
-          className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all"
-        >
-          + Create Template
-        </button>
-      </div>
-      <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Created</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {templates.map(template => (
-              <tr key={template.id}>
-                <td>{template.name}</td>
-                <td>{template.description || '-'}</td>
-                <td>{new Date(template.createdAt).toLocaleDateString()}</td>
-                <td>
-                  <div className="flex gap-2">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Event Templates</h1>
+              <p className="text-gray-600">{templates.length} templates configured</p>
+            </div>
+            <button
+              onClick={() => navigate(`/guild/${guildId}/templates/create`)}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Create Template
+            </button>
+          </div>
+
+          {/* Templates Grid */}
+          {templates.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No templates found</h3>
+              <p className="text-gray-600 mb-6">Create templates to quickly set up recurring events</p>
+              <button
+                onClick={() => navigate(`/guild/${guildId}/templates/create`)}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                Create Template
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {templates.map(template => (
+                <div
+                  key={template.id}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all"
+                >
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl">
+                      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-gray-900 truncate">{template.name}</h3>
+                      <p className="text-sm text-gray-600">
+                        Created {new Date(template.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {template.description && (
+                    <p className="text-gray-600 mb-4 line-clamp-2">{template.description}</p>
+                  )}
+
+                  {/* Template Details */}
+                  {template.config && typeof template.config === 'object' && (
+                    <div className="mb-4 space-y-2">
+                      {(template.config as any).roles && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                          <span>{Object.keys((template.config as any).roles || {}).length} roles configured</span>
+                        </div>
+                      )}
+                      {(template.config as any).maxParticipants && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                          <span>Max {(template.config as any).maxParticipants} participants</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-4 border-t border-gray-200">
                     <button
                       onClick={() => navigate(`/guild/${guildId}/templates/${template.id}/edit`)}
-                      className="px-3 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded hover:bg-purple-500/30 transition-colors text-sm"
+                      className="flex-1 px-4 py-2 bg-purple-50 text-purple-700 rounded-xl hover:bg-purple-100 font-medium transition-colors"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(template.id)}
-                      className="px-3 py-1 bg-red-500/20 text-red-300 border border-red-500/30 rounded hover:bg-red-500/30 transition-colors text-sm"
+                      className="flex-1 px-4 py-2 bg-red-50 text-red-700 rounded-xl hover:bg-red-100 font-medium transition-colors"
                     >
                       Delete
                     </button>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <Footer />
     </Layout>

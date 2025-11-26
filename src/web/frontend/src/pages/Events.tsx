@@ -7,11 +7,19 @@ import { api, Event } from '../services/api';
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
 
+const statusColors = {
+  scheduled: 'bg-blue-100 text-blue-800',
+  active: 'bg-green-100 text-green-800',
+  completed: 'bg-gray-100 text-gray-800',
+  cancelled: 'bg-red-100 text-red-800',
+};
+
 export default function Events() {
   const { guildId } = useParams<{ guildId: string }>();
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
     if (guildId) {
@@ -19,44 +27,127 @@ export default function Events() {
     }
   }, [guildId]);
 
-  if (loading) return <Layout><div className="loading">Loading events...</div></Layout>;
+  const filteredEvents = filter === 'all' 
+    ? events 
+    : events.filter(e => e.status === filter);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading events...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <div className="flex justify-between items-center mb-6">
-        <h1>Events</h1>
-        <button
-          onClick={() => navigate(`/guild/${guildId}/events/create`)}
-          className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all"
-        >
-          + Create Event
-        </button>
-      </div>
-      <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Participants</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.map(event => (
-              <tr 
-                key={event.id}
-                onClick={() => navigate(`/guild/${guildId}/events/${event.id}`)}
-                className="cursor-pointer hover:bg-white/5 transition-colors"
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Events</h1>
+              <p className="text-gray-600">{filteredEvents.length} events found</p>
+            </div>
+            <button
+              onClick={() => navigate(`/guild/${guildId}/events/create`)}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Create Event
+            </button>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {['all', 'scheduled', 'active', 'completed'].map(status => (
+              <button
+                key={status}
+                onClick={() => setFilter(status)}
+                className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                  filter === status
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                }`}
               >
-                <td>{event.title}</td>
-                <td>{new Date(event.startTime).toLocaleString()}</td>
-                <td><span className={`badge ${event.status}`}>{event.status}</span></td>
-                <td>{event._count?.participants || 0}</td>
-              </tr>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </button>
             ))}
-          </tbody>
-        </table>
+          </div>
+
+          {/* Events Grid */}
+          {filteredEvents.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No events found</h3>
+              <p className="text-gray-600 mb-6">Get started by creating your first event</p>
+              <button
+                onClick={() => navigate(`/guild/${guildId}/events/create`)}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                Create Event
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {filteredEvents.map(event => (
+                <div
+                  key={event.id}
+                  onClick={() => navigate(`/guild/${guildId}/events/${event.id}`)}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all cursor-pointer hover:scale-[1.01]"
+                >
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold text-gray-900">{event.title}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[event.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}>
+                          {event.status}
+                        </span>
+                      </div>
+                      {event.description && (
+                        <p className="text-gray-600 mb-3 line-clamp-2">{event.description}</p>
+                      )}
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span>{new Date(event.startTime).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>{new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                          <span>{event._count?.participants || 0} participants</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <Footer />
     </Layout>
