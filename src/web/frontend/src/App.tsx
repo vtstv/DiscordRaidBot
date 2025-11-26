@@ -25,6 +25,7 @@ import Dashboard from './pages/Dashboard';
 import Events from './pages/Events';
 import EventDetails from './pages/EventDetails';
 import CreateEvent from './pages/CreateEvent';
+import EventCalendar from './pages/EventCalendar';
 import Templates from './pages/Templates';
 import CreateTemplate from './pages/CreateTemplate';
 import Settings from './pages/Settings';
@@ -60,6 +61,7 @@ function AppRoutes() {
           <Route path="/guild/:guildId/events/:eventId" element={<EventDetails />} />
           <Route path="/guild/:guildId/events/create" element={<CreateEvent />} />
           <Route path="/guild/:guildId/events/:eventId/edit" element={<CreateEvent />} />
+          <Route path="/guild/:guildId/calendar" element={<EventCalendar />} />
           <Route path="/guild/:guildId/templates" element={<Templates />} />
           <Route path="/guild/:guildId/templates/create" element={<CreateTemplate />} />
           <Route path="/guild/:guildId/templates/:templateId/edit" element={<CreateTemplate />} />

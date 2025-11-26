@@ -150,9 +150,26 @@ npm start
 
 ## Docker Services
 
+The bot uses a **multi-container architecture** with separate services:
+
 - **bot**: Discord bot service
-- **web**: Web dashboard (port 3000)
+- **web**: Web dashboard (port 3000) - *optional*
 - **postgres**: PostgreSQL database (port 5432)
+- **redis**: Redis pub/sub for bot↔web communication
+
+### Resource-Efficient Mode
+
+For servers with limited RAM, you can run **bot-only** mode:
+
+```bash
+# Bot only (no web dashboard)
+docker-compose up -d bot postgres redis
+
+# With web dashboard (default)
+docker-compose --profile with-web up -d
+```
+
+The bot and web services communicate via Redis pub/sub, allowing them to run independently or together.
 
 ## Environment Variables
 

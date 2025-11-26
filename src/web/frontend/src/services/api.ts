@@ -28,6 +28,8 @@ export interface Event {
   endTime?: string;
   status: string;
   maxParticipants?: number;
+  channelId?: string;
+  templateId?: string;
   createdBy: string;
   _count?: {
     participants: number;
@@ -126,6 +128,11 @@ class ApiService {
     if (!response.ok) {
       const error: any = await response.json().catch(() => ({ error: 'Request failed' }));
       throw new Error(error.error || error.message || 'Request failed');
+    }
+
+    // Handle 204 No Content responses
+    if (response.status === 204 || response.headers.get('content-length') === '0') {
+      return undefined as T;
     }
 
     return response.json() as Promise<T>;

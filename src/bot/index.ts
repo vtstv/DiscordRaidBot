@@ -11,6 +11,7 @@ import { handleInteraction } from './interactionHandler.js';
 import { handlePrefixCommand } from './prefixCommandHandler.js';
 import { startScheduler, stopScheduler } from '../scheduler/eventScheduler.js';
 import { startStatsScheduler, stopStatsScheduler } from '../scheduler/statsScheduler.js';
+import { initializeSubscriber, closeSubscriber } from '../services/eventSubscriber.js';
 
 const logger = getModuleLogger('bot');
 
@@ -170,6 +171,10 @@ async function handleReady(client: Client): Promise<void> {
   // Start stats scheduler
   startStatsScheduler();
   logger.info('Stats scheduler started');
+
+  // Initialize Redis event subscriber
+  await initializeSubscriber();
+  logger.info('Event subscriber started');
 }
 
 /**
@@ -210,6 +215,7 @@ export async function shutdown(): Promise<void> {
 
   stopScheduler();
   stopStatsScheduler();
+  await closeSubscriber();
 
   if (client) {
     client.destroy();

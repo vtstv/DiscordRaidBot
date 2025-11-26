@@ -50,10 +50,17 @@ services:
       DATABASE_URL: postgresql://raidbot:raidbot_password@postgres:5432/raidbot
       REDIS_URL: redis://redis:6379
       PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
+      START_WEB: "false"
     env_file:
       - .env
     volumes:
       - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   web:
     build:
@@ -65,16 +72,27 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://raidbot:raidbot_password@postgres:5432/raidbot
-      WEB_ENABLED: "true"
+      REDIS_URL: redis://redis:6379
       START_WEB: "true"
+      START_BOT: "false"
       PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
     env_file:
       - .env
     ports:
       - "3000:3000"
+    profiles:
+      - with-web
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   postgres-data:

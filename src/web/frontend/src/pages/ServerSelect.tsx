@@ -6,15 +6,31 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGuild } from '../contexts/GuildContext';
+import { useTheme } from '../contexts/ThemeContext';
 import api, { Guild } from '../services/api';
 
 export default function ServerSelect() {
   const { user, logout } = useAuth();
   const { setSelectedGuild } = useGuild();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const getAvatarUrl = () => {
+    if (!user) return null;
+    if (user.avatar) {
+      // Check if avatar is already a full URL (from backend)
+      if (user.avatar.startsWith('http')) {
+        return user.avatar;
+      }
+      // Otherwise construct URL from hash
+      return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+    }
+    const defaultAvatar = parseInt(user.discriminator || '0') % 5;
+    return `https://cdn.discordapp.com/embed/avatars/${defaultAvatar}.png`;
+  };
 
   useEffect(() => {
     loadGuilds();
@@ -39,10 +55,10 @@ export default function ServerSelect() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors duration-200">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading servers...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading servers...</p>
         </div>
       </div>
     );
@@ -50,25 +66,25 @@ export default function ServerSelect() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 max-w-md text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors duration-200">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 max-w-md text-center">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Error</h3>
-          <p className="text-gray-600">{error}</p>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Error</h3>
+          <p className="text-gray-600 dark:text-gray-400">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-200">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl shadow-lg">
@@ -77,26 +93,45 @@ export default function ServerSelect() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Select a Server</h1>
-                <p className="text-gray-600">Choose which server to manage</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Select a Server</h1>
+                <p className="text-gray-600 dark:text-gray-400">Choose which server to manage</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {theme === 'dark' ? (
+                  <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
+              </button>
+
+              {/* User Avatar & Logout */}
               {user && (
-                <>
-                  <div className="flex items-center gap-3">
-                    {user.avatar && (
-                      <img src={user.avatar} alt={user.username} className="w-10 h-10 rounded-full border-2 border-purple-200" />
-                    )}
-                    <span className="font-medium text-gray-900">{user.username}</span>
-                  </div>
-                  <button 
-                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-all"
-                    onClick={logout}
-                  >
-                    Logout
-                  </button>
-                </>
+                <div className="flex items-center gap-3">
+                  {getAvatarUrl() && (
+                    <img
+                      src={getAvatarUrl()!}
+                      alt={user.username}
+                      className="w-10 h-10 rounded-full border-2 border-purple-300 dark:border-purple-600 cursor-pointer hover:scale-110 transition-transform"
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to logout?')) {
+                          logout();
+                        }
+                      }}
+                      title={`${user.username} (click to logout)`}
+                    />
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -106,17 +141,17 @@ export default function ServerSelect() {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-12">
         {guilds.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
-            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center transition-colors duration-200">
+            <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">No Servers Available</h3>
-            <p className="text-gray-600 mb-6">No servers found where you can manage the bot.</p>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-left max-w-md mx-auto">
-              <p className="text-blue-900 font-semibold mb-3">Make sure:</p>
-              <ul className="space-y-2 text-blue-800">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">No Servers Available</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">No servers found where you can manage the bot.</p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 text-left max-w-md mx-auto">
+              <p className="text-blue-900 dark:text-blue-300 font-semibold mb-3">Make sure:</p>
+              <ul className="space-y-2 text-blue-800 dark:text-blue-400">
                 <li className="flex items-start gap-2">
                   <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -134,27 +169,27 @@ export default function ServerSelect() {
           </div>
         ) : (
           <>
-            <p className="text-gray-600 mb-8 text-center">{guilds.length} server{guilds.length !== 1 ? 's' : ''} available</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-8 text-center">{guilds.length} server{guilds.length !== 1 ? 's' : ''} available</p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {guilds.map(guild => (
                 <div
                   key={guild.id}
                   onClick={() => selectGuild(guild)}
-                  className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-xl hover:scale-105 transition-all cursor-pointer"
+                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-105 transition-all cursor-pointer"
                 >
                   <div className="flex flex-col items-center text-center">
                     {guild.icon ? (
                       <img 
                         src={`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`}
                         alt={guild.name}
-                        className="w-20 h-20 rounded-full border-4 border-purple-200 shadow-md mb-4"
+                        className="w-20 h-20 rounded-full border-4 border-purple-200 dark:border-purple-700 shadow-md mb-4"
                       />
                     ) : (
                       <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-md">
                         {guild.name.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{guild.name}</h3>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{guild.name}</h3>
                     {guild.owner && (
                       <span className="inline-block px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-semibold rounded-full">
                         👑 Owner

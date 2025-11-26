@@ -6,8 +6,10 @@ import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
 import { requireGuildManager } from '../auth/middleware.js';
 import { enrichParticipantData, getDiscordUserInfo } from '../../utils/discord-enrichment.js';
+import { getModuleLogger } from '../../utils/logger.js';
 
 const prisma = getPrismaClient();
+const logger = getModuleLogger('events-routes');
 
 export async function eventsRoutes(server: FastifyInstance): Promise<void> {
   // List events for a guild
@@ -211,6 +213,16 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
       },
     });
 
+    // Publish event creation notification via Redis
+    try {
+      const { publishEventCreated } = await import('../../services/eventPublisher.js');
+      await publishEventCreated(event.id);
+      logger.info({ eventId: event.id }, 'Event creation notification published');
+    } catch (publishError) {
+      logger.warn({ error: publishError, eventId: event.id }, 'Failed to publish event creation notification - redis may not be available');
+      // Still return success as event was created in DB
+    }
+
     return reply.code(201).send(event);
   });
 
@@ -278,6 +290,15 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
         where: { id },
         data: updateData,
       });
+
+      // Publish event update notification via Redis
+      try {
+        const { publishEventUpdated } = await import('../../services/eventPublisher.js');
+        await publishEventUpdated(id);
+        logger.info({ eventId: id }, 'Event update notification published');
+      } catch (publishError) {
+        logger.warn({ error: publishError, eventId: id }, 'Failed to publish event update notification - redis may not be available');
+      }
 
       return event;
     } catch (error: any) {

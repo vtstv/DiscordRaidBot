@@ -17,14 +17,29 @@ npx prisma migrate deploy
 
 echo "Migrations applied successfully!"
 
-# Start the application based on role and NODE_ENV
-if [ "$START_WEB" = "true" ]; then
+# Determine what to start based on environment variables
+if [ "$START_WEB" = "true" ] && [ "$START_BOT" = "true" ]; then
+  # Start both bot and web
+  echo "Starting bot + web server..."
+  if [ "$NODE_ENV" = "development" ]; then
+    exec tsx watch src/index.ts
+  else
+    exec tsx src/index.ts
+  fi
+elif [ "$START_WEB" = "true" ]; then
+  # Start only web server
   echo "Starting web server..."
-  exec tsx src/web/index.ts
-elif [ "$NODE_ENV" = "development" ]; then
-  echo "Starting bot in development mode..."
-  exec npm run dev
+  if [ "$NODE_ENV" = "development" ]; then
+    exec tsx watch src/web/index.ts
+  else
+    exec tsx src/web/index.ts
+  fi
 else
+  # Start only bot (default)
   echo "Starting bot..."
-  exec tsx src/bot/index.ts
+  if [ "$NODE_ENV" = "development" ]; then
+    exec tsx watch src/bot/index.ts
+  else
+    exec tsx src/bot/index.ts
+  fi
 fi

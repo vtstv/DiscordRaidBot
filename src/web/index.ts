@@ -35,6 +35,15 @@ export async function startWebServer(): Promise<void> {
     // Connect to database
     await connectDatabase();
 
+    // Initialize Redis publisher for event notifications
+    try {
+      const { initializePublisher } = await import('../services/eventPublisher.js');
+      await initializePublisher();
+      logger.info('Event publisher initialized');
+    } catch (error) {
+      logger.warn({ error }, 'Failed to initialize event publisher - redis package may not be installed. Events created via web will not be sent to Discord automatically.');
+    }
+
     // Create Fastify instance
     server = Fastify({
       logger: {
@@ -57,7 +66,9 @@ export async function startWebServer(): Promise<void> {
     await server.register(session, {
       secret: config.WEB_SESSION_SECRET,
       cookie: {
-        secure: config.NODE_ENV === 'production', // HTTPS only in production
+        // Only require HTTPS in production AND when not on localhost
+        // This allows testing production builds locally
+        secure: config.NODE_ENV === 'production' && !config.WEB_BASE_URL?.includes('localhost'),
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         sameSite: 'lax',
@@ -127,6 +138,12 @@ export async function startWebServer(): Promise<void> {
 export async function stopWebServer(): Promise<void> {
   if (server) {
     logger.info('Stopping web server...');
+    try {
+      const { closePublisher } = await import('../services/eventPublisher.js');
+      await closePublisher();
+    } catch (error) {
+      // Redis not available, skip
+    }
     await server.close();
     server = null;
     await disconnectDatabase();
