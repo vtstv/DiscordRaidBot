@@ -48,6 +48,7 @@ model Guild {
   templates Template[]
   events    Event[]
   logEntries LogEntry[]
+  dashboardRolePermissions DashboardRolePermission[]
   statistics ParticipantStatistics[]
   raidPlans RaidPlan[]
   compositionPresets CompositionPreset[]
@@ -239,5 +240,27 @@ model CompositionPreset {
 
   @@index([guildId])
   @@map("composition_presets")
+}
+
+model DashboardRolePermission {
+  id          String   @id @default(uuid())
+  guildId     String   @map("guildid")
+  roleId      String   @map("roleid")  // Discord role ID
+  
+  // Permissions for different modules
+  canAccessEvents       Boolean @default(true) @map("canaccessevents")
+  canAccessCompositions Boolean @default(true) @map("canaccesscompositions")
+  canAccessTemplates    Boolean @default(true) @map("canaccesstemplates")
+  canAccessSettings     Boolean @default(false) @map("canaccesssettings")  // Settings access is more restricted by default
+  
+  createdAt   DateTime @default(now()) @map("createdat")
+  updatedAt   DateTime @updatedAt @map("updatedat")
+
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, roleId])
+  @@index([guildId])
+  @@index([roleId])
+  @@map("dashboard_role_permissions")
 }
 

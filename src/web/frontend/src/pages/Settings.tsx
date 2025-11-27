@@ -99,19 +99,48 @@ export default function Settings() {
   const [settings, setSettings] = useState<GuildSettings | null>(null);
   const [roles, setRoles] = useState<DiscordRole[]>([]);
   const [channels, setChannels] = useState<DiscordChannel[]>([]);
+  const [rolePermissions, setRolePermissions] = useState<Record<string, {
+    canAccessEvents: boolean;
+    canAccessCompositions: boolean;
+    canAccessTemplates: boolean;
+    canAccessSettings: boolean;
+  }>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (guildId) {
+      setLoading(true);
+      setError(null);
       Promise.all([
         api.getGuildSettings(guildId),
         api.getGuildRoles(guildId),
         api.getGuildChannels(guildId),
-      ]).then(([settingsData, rolesData, channelsData]) => {
+        api.getRolePermissions(guildId),
+      ]).then(([settingsData, rolesData, channelsData, permissionsData]) => {
         setSettings(settingsData);
         setRoles(rolesData.filter(r => !r.managed).sort((a, b) => b.position - a.position));
         setChannels(channelsData.filter(c => c.type === 0 || c.type === 5).sort((a, b) => a.position - b.position));
+        
+        // Convert permissions array to map
+        const permMap: Record<string, any> = {};
+        permissionsData.forEach((p: any) => {
+          permMap[p.roleId] = {
+            canAccessEvents: p.canAccessEvents,
+            canAccessCompositions: p.canAccessCompositions,
+            canAccessTemplates: p.canAccessTemplates,
+            canAccessSettings: p.canAccessSettings,
+          };
+        });
+        setRolePermissions(permMap);
+      }).catch((err) => {
+        console.error('Failed to load settings:', err);
+        if (err.message?.includes('403') || err.message?.includes('Forbidden')) {
+          setError('Access Denied: You do not have permission to view Settings.');
+        } else {
+          setError('Failed to load settings. Please try again.');
+        }
       }).finally(() => setLoading(false));
     }
   }, [guildId]);
@@ -121,9 +150,40 @@ export default function Settings() {
     if (guildId && settings) {
       setSaving(true);
       try {
+        // Save guild settings
         await api.updateGuildSettings(guildId, settings);
+        
+        // Get current role permissions from server
+        const currentPermissions = await api.getRolePermissions(guildId);
+        const currentRoleIds = new Set(currentPermissions.map((p: any) => p.roleId));
+        
+        // Save/update permissions for all current dashboard roles
+        const currentDashboardRoles = settings.dashboardRoles || [];
+        const permissionUpdates = currentDashboardRoles.map(roleId => {
+          const perms = rolePermissions[roleId] || {
+            canAccessEvents: true,
+            canAccessCompositions: true,
+            canAccessTemplates: true,
+            canAccessSettings: false,
+          };
+          return api.updateRolePermission(guildId, { roleId, ...perms });
+        });
+        
+        // Delete permissions for roles that were removed from dashboardRoles
+        const rolesToDelete = Array.from(currentRoleIds).filter(
+          roleId => !currentDashboardRoles.includes(roleId as string)
+        );
+        const deletePromises = rolesToDelete.map(roleId => 
+          api.deleteRolePermission(guildId, roleId as string).catch(() => {
+            // Ignore 404 errors if permission doesn't exist
+          })
+        );
+        
+        await Promise.all([...permissionUpdates, ...deletePromises]);
+        
         alert('✅ Settings saved successfully!');
       } catch (error) {
+        console.error('Failed to save settings:', error);
         alert('❌ Failed to save settings');
       } finally {
         setSaving(false);
@@ -144,12 +204,24 @@ export default function Settings() {
     );
   }
   
-  if (!settings) {
+  if (error || !settings) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-screen dark:bg-gray-900">
-          <div className="text-center text-red-500 dark:text-red-400">
-            <p className="text-xl">❌ Settings not found</p>
+          <div className="text-center max-w-md">
+            <div className="bg-red-100 dark:bg-red-900/20 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-10 h-10 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">Access Denied</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{error || 'Settings not found'}</p>
+            <button
+              onClick={() => window.history.back()}
+              className="px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors"
+            >
+              Go Back
+            </button>
           </div>
         </div>
       </Layout>
@@ -277,6 +349,11 @@ export default function Settings() {
                                         onClick={() => {
                                           const current = settings.dashboardRoles || [];
                                           setSettings({...settings, dashboardRoles: current.filter(id => id !== roleId)});
+                                          
+                                          // Remove permissions for this role
+                                          const newPerms = {...rolePermissions};
+                                          delete newPerms[roleId];
+                                          setRolePermissions(newPerms);
                                         }}
                                         className="ml-1 hover:text-red-600 dark:hover:text-red-400"
                                       >
@@ -312,6 +389,20 @@ export default function Settings() {
                                 if (roleId) {
                                   const current = settings.dashboardRoles || [];
                                   setSettings({...settings, dashboardRoles: [...current, roleId]});
+                                  
+                                  // Initialize default permissions for this role if not already set
+                                  if (!rolePermissions[roleId]) {
+                                    setRolePermissions({
+                                      ...rolePermissions,
+                                      [roleId]: {
+                                        canAccessEvents: true,
+                                        canAccessCompositions: true,
+                                        canAccessTemplates: true,
+                                        canAccessSettings: false,
+                                      }
+                                    });
+                                  }
+                                  
                                   select.value = '';
                                 }
                               }}
@@ -325,11 +416,103 @@ export default function Settings() {
                           {(settings.dashboardRoles || []).length > 0 && (
                             <button
                               type="button"
-                              onClick={() => setSettings({...settings, dashboardRoles: []})}
+                              onClick={() => {
+                                setSettings({...settings, dashboardRoles: []});
+                                setRolePermissions({}); // Clear all permissions
+                              }}
                               className="w-full px-4 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-800/30 text-red-700 dark:text-red-300 rounded-xl transition-colors text-sm"
                             >
                               Clear all roles
                             </button>
+                          )}
+
+                          {/* Role Permissions */}
+                          {(settings.dashboardRoles || []).length > 0 && (
+                            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                🔒 Module Access Permissions
+                              </div>
+                              <div className="space-y-3">
+                                {(settings.dashboardRoles || []).map(roleId => {
+                                  const role = roles.find(r => r.id === roleId);
+                                  const perms = rolePermissions[roleId] || {
+                                    canAccessEvents: true,
+                                    canAccessCompositions: true,
+                                    canAccessTemplates: true,
+                                    canAccessSettings: false,
+                                  };
+
+                                  return (
+                                    <div key={roleId} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                      <div className="font-medium text-sm text-gray-900 dark:text-white mb-2">
+                                        @{role?.name || 'Unknown'}
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={perms.canAccessEvents}
+                                            onChange={(e) => {
+                                              setRolePermissions({
+                                                ...rolePermissions,
+                                                [roleId]: { ...perms, canAccessEvents: e.target.checked }
+                                              });
+                                            }}
+                                            className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                          />
+                                          <span className="text-gray-700 dark:text-gray-300">📅 Events</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={perms.canAccessCompositions}
+                                            onChange={(e) => {
+                                              setRolePermissions({
+                                                ...rolePermissions,
+                                                [roleId]: { ...perms, canAccessCompositions: e.target.checked }
+                                              });
+                                            }}
+                                            className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                          />
+                                          <span className="text-gray-700 dark:text-gray-300">⚔️ Compositions</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={perms.canAccessTemplates}
+                                            onChange={(e) => {
+                                              setRolePermissions({
+                                                ...rolePermissions,
+                                                [roleId]: { ...perms, canAccessTemplates: e.target.checked }
+                                              });
+                                            }}
+                                            className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                          />
+                                          <span className="text-gray-700 dark:text-gray-300">📋 Templates</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={perms.canAccessSettings}
+                                            onChange={(e) => {
+                                              setRolePermissions({
+                                                ...rolePermissions,
+                                                [roleId]: { ...perms, canAccessSettings: e.target.checked }
+                                              });
+                                            }}
+                                            className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                          />
+                                          <span className="text-gray-700 dark:text-gray-300">⚙️ Settings</span>
+                                        </label>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                                💡 Manager role has full access to all modules regardless of these settings
+                              </p>
+                            </div>
                           )}
                         </div>
                       </div>

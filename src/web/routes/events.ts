@@ -5,6 +5,7 @@
 import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
 import { requireGuildManager } from '../auth/middleware.js';
+import { requireModulePermission } from '../auth/permissions.js';
 import { enrichParticipantData, getDiscordUserInfo } from '../../utils/discord-enrichment.js';
 import { getModuleLogger } from '../../utils/logger.js';
 
@@ -21,6 +22,11 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
     if (!guildId) {
       return reply.code(400).send({ error: 'guildId is required' });
     }
+
+    // Check permission
+    (request as any).params = { guildId };
+    await requireModulePermission('events')(request, reply);
+    if (reply.sent) return;
 
     const where: any = { guildId };
     if (status) {
@@ -225,9 +231,14 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
     };
   }>(
     '/',
-    { preHandler: requireGuildManager },
     async (request, reply) => {
       const { guildId, guildName, ...eventData } = request.body;
+
+      // Check permission
+      (request as any).params = { guildId };
+      await requireModulePermission('events')(request, reply);
+      if (reply.sent) return;
+
       const userId = (request as any).session?.user?.id || 'unknown';
 
     // Ensure guild exists
@@ -306,11 +317,11 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
           return reply.code(404).send({ error: 'Event not found' });
         }
 
-        // Add guildId to request for middleware
-        (request as any).body = { ...(request.body || {}), guildId: event.guildId };
+        // Add guildId to request params for permission check
+        (request as any).params = { ...request.params, guildId: event.guildId };
 
-        // Run auth check
-        await requireGuildManager(request, reply);
+        // Check permission
+        await requireModulePermission('events')(request, reply);
       },
     },
     async (request, reply) => {
@@ -374,11 +385,11 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
           return reply.code(404).send({ error: 'Event not found' });
         }
 
-        // Add guildId to request for middleware
-        (request as any).body = { guildId: event.guildId };
+        // Add guildId to request params for permission check
+        (request as any).params = { ...request.params, guildId: event.guildId };
 
-        // Run auth check
-        await requireGuildManager(request, reply);
+        // Check permission
+        await requireModulePermission('events')(request, reply);
       },
     },
     async (request, reply) => {

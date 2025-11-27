@@ -188,6 +188,39 @@ class ApiService {
     return this.request(`/api/guilds/${guildId}/channels`);
   }
 
+  async getRolePermissions(guildId: string): Promise<any[]> {
+    return this.request(`/api/guilds/${guildId}/role-permissions`);
+  }
+
+  async updateRolePermission(guildId: string, permission: {
+    roleId: string;
+    canAccessEvents?: boolean;
+    canAccessCompositions?: boolean;
+    canAccessTemplates?: boolean;
+    canAccessSettings?: boolean;
+  }): Promise<any> {
+    return this.request(`/api/guilds/${guildId}/role-permissions`, {
+      method: 'PUT',
+      body: JSON.stringify(permission),
+    });
+  }
+
+  async deleteRolePermission(guildId: string, roleId: string): Promise<void> {
+    return this.request(`/api/guilds/${guildId}/role-permissions/${roleId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getMyPermissions(guildId: string): Promise<{
+    events: boolean;
+    compositions: boolean;
+    templates: boolean;
+    settings: boolean;
+    isManager: boolean;
+  }> {
+    return this.request(`/api/guilds/${guildId}/my-permissions`);
+  }
+
   // Events
   async getEvents(guildId: string, status?: string): Promise<Event[]> {
     const params = new URLSearchParams({ guildId });

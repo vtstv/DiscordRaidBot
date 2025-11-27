@@ -15,7 +15,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const { guildId } = useParams<{ guildId: string }>();
   const { user, logout } = useAuth();
-  const { selectedGuild } = useGuild();
+  const { selectedGuild, permissions } = useGuild();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -159,28 +159,32 @@ export default function Layout({ children }: LayoutProps) {
           >
             <span>📊</span> Dashboard
           </Link>
-          <Link 
-            to={`/guild/${guildId}/events`} 
-            className={`nav-link rounded-lg px-4 py-2 flex items-center gap-3 transition-colors ${
-              isActive('events') 
-                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}
-            onClick={closeSidebar}
-          >
-            <span>📅</span> Events
-          </Link>
-          <Link 
-            to={`/guild/${guildId}/compositions`} 
-            className={`nav-link rounded-lg px-4 py-2 flex items-center gap-3 transition-colors ${
-              isActive('compositions') 
-                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}
-            onClick={closeSidebar}
-          >
-            <span>👥</span> Compositions
-          </Link>
+          {(permissions?.events || permissions?.isManager) && (
+            <Link 
+              to={`/guild/${guildId}/events`} 
+              className={`nav-link rounded-lg px-4 py-2 flex items-center gap-3 transition-colors ${
+                isActive('events') 
+                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+              onClick={closeSidebar}
+            >
+              <span>📅</span> Events
+            </Link>
+          )}
+          {(permissions?.compositions || permissions?.isManager) && (
+            <Link 
+              to={`/guild/${guildId}/compositions`} 
+              className={`nav-link rounded-lg px-4 py-2 flex items-center gap-3 transition-colors ${
+                isActive('compositions') 
+                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+              onClick={closeSidebar}
+            >
+              <span>👥</span> Compositions
+            </Link>
+          )}
           <Link 
             to={`/guild/${guildId}/calendar`} 
             className={`nav-link rounded-lg px-4 py-2 flex items-center gap-3 transition-colors ${
@@ -192,28 +196,32 @@ export default function Layout({ children }: LayoutProps) {
           >
             <span>📆</span> Calendar
           </Link>
-          <Link 
-            to={`/guild/${guildId}/templates`} 
-            className={`nav-link rounded-lg px-4 py-2 flex items-center gap-3 transition-colors ${
-              isActive('templates') 
-                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}
-            onClick={closeSidebar}
-          >
-            <span>📋</span> Templates
-          </Link>
-          <Link 
-            to={`/guild/${guildId}/settings`} 
-            className={`nav-link rounded-lg px-4 py-2 flex items-center gap-3 transition-colors ${
-              isActive('settings') 
-                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}
-            onClick={closeSidebar}
-          >
-            <span>⚙️</span> Settings
-          </Link>
+          {(permissions?.templates || permissions?.isManager) && (
+            <Link 
+              to={`/guild/${guildId}/templates`} 
+              className={`nav-link rounded-lg px-4 py-2 flex items-center gap-3 transition-colors ${
+                isActive('templates') 
+                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+              onClick={closeSidebar}
+            >
+              <span>📋</span> Templates
+            </Link>
+          )}
+          {(permissions?.settings || permissions?.isManager) && (
+            <Link 
+              to={`/guild/${guildId}/settings`} 
+              className={`nav-link rounded-lg px-4 py-2 flex items-center gap-3 transition-colors ${
+                isActive('settings') 
+                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+              onClick={closeSidebar}
+            >
+              <span>⚙️</span> Settings
+            </Link>
+          )}
         </div>
 
         <div className="sidebar-footer dark:border-gray-700 mt-auto p-4 border-t border-gray-200 lg:hidden">

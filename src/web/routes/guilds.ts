@@ -207,4 +207,129 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       return reply.code(500).send({ error: 'Failed to get channels' });
     }
   });
+
+  // Get dashboard role permissions
+  server.get<{
+    Params: { guildId: string };
+  }>('/:guildId/role-permissions', async (request, reply) => {
+    (request as any).params = { guildId: request.params.guildId };
+    await requireGuildAdmin(request as any, reply);
+    if (reply.sent) return;
+
+    const { guildId } = request.params;
+
+    try {
+      const permissions = await prisma.dashboardRolePermission.findMany({
+        where: { guildId },
+        orderBy: { createdAt: 'asc' },
+      });
+      return permissions;
+    } catch (error) {
+      logger.error({ error, guildId }, 'Failed to get role permissions');
+      return reply.code(500).send({ error: 'Failed to get permissions' });
+    }
+  });
+
+  // Update dashboard role permissions
+  server.put<{
+    Params: { guildId: string };
+    Body: {
+      roleId: string;
+      canAccessEvents?: boolean;
+      canAccessCompositions?: boolean;
+      canAccessTemplates?: boolean;
+      canAccessSettings?: boolean;
+    };
+  }>('/:guildId/role-permissions', async (request, reply) => {
+    (request as any).params = { guildId: request.params.guildId };
+    await requireGuildAdmin(request as any, reply);
+    if (reply.sent) return;
+
+    const { guildId } = request.params;
+    const { roleId, canAccessEvents, canAccessCompositions, canAccessTemplates, canAccessSettings } = request.body;
+
+    try {
+      const permission = await prisma.dashboardRolePermission.upsert({
+        where: {
+          guildId_roleId: {
+            guildId,
+            roleId,
+          },
+        },
+        create: {
+          guildId,
+          roleId,
+          canAccessEvents: canAccessEvents ?? true,
+          canAccessCompositions: canAccessCompositions ?? true,
+          canAccessTemplates: canAccessTemplates ?? true,
+          canAccessSettings: canAccessSettings ?? false,
+        },
+        update: {
+          ...(canAccessEvents !== undefined && { canAccessEvents }),
+          ...(canAccessCompositions !== undefined && { canAccessCompositions }),
+          ...(canAccessTemplates !== undefined && { canAccessTemplates }),
+          ...(canAccessSettings !== undefined && { canAccessSettings }),
+        },
+      });
+
+      logger.info({ guildId, roleId, permission }, 'Role permissions updated');
+      return permission;
+    } catch (error) {
+      logger.error({ error, guildId, roleId }, 'Failed to update role permissions');
+      return reply.code(500).send({ error: 'Failed to update permissions' });
+    }
+  });
+
+  // Delete dashboard role permissions
+  server.delete<{
+    Params: { guildId: string; roleId: string };
+  }>('/:guildId/role-permissions/:roleId', async (request, reply) => {
+    (request as any).params = { guildId: request.params.guildId };
+    await requireGuildAdmin(request as any, reply);
+    if (reply.sent) return;
+
+    const { guildId, roleId } = request.params;
+
+    try {
+      await prisma.dashboardRolePermission.delete({
+        where: {
+          guildId_roleId: {
+            guildId,
+            roleId,
+          },
+        },
+      });
+
+      logger.info({ guildId, roleId }, 'Role permissions deleted');
+      return { success: true };
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        return reply.code(404).send({ error: 'Permissions not found' });
+      }
+      logger.error({ error, guildId, roleId }, 'Failed to delete role permissions');
+      return reply.code(500).send({ error: 'Failed to delete permissions' });
+    }
+  });
+
+  // Get user's permissions for current guild
+  server.get<{
+    Params: { guildId: string };
+  }>('/:guildId/my-permissions', async (request, reply) => {
+    const user = (request as any).session?.user;
+    
+    if (!user) {
+      return reply.code(401).send({ error: 'Not authenticated' });
+    }
+
+    const { guildId } = request.params;
+
+    try {
+      const { getUserPermissions } = await import('../auth/permissions.js');
+      const permissions = await getUserPermissions(guildId, user.id);
+      return permissions;
+    } catch (error) {
+      logger.error({ error, guildId, userId: user.id }, 'Failed to get user permissions');
+      return reply.code(500).send({ error: 'Failed to get permissions' });
+    }
+  });
 }

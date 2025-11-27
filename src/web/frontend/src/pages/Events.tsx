@@ -19,17 +19,30 @@ export default function Events() {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
   useEffect(() => {
     if (guildId) {
-      api.getEvents(guildId).then(evts => {
-        // Sort events with newest first (descending by startTime)
-        const sorted = evts.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
-        setEvents(sorted);
-      }).finally(() => setLoading(false));
+      setLoading(true);
+      setError(null);
+      api.getEvents(guildId)
+        .then(evts => {
+          // Sort events with newest first (descending by startTime)
+          const sorted = evts.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+          setEvents(sorted);
+        })
+        .catch((err) => {
+          console.error('Failed to load events:', err);
+          if (err.message?.includes('403') || err.message?.includes('Forbidden')) {
+            setError('Access Denied: You do not have permission to view Events.');
+          } else {
+            setError('Failed to load events. Please try again.');
+          }
+        })
+        .finally(() => setLoading(false));
     }
   }, [guildId]);
 
@@ -52,6 +65,30 @@ export default function Events() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">Loading events...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen dark:bg-gray-900">
+          <div className="text-center max-w-md">
+            <div className="bg-red-100 dark:bg-red-900/20 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-10 h-10 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">Access Denied</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+            <button
+              onClick={() => navigate(`/guild/${guildId}/dashboard`)}
+              className="px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors"
+            >
+              Go to Dashboard
+            </button>
           </div>
         </div>
       </Layout>

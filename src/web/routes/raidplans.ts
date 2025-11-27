@@ -5,6 +5,7 @@
 import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
 import { requireGuildManager } from '../auth/middleware.js';
+import { requireModulePermission } from '../auth/permissions.js';
 import { getModuleLogger } from '../../utils/logger.js';
 
 const prisma = getPrismaClient();
@@ -16,6 +17,11 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
     Querystring: { guildId: string };
   }>('/guild/:guildId/events-with-plans', async (request, reply) => {
     const { guildId } = request.params as any;
+
+    // Check permission
+    (request as any).params = { guildId };
+    await requireModulePermission('compositions')(request, reply);
+    if (reply.sent) return;
 
     try {
       // Get all raid plans for the guild with their events
@@ -174,7 +180,7 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
     try {
       const raidPlan = await prisma.raidPlan.findUnique({
         where: { eventId },
-        include: {
+        select: { id: true, eventId: true, guildId: true, title: true, groups: true, createdAt: true, updatedAt: true,
           event: {
             select: {
               id: true,
@@ -200,6 +206,11 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
         return reply.code(404).send({ error: 'Raid plan not found' });
       }
 
+      // Check permission
+      (request as any).params = { guildId: raidPlan.guildId };
+      await requireModulePermission('compositions')(request, reply);
+      if (reply.sent) return;
+
       // Check if user has access to this guild (only if guildId provided)
       if (guildId && raidPlan.guildId !== guildId) {
         return reply.code(403).send({ error: 'Access denied' });
@@ -220,8 +231,13 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
       title?: string;
       groups?: any[];
     };
-  }>('/', { preHandler: requireGuildManager }, async (request, reply) => {
+  }>('/', async (request, reply) => {
     const { eventId, guildId, title, groups } = request.body;
+
+    // Check permission
+    (request as any).params = { guildId };
+    await requireModulePermission('compositions')(request, reply);
+    if (reply.sent) return;
     const authSession = (request as any).authSession;
     const createdBy = authSession?.user?.id;
 
@@ -309,13 +325,18 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
       title?: string;
       groups?: any[];
     };
-  }>('/:id', { preHandler: requireGuildManager }, async (request, reply) => {
+  }>('/:id', async (request, reply) => {
     const { id } = request.params;
     const { guildId, title, groups } = request.body;
 
     if (!guildId) {
       return reply.code(400).send({ error: 'guildId is required' });
     }
+
+    // Check permission
+    (request as any).params = { guildId };
+    await requireModulePermission('compositions')(request, reply);
+    if (reply.sent) return;
 
     try {
       const existing = await prisma.raidPlan.findUnique({
@@ -369,13 +390,18 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
   server.delete<{
     Params: { id: string };
     Querystring: { guildId: string };
-  }>('/:id', { preHandler: requireGuildManager }, async (request, reply) => {
+  }>('/:id', async (request, reply) => {
     const { id } = request.params;
     const { guildId } = request.query;
 
     if (!guildId) {
       return reply.code(400).send({ error: 'guildId is required' });
     }
+
+    // Check permission
+    (request as any).params = { guildId };
+    await requireModulePermission('compositions')(request, reply);
+    if (reply.sent) return;
 
     try {
       const existing = await prisma.raidPlan.findUnique({

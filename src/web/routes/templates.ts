@@ -6,6 +6,7 @@ import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
 import { TemplateConfigSchema } from '../../commands/template.js';
 import { requireGuildManager } from '../auth/middleware.js';
+import { requireModulePermission } from '../auth/permissions.js';
 
 const prisma = getPrismaClient();
 
@@ -19,6 +20,11 @@ export async function templatesRoutes(server: FastifyInstance): Promise<void> {
     if (!guildId) {
       return reply.code(400).send({ error: 'guildId is required' });
     }
+
+    // Check permission
+    (request as any).params = { guildId };
+    await requireModulePermission('templates')(request, reply);
+    if (reply.sent) return;
 
     const templates = await prisma.template.findMany({
       where: { guildId },
@@ -36,11 +42,17 @@ export async function templatesRoutes(server: FastifyInstance): Promise<void> {
 
     const template = await prisma.template.findUnique({
       where: { id },
+      select: { id: true, guildId: true, name: true, description: true, config: true, createdAt: true, updatedAt: true },
     });
 
     if (!template) {
       return reply.code(404).send({ error: 'Template not found' });
     }
+
+    // Check permission
+    (request as any).params = { guildId: template.guildId };
+    await requireModulePermission('templates')(request, reply);
+    if (reply.sent) return;
 
     return template;
   });
@@ -56,9 +68,13 @@ export async function templatesRoutes(server: FastifyInstance): Promise<void> {
     };
   }>(
     '/',
-    { preHandler: requireGuildManager },
     async (request, reply) => {
       const { guildId, guildName, ...templateData } = request.body;
+
+      // Check permission
+      (request as any).params = { guildId };
+      await requireModulePermission('templates')(request, reply);
+      if (reply.sent) return;
 
     // Normalize config - ensure emojiMap doesn't have invalid values
     const config = { ...templateData.config };
@@ -146,11 +162,9 @@ export async function templatesRoutes(server: FastifyInstance): Promise<void> {
           return reply.code(404).send({ error: 'Template not found' });
         }
 
-        // Add guildId to request for middleware
-        (request as any).body = { ...(request.body || {}), guildId: template.guildId };
-
-        // Run auth check
-        await requireGuildManager(request, reply);
+        // Check permission
+        (request as any).params = { ...request.params, guildId: template.guildId };
+        await requireModulePermission('templates')(request, reply);
       },
     },
     async (request, reply) => {
@@ -209,11 +223,9 @@ export async function templatesRoutes(server: FastifyInstance): Promise<void> {
           return reply.code(404).send({ error: 'Template not found' });
         }
 
-        // Add guildId to request for middleware
-        (request as any).body = { guildId: template.guildId };
-
-        // Run auth check
-        await requireGuildManager(request, reply);
+        // Check permission
+        (request as any).params = { ...request.params, guildId: template.guildId };
+        await requireModulePermission('templates')(request, reply);
       },
     },
     async (request, reply) => {
