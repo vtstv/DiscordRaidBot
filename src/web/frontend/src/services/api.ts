@@ -31,6 +31,7 @@ export interface Event {
   channelId?: string;
   templateId?: string;
   createdBy: string;
+  createdAt: string;
   _count?: {
     participants: number;
   };

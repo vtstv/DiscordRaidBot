@@ -35,7 +35,10 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
 
     const events = await prisma.event.findMany({
       where,
-      orderBy: { startTime: 'asc' },
+      orderBy: [
+        { createdAt: 'desc' },  // Newest events first
+        { startTime: 'asc' },   // Then by start time
+      ],
       take: 50,
       include: {
         _count: {

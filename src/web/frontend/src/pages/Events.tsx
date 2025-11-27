@@ -30,9 +30,8 @@ export default function Events() {
       setError(null);
       api.getEvents(guildId)
         .then(evts => {
-          // Sort events with newest first (descending by startTime)
-          const sorted = evts.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
-          setEvents(sorted);
+          // Backend already sorts by createdAt desc, then startTime asc
+          setEvents(evts);
         })
         .catch((err) => {
           console.error('Failed to load events:', err);
