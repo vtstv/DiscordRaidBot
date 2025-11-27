@@ -19,30 +19,55 @@ export default function Events() {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
-  useEffect(() => {
-    if (guildId) {
+  const loadEvents = (isRefresh = false) => {
+    if (!guildId) return;
+    
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
       setLoading(true);
-      setError(null);
-      api.getEvents(guildId)
-        .then(evts => {
-          // Backend already sorts by createdAt desc, then startTime asc
-          setEvents(evts);
-        })
-        .catch((err) => {
-          console.error('Failed to load events:', err);
-          if (err.message?.includes('403') || err.message?.includes('Forbidden')) {
-            setError('Access Denied: You do not have permission to view Events.');
-          } else {
-            setError('Failed to load events. Please try again.');
-          }
-        })
-        .finally(() => setLoading(false));
     }
+    setError(null);
+    
+    api.getEvents(guildId)
+      .then(evts => {
+        // Backend already sorts by createdAt desc, then startTime asc
+        setEvents(evts);
+      })
+      .catch((err) => {
+        console.error('Failed to load events:', err);
+        if (err.message?.includes('403') || err.message?.includes('Forbidden')) {
+          setError('Access Denied: You do not have permission to view Events.');
+        } else {
+          setError('Failed to load events. Please try again.');
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+        setRefreshing(false);
+      });
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadEvents();
+  }, [guildId]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (!guildId) return;
+    
+    const interval = setInterval(() => {
+      loadEvents(true);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, [guildId]);
 
   const filteredEvents = events.filter(e => {
@@ -104,15 +129,33 @@ export default function Events() {
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Events</h1>
               <p className="text-gray-600 dark:text-gray-400">{filteredEvents.length} events found</p>
             </div>
-            <button
-              onClick={() => navigate(`/guild/${guildId}/events/create`)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Create Event
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => loadEvents(true)}
+                disabled={refreshing}
+                className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-2xl font-semibold shadow-sm hover:shadow-md hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                title="Refresh events list (auto-updates every 30s)"
+              >
+                <svg 
+                  className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {refreshing ? 'Updating...' : 'Refresh'}
+              </button>
+              <button
+                onClick={() => navigate(`/guild/${guildId}/events/create`)}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Create Event
+              </button>
+            </div>
           </div>
 
           {/* Filters */}

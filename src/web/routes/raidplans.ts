@@ -283,8 +283,6 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
         { id: 'group-1', name: 'Group 1', positions: [] },
         { id: 'group-2', name: 'Group 2', positions: [] },
         { id: 'group-3', name: 'Group 3', positions: [] },
-        { id: 'group-4', name: 'Group 4', positions: [] },
-        { id: 'group-5', name: 'Group 5', positions: [] },
       ];
 
       const raidPlan = await prisma.raidPlan.create({
