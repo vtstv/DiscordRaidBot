@@ -9,6 +9,7 @@ import { registerAuthRoutes } from './auth.js';
 import { adminRoutes } from './admin.js';
 import { guildsRoutes } from './guilds.js';
 import { statsRoutes } from './stats.js';
+import { raidPlansRoutes } from './raidplans.js';
 
 export async function registerRoutes(server: FastifyInstance): Promise<void> {
   // Auth routes (no prefix)
@@ -26,5 +27,6 @@ export async function registerRoutes(server: FastifyInstance): Promise<void> {
     await api.register(templatesRoutes, { prefix: '/templates' });
     await api.register(statsRoutes, { prefix: '/stats' });
     await api.register(adminRoutes, { prefix: '/admin' });
+    await api.register(raidPlansRoutes, { prefix: '/raidplans' });
   }, { prefix: '/api' });
 }

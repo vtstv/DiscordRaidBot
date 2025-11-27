@@ -30,6 +30,8 @@ import Templates from './pages/Templates';
 import CreateTemplate from './pages/CreateTemplate';
 import Settings from './pages/Settings';
 import PublicEvent from './pages/PublicEvent';
+import CompositionTool from './pages/CompositionTool';
+import PublicRaidPlan from './pages/PublicRaidPlan';
 
 function AppRoutes() {
   const { user, loading } = useAuth();
@@ -42,6 +44,7 @@ function AppRoutes() {
     <Routes>
       {/* Public routes */}
       <Route path="/event/:eventId" element={<PublicEvent />} />
+      <Route path="/raidplan/:raidPlanId" element={<PublicRaidPlan />} />
 
       {!user ? (
         <>
@@ -63,6 +66,7 @@ function AppRoutes() {
           <Route path="/guild/:guildId/dashboard" element={<Dashboard />} />
           <Route path="/guild/:guildId/events" element={<Events />} />
           <Route path="/guild/:guildId/events/:eventId" element={<EventDetails />} />
+          <Route path="/guild/:guildId/events/:eventId/composition" element={<CompositionTool />} />
           <Route path="/guild/:guildId/events/create" element={<CreateEvent />} />
           <Route path="/guild/:guildId/events/:eventId/edit" element={<CreateEvent />} />
           <Route path="/guild/:guildId/calendar" element={<EventCalendar />} />

@@ -48,6 +48,7 @@ model Guild {
   events    Event[]
   logEntries LogEntry[]
   statistics ParticipantStatistics[]
+  raidPlans RaidPlan[]
 
   @@map("guilds")
 }
@@ -111,6 +112,7 @@ model Event {
   template        Template?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
   participants    Participant[]
   logEntries      LogEntry[]
+  raidPlan        RaidPlan?
 
   @@index([guildId, status])
   @@index([startTime])
@@ -198,3 +200,24 @@ model ParticipantStatistics {
   @@index([guildId, rank])
   @@map("participant_statistics")
 }
+
+model RaidPlan {
+  id          String   @id @default(uuid())
+  eventId     String   @unique @map("eventid")
+  guildId     String   @map("guildid")
+  
+  title       String   @default("Raid Composition")
+  groups      Json     // Array of groups: [{ id, name, positions: [{ id, participantId, label, roleClass }] }]
+  
+  createdBy   String   @map("createdby")  // Discord user ID
+  createdAt   DateTime @default(now()) @map("createdat")
+  updatedAt   DateTime @updatedAt @map("updatedat")
+
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId])
+  @@index([eventId])
+  @@map("raid_plans")
+}
+

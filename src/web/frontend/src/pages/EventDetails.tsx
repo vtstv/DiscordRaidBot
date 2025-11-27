@@ -240,6 +240,13 @@ export default function EventDetails() {
               </div>
               <div className="flex gap-3">
                 <button
+                  onClick={() => navigate(`/guild/${guildId}/events/${eventId}/composition`)}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
+                  title="Manage raid composition"
+                >
+                  Composition
+                </button>
+                <button
                   onClick={() => navigate(`/guild/${guildId}/events/${eventId}/edit`)}
                   className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-md transition-all font-medium"
                 >

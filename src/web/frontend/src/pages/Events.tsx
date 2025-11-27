@@ -25,7 +25,11 @@ export default function Events() {
 
   useEffect(() => {
     if (guildId) {
-      api.getEvents(guildId).then(setEvents).finally(() => setLoading(false));
+      api.getEvents(guildId).then(evts => {
+        // Sort events with newest first (descending by startTime)
+        const sorted = evts.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+        setEvents(sorted);
+      }).finally(() => setLoading(false));
     }
   }, [guildId]);
 

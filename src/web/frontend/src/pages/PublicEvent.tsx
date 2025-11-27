@@ -17,6 +17,7 @@ export default function PublicEvent() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [raidPlanId, setRaidPlanId] = useState<string | null>(null);
 
   useEffect(() => {
     if (eventId) {
@@ -28,7 +29,14 @@ export default function PublicEvent() {
           }
           return response.json();
         })
-        .then(data => setEvent(data))
+        .then(data => {
+          setEvent(data);
+          // Check if raid plan exists
+          fetch(`/api/raidplans/event/${eventId}/public`)
+            .then(res => res.ok ? res.json() : null)
+            .then(plan => plan && setRaidPlanId(plan.id))
+            .catch(() => {}); // Silently ignore if no raid plan
+        })
         .catch(err => setError(err.message))
         .finally(() => setLoading(false));
     }
@@ -92,6 +100,29 @@ export default function PublicEvent() {
           </div>
         )}
 
+        {/* Raid Plan Link */}
+        {raidPlanId && (
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl shadow-sm border border-purple-200 dark:border-purple-700 p-6 mb-6 transition-colors duration-200">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-purple-600 rounded-xl">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Raid Composition</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">View the planned raid composition for this event</p>
+              </div>
+              <a
+                href={`/raidplan/${raidPlanId}`}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                View Raid Plan
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Participants */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-200">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
@@ -148,11 +179,16 @@ export default function PublicEvent() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-500 dark:text-gray-500">
-          <p>Event ID: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs">{event.id}</code></p>
+        <div className="text-center mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-gray-500 dark:text-gray-500">
+            Event ID: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs">{event.id}</code>
+          </p>
           {event.createdByUser && (
-            <p className="mt-2">Created by {event.createdByUser.displayName}</p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-500">Created by {event.createdByUser.displayName}</p>
           )}
+          <div className="mt-4 text-xs text-gray-400 dark:text-gray-600">
+            <p>© 2025 <a href="https://github.com/vtstv" target="_blank" rel="noopener noreferrer" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">Murr</a> • RaidBot v1.0.0</p>
+          </div>
         </div>
       </div>
     </div>
