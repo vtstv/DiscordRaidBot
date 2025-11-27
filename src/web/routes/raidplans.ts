@@ -234,12 +234,18 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
   }>('/', async (request, reply) => {
     const { eventId, guildId, title, groups } = request.body;
 
+    // Manually set params for middleware (since guildId is in body, not params)
+    if (!request.params) {
+      (request as any).params = {};
+    }
+    (request.params as any).guildId = guildId;
+    
     // Check permission
-    (request as any).params = { guildId };
     await requireModulePermission('compositions')(request, reply);
     if (reply.sent) return;
-    const authSession = (request as any).authSession;
-    const createdBy = authSession?.user?.id;
+    
+    // Get user ID from session (not authSession - that's set by requireAuth middleware)
+    const createdBy = (request as any).session?.user?.id;
 
     if (!eventId || !guildId) {
       return reply.code(400).send({ error: 'eventId and guildId are required' });

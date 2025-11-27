@@ -8,7 +8,9 @@ import type { Event, RaidPlanData } from './types';
  * Load event data
  */
 export async function loadEvent(eventId: string, guildId: string): Promise<Event> {
-  const response = await fetch(`/api/events/${eventId}?guildId=${guildId}`);
+  const response = await fetch(`/api/events/${eventId}?guildId=${guildId}`, {
+    credentials: 'include',
+  });
   if (!response.ok) {
     throw new Error('Failed to load event');
   }
@@ -19,7 +21,9 @@ export async function loadEvent(eventId: string, guildId: string): Promise<Event
  * Load raid plan for event
  */
 export async function loadRaidPlan(eventId: string, guildId: string): Promise<RaidPlanData | null> {
-  const response = await fetch(`/api/raidplans/event/${eventId}?guildId=${guildId}`);
+  const response = await fetch(`/api/raidplans/event/${eventId}?guildId=${guildId}`, {
+    credentials: 'include',
+  });
   if (response.ok) {
     return response.json();
   }
@@ -66,6 +70,7 @@ export async function updateRaidPlan(
   const response = await fetch(`/api/raidplans/${raidPlanId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({
       guildId,
       title,
