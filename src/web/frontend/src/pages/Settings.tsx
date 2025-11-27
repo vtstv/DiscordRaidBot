@@ -232,7 +232,7 @@ export default function Settings() {
                 {/* Manager & Permissions Card */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200">
                   <div className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">👤 Manager</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">👤 Manager & Access</h2>
                     
                     <div className="space-y-4">
                       <div>
@@ -254,6 +254,33 @@ export default function Settings() {
                             </option>
                           ))}
                         </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                          Dashboard Access Roles
+                          <InfoIcon onClick={() => alert('Select roles that can access the dashboard. If empty, only managers can access. Hold Ctrl/Cmd to select multiple roles.')} />
+                        </label>
+                        <select 
+                          multiple
+                          value={settings.dashboardRoles || []} 
+                          onChange={e => {
+                            const selected = Array.from(e.target.selectedOptions).map(o => o.value);
+                            setSettings({...settings, dashboardRoles: selected});
+                          }}
+                          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all min-h-[120px]"
+                        >
+                          {roles.map(role => (
+                            <option key={role.id} value={role.id}>
+                              @{role.name}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          {settings.dashboardRoles && settings.dashboardRoles.length > 0 
+                            ? `${settings.dashboardRoles.length} role(s) selected` 
+                            : 'No additional roles selected (managers only)'}
+                        </p>
                       </div>
                     </div>
                   </div>

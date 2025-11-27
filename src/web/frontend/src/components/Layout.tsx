@@ -171,6 +171,17 @@ export default function Layout({ children }: LayoutProps) {
             <span>📅</span> Events
           </Link>
           <Link 
+            to={`/guild/${guildId}/compositions`} 
+            className={`nav-link rounded-lg px-4 py-2 flex items-center gap-3 transition-colors ${
+              isActive('compositions') 
+                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+            }`}
+            onClick={closeSidebar}
+          >
+            <span>👥</span> Compositions
+          </Link>
+          <Link 
             to={`/guild/${guildId}/calendar`} 
             className={`nav-link rounded-lg px-4 py-2 flex items-center gap-3 transition-colors ${
               isActive('calendar') 

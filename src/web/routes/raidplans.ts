@@ -11,6 +11,74 @@ const prisma = getPrismaClient();
 const logger = getModuleLogger('raidplans-routes');
 
 export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
+  // Get all events with raid plans for a guild
+  server.get<{
+    Querystring: { guildId: string };
+  }>('/guild/:guildId/events-with-plans', async (request, reply) => {
+    const { guildId } = request.params as any;
+
+    try {
+      // Get all raid plans for the guild with their events
+      const raidPlans = await prisma.raidPlan.findMany({
+        where: { guildId },
+        include: {
+          event: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              startTime: true,
+              status: true,
+              maxParticipants: true,
+              channelId: true,
+              participants: {
+                where: { status: 'confirmed' },
+                select: {
+                  id: true,
+                  userId: true,
+                  username: true,
+                  role: true,
+                  spec: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          event: {
+            startTime: 'asc',
+          },
+        },
+      });
+
+      // Transform to events with raidPlan property
+      const eventsWithPlans = raidPlans
+        .filter(rp => rp.event) // Only events that exist
+        .filter(rp => {
+          // Filter for upcoming events only
+          const startTime = new Date(rp.event.startTime);
+          return (
+            (rp.event.status === 'scheduled' || rp.event.status === 'active') &&
+            startTime > new Date()
+          );
+        })
+        .map(rp => ({
+          ...rp.event,
+          raidPlan: {
+            id: rp.id,
+            eventId: rp.eventId,
+            title: rp.title,
+            groups: rp.groups,
+          },
+        }));
+
+      return eventsWithPlans;
+    } catch (error) {
+      logger.error({ error, guildId }, 'Failed to fetch events with raid plans');
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
   // Get raid plan for an event (public endpoint)
   server.get<{
     Params: { id: string };
@@ -98,14 +166,10 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
   // Get raid plan for an event (authenticated)
   server.get<{
     Params: { eventId: string };
-    Querystring: { guildId: string };
+    Querystring: { guildId?: string };
   }>('/event/:eventId', async (request, reply) => {
     const { eventId } = request.params;
     const { guildId } = request.query;
-
-    if (!guildId) {
-      return reply.code(400).send({ error: 'guildId is required' });
-    }
 
     try {
       const raidPlan = await prisma.raidPlan.findUnique({
@@ -136,8 +200,8 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
         return reply.code(404).send({ error: 'Raid plan not found' });
       }
 
-      // Check if user has access to this guild
-      if (raidPlan.guildId !== guildId) {
+      // Check if user has access to this guild (only if guildId provided)
+      if (guildId && raidPlan.guildId !== guildId) {
         return reply.code(403).send({ error: 'Access denied' });
       }
 
@@ -155,13 +219,18 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
       guildId: string;
       title?: string;
       groups?: any[];
-      createdBy: string;
     };
   }>('/', { preHandler: requireGuildManager }, async (request, reply) => {
-    const { eventId, guildId, title, groups, createdBy } = request.body;
+    const { eventId, guildId, title, groups } = request.body;
+    const authSession = (request as any).authSession;
+    const createdBy = authSession?.user?.id;
 
-    if (!eventId || !guildId || !createdBy) {
-      return reply.code(400).send({ error: 'eventId, guildId, and createdBy are required' });
+    if (!eventId || !guildId) {
+      return reply.code(400).send({ error: 'eventId and guildId are required' });
+    }
+
+    if (!createdBy) {
+      return reply.code(401).send({ error: 'Unauthorized' });
     }
 
     try {

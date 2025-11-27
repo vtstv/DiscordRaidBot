@@ -73,7 +73,8 @@ export async function compositionPresetsRoutes(server: FastifyInstance): Promise
     };
   }>('/', { preHandler: requireGuildManager }, async (request, reply) => {
     const { guildId, name, description, groups } = request.body;
-    const userId = (request as any).user?.id;
+    const authSession = (request as any).authSession;
+    const userId = authSession?.user?.id;
 
     if (!userId) {
       return reply.code(401).send({ error: 'Unauthorized' });

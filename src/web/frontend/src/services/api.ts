@@ -78,6 +78,7 @@ export interface GuildSettings {
   logChannelId?: string;
   archiveChannelId?: string;
   managerRoleId?: string;
+  dashboardRoles?: string[];
   commandPrefix?: string;
   approvalChannels?: string[];
   reminderIntervals?: string[];

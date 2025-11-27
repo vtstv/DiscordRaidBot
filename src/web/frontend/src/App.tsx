@@ -32,6 +32,7 @@ import Settings from './pages/Settings';
 import PublicEvent from './pages/PublicEvent';
 import CompositionTool from './pages/CompositionTool';
 import PublicRaidPlan from './pages/PublicRaidPlan';
+import Compositions from './pages/Compositions';
 
 function AppRoutes() {
   const { user, loading } = useAuth();
@@ -69,6 +70,7 @@ function AppRoutes() {
           <Route path="/guild/:guildId/events/:eventId/composition" element={<CompositionTool />} />
           <Route path="/guild/:guildId/events/create" element={<CreateEvent />} />
           <Route path="/guild/:guildId/events/:eventId/edit" element={<CreateEvent />} />
+          <Route path="/guild/:guildId/compositions" element={<Compositions />} />
           <Route path="/guild/:guildId/calendar" element={<EventCalendar />} />
           <Route path="/guild/:guildId/templates" element={<Templates />} />
           <Route path="/guild/:guildId/templates/create" element={<CreateTemplate />} />

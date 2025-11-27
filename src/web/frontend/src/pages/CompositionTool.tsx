@@ -99,6 +99,7 @@ export default function CompositionTool() {
     const response = await fetch('/api/raidplans', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         eventId,
         guildId,
@@ -106,6 +107,10 @@ export default function CompositionTool() {
         groups: defaultGroups,
       }),
     });
+
+    if (!response.ok) {
+      throw new Error('Failed to create raid plan');
+    }
 
     return response.json();
   };
@@ -281,9 +286,10 @@ export default function CompositionTool() {
 
   const handleSavePreset = async (name: string, description: string) => {
     try {
-      await fetch('/api/composition-presets', {
+      const response = await fetch('/api/composition-presets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           guildId,
           name,
@@ -291,6 +297,11 @@ export default function CompositionTool() {
           groups,
         }),
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save preset');
+      }
+      
       alert('Preset saved successfully!');
     } catch (error) {
       console.error('Failed to save preset:', error);
@@ -299,7 +310,7 @@ export default function CompositionTool() {
   };
 
   const assignedParticipantIds = new Set(
-    groups.flatMap(g => g.positions.map(p => p.participantId).filter(Boolean))
+    (groups || []).flatMap(g => g.positions.map(p => p.participantId).filter(Boolean))
   );
 
   const unassignedParticipants = (event?.participants || []).filter(

@@ -35,7 +35,9 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
   const loadPresets = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/composition-presets?guildId=${guildId}`);
+      const response = await fetch(`/api/composition-presets?guildId=${guildId}`, {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
         setPresets(data);
@@ -68,7 +70,10 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
     if (!confirm('Delete this preset?')) return;
     
     try {
-      await fetch(`/api/composition-presets/${id}?guildId=${guildId}`, { method: 'DELETE' });
+      await fetch(`/api/composition-presets/${id}?guildId=${guildId}`, { 
+        method: 'DELETE',
+        credentials: 'include',
+      });
       loadPresets();
     } catch (error) {
       console.error('Failed to delete preset:', error);
