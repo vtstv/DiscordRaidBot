@@ -49,6 +49,7 @@ model Guild {
   logEntries LogEntry[]
   statistics ParticipantStatistics[]
   raidPlans RaidPlan[]
+  compositionPresets CompositionPreset[]
 
   @@map("guilds")
 }
@@ -219,5 +220,23 @@ model RaidPlan {
   @@index([guildId])
   @@index([eventId])
   @@map("raid_plans")
+}
+
+model CompositionPreset {
+  id          String   @id @default(uuid())
+  guildId     String   @map("guildid")
+  
+  name        String   // User-defined preset name
+  description String?  // Optional description
+  groups      Json     // Same structure as RaidPlan groups (without participantId)
+  
+  createdBy   String   @map("createdby")  // Discord user ID
+  createdAt   DateTime @default(now()) @map("createdat")
+  updatedAt   DateTime @updatedAt @map("updatedat")
+
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId])
+  @@map("composition_presets")
 }
 

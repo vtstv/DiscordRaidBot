@@ -23,6 +23,7 @@ import {
 import Layout from '../components/Layout';
 import SortableGroup from '../components/SortableGroup';
 import DraggableParticipant from '../components/DraggableParticipant';
+import PresetModal from '../components/PresetModal';
 import { Group, Participant, RaidPlan } from '../types/composition';
 
 interface Event {
@@ -42,6 +43,8 @@ export default function CompositionTool() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState('');
+  const [showPresetModal, setShowPresetModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -261,6 +264,40 @@ export default function CompositionTool() {
     setIsEditingTitle(false);
   };
 
+  const handleLoadPreset = (presetGroups: any) => {
+    // Generate new IDs for groups and positions
+    const newGroups = presetGroups.map((g: any) => ({
+      ...g,
+      id: `group-${Date.now()}-${Math.random()}`,
+      positions: g.positions.map((p: any) => ({
+        ...p,
+        id: `pos-${Date.now()}-${Math.random()}`,
+        participantId: undefined,
+      })),
+    }));
+    setGroups(newGroups);
+    saveRaidPlan(newGroups);
+  };
+
+  const handleSavePreset = async (name: string, description: string) => {
+    try {
+      await fetch('/api/composition-presets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guildId,
+          name,
+          description,
+          groups,
+        }),
+      });
+      alert('Preset saved successfully!');
+    } catch (error) {
+      console.error('Failed to save preset:', error);
+      alert('Failed to save preset');
+    }
+  };
+
   const assignedParticipantIds = new Set(
     groups.flatMap(g => g.positions.map(p => p.participantId).filter(Boolean))
   );
@@ -268,6 +305,13 @@ export default function CompositionTool() {
   const unassignedParticipants = (event?.participants || []).filter(
     p => !assignedParticipantIds.has(p.id)
   );
+
+  const filteredParticipants = searchTerm
+    ? unassignedParticipants.filter(p =>
+        p.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.role?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : unassignedParticipants;
 
   if (loading) {
     return (
@@ -281,24 +325,32 @@ export default function CompositionTool() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-6">
         <div className="max-w-7xl mx-auto px-4">
           {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <button
               onClick={() => navigate(`/guild/${guildId}/events/${eventId}`)}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium"
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium text-sm"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Back to Event
             </button>
-            {saving && <span className="text-sm text-purple-600 dark:text-purple-400">Saving...</span>}
+            <div className="flex items-center gap-2">
+              {saving && <span className="text-xs text-purple-600 dark:text-purple-400">Saving...</span>}
+              <button
+                onClick={() => setShowPresetModal(true)}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:shadow-lg transition-all text-sm"
+              >
+                Profiles
+              </button>
+            </div>
           </div>
 
           {/* Title */}
-          <div className="mb-6">
+          <div className="mb-4">
             {isEditingTitle ? (
               <input
                 type="text"
@@ -306,13 +358,13 @@ export default function CompositionTool() {
                 onChange={(e) => setTitleValue(e.target.value)}
                 onBlur={handleSaveTitle}
                 onKeyPress={(e) => e.key === 'Enter' && handleSaveTitle()}
-                className="text-3xl font-bold px-4 py-2 border-2 border-purple-300 dark:border-purple-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="text-2xl font-bold px-3 py-1 border-2 border-purple-300 dark:border-purple-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 autoFocus
               />
             ) : (
               <h1
                 onClick={() => setIsEditingTitle(true)}
-                className="text-3xl font-bold text-gray-900 dark:text-white cursor-pointer hover:text-purple-600 dark:hover:text-purple-400"
+                className="text-2xl font-bold text-gray-900 dark:text-white cursor-pointer hover:text-purple-600 dark:hover:text-purple-400"
                 title="Click to edit title"
               >
                 {raidPlan?.title || 'Raid Composition'}
@@ -326,20 +378,32 @@ export default function CompositionTool() {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
               {/* Unassigned Participants */}
               <div className="lg:col-span-1">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 sticky top-4">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sticky top-4">
+                  <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">
                     Unassigned ({unassignedParticipants.length})
                   </h2>
-                  <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                    {unassignedParticipants.map(participant => (
+                  
+                  {/* Search */}
+                  <div className="mb-3">
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search participants..."
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
+                    {filteredParticipants.map(participant => (
                       <DraggableParticipant key={participant.id} participant={participant} />
                     ))}
-                    {unassignedParticipants.length === 0 && (
-                      <p className="text-sm text-gray-400 dark:text-gray-600 text-center py-4">
-                        All participants assigned
+                    {filteredParticipants.length === 0 && (
+                      <p className="text-xs text-gray-400 dark:text-gray-600 text-center py-4">
+                        {searchTerm ? 'No matches' : 'All assigned'}
                       </p>
                     )}
                   </div>
@@ -352,7 +416,7 @@ export default function CompositionTool() {
                   items={groups.map(g => `group-${g.id}`)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {groups.map(group => (
                       <SortableGroup
                         key={group.id}
@@ -371,7 +435,7 @@ export default function CompositionTool() {
 
                 <button
                   onClick={handleAddGroup}
-                  className="mt-4 w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl text-gray-600 dark:text-gray-400 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400 transition-all font-medium"
+                  className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400 transition-all font-medium"
                 >
                   + Add Group
                 </button>
@@ -380,12 +444,20 @@ export default function CompositionTool() {
 
             <DragOverlay>
               {activeId && activeId.startsWith('participant-') ? (
-                <div className="p-3 bg-white dark:bg-gray-700 border-2 border-purple-500 rounded-xl shadow-lg">
+                <div className="px-3 py-2 bg-white dark:bg-gray-700 border-2 border-purple-500 rounded-lg shadow-lg text-xs">
                   Dragging...
                 </div>
               ) : null}
             </DragOverlay>
           </DndContext>
+
+          <PresetModal
+            isOpen={showPresetModal}
+            onClose={() => setShowPresetModal(false)}
+            onLoad={handleLoadPreset}
+            onSave={handleSavePreset}
+            guildId={guildId!}
+          />
         </div>
       </div>
     </Layout>
