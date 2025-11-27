@@ -8,7 +8,7 @@ import type { Event } from './types';
  * Create default groups for a new raid plan
  */
 export function createDefaultGroups(): Group[] {
-  return Array.from({ length: 5 }, (_, i) => ({
+  return Array.from({ length: 3 }, (_, i) => ({
     id: `group-${Date.now()}-${i}`,
     name: `Group ${i + 1}`,
     positions: Array.from({ length: 5 }, (_, j) => ({

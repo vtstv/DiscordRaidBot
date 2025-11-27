@@ -77,9 +77,9 @@ export default function CompositionTool() {
         setRaidPlan(planData);
         setGroups(planData.groups || []);
       } else {
-        const newPlan = await createNewRaidPlan(eventData);
-        setRaidPlan(newPlan);
-        setGroups(newPlan.groups);
+        // Don't create raid plan yet - just show default groups
+        // RaidPlan will be created on first save
+        setGroups(createDefaultGroups());
       }
     } catch (error) {
       console.error('Failed to load raid plan:', error);
@@ -88,17 +88,22 @@ export default function CompositionTool() {
     }
   };
 
-  const createNewRaidPlan = async (eventData: Event): Promise<RaidPlanData> => {
-    const defaultGroups = createDefaultGroups();
-    return createRaidPlan(eventId!, guildId!, `Raid Plan: ${eventData.title}`, defaultGroups);
-  };
-
   const saveGroups = async (updatedGroups: Group[], title?: string) => {
-    if (!raidPlan) return;
-
     setSaving(true);
     try {
-      await updateRaidPlan(raidPlan.id, guildId!, title || raidPlan.title, updatedGroups);
+      if (!raidPlan) {
+        // Create raid plan on first save
+        const newPlan = await createRaidPlan(
+          eventId!,
+          guildId!,
+          title || `Raid Plan: ${event?.title || 'Event'}`,
+          updatedGroups
+        );
+        setRaidPlan(newPlan);
+      } else {
+        // Update existing raid plan
+        await updateRaidPlan(raidPlan.id, guildId!, title || raidPlan.title, updatedGroups);
+      }
     } catch (error) {
       console.error('Failed to save:', error);
       alert('Failed to save raid plan');
