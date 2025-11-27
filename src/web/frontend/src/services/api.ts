@@ -42,6 +42,7 @@ export interface Event {
     userId: string;
     role?: string;
     status?: string;
+    note?: string;
     // Enriched fields from Discord
     username?: string;
     discordUsername?: string;
@@ -83,6 +84,7 @@ export interface GuildSettings {
   autoDeleteHours?: number;
   logRetentionDays?: number;
   threadChannels?: string[];
+  noteChannels?: string[];
   // Statistics settings
   statsEnabled?: boolean;
   statsChannelId?: string;
@@ -90,6 +92,9 @@ export interface GuildSettings {
   statsAutoRoleEnabled?: boolean;
   statsTop10RoleId?: string;
   statsMinEvents?: number;
+  allowParticipantNotes?: boolean;
+  participantNoteMaxLength?: number;
+  showViewOnlineButton?: boolean;
 }
 
 export interface DiscordRole {

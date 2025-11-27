@@ -29,6 +29,7 @@ import EventCalendar from './pages/EventCalendar';
 import Templates from './pages/Templates';
 import CreateTemplate from './pages/CreateTemplate';
 import Settings from './pages/Settings';
+import PublicEvent from './pages/PublicEvent';
 
 function AppRoutes() {
   const { user, loading } = useAuth();
@@ -39,6 +40,9 @@ function AppRoutes() {
 
   return (
     <Routes>
+      {/* Public routes */}
+      <Route path="/event/:eventId" element={<PublicEvent />} />
+
       {!user ? (
         <>
           <Route path="/" element={<Landing />} />

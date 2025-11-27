@@ -13,6 +13,7 @@ import { getModuleLogger } from '../utils/logger.js';
 import { DateTime } from 'luxon';
 import { getClient } from '../bot/index.js';
 import { getTranslator } from '../i18n/index.js';
+import { config } from '../config/env.js';
 
 const logger = getModuleLogger('event-message');
 const prisma = getPrismaClient();
@@ -22,6 +23,13 @@ const prisma = getPrismaClient();
  */
 export async function createEventMessage(event: any) {
   const { t } = await getTranslator(event.guildId);
+
+  // Fetch guild settings to check if view online button should be shown
+  const guild = await prisma.guild.findUnique({
+    where: { id: event.guildId },
+    select: { showViewOnlineButton: true },
+  });
+  const showViewOnline = guild?.showViewOnlineButton !== false;
 
   const participants = await prisma.participant.findMany({
     where: { eventId: event.id, status: 'confirmed' },
@@ -255,6 +263,18 @@ export async function createEventMessage(event: any) {
           .setStyle(ButtonStyle.Secondary)
       );
 
+      // View online button (conditionally shown based on guild settings)
+      if (showViewOnline) {
+        const viewOnlineRow = new ActionRowBuilder<ButtonBuilder>();
+        viewOnlineRow.addComponents(
+          new ButtonBuilder()
+            .setLabel('View online')
+            .setStyle(ButtonStyle.Link)
+            .setURL(`${config.WEB_BASE_URL}/event/${event.id}`)
+        );
+        components.push(viewOnlineRow);
+      }
+
       components.push(actionRow);
     } else {
       // Simple buttons without roles
@@ -295,6 +315,18 @@ export async function createEventMessage(event: any) {
           .setLabel(t('buttons.edit'))
           .setStyle(ButtonStyle.Secondary)
       );
+
+      // View online button (conditionally shown based on guild settings)
+      if (showViewOnline) {
+        const viewOnlineRow = new ActionRowBuilder<ButtonBuilder>();
+        viewOnlineRow.addComponents(
+          new ButtonBuilder()
+            .setLabel('View online')
+            .setStyle(ButtonStyle.Link)
+            .setURL(`${config.WEB_BASE_URL}/event/${event.id}`)
+        );
+        components.push(viewOnlineRow);
+      }
 
       components.push(buttonRow);
     }

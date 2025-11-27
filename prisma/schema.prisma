@@ -38,6 +38,9 @@ model Guild {
   allowParticipantNotes Boolean @default(true) @map("allowparticipantnotes")  // Allow participants to add notes
   participantNoteMaxLength Int @default(30) @map("participantnotemaxlength")  // Max characters for participant notes
   
+  // View online button settings
+  showViewOnlineButton Boolean @default(true) @map("showviewonlinebutton")  // Show 'View online' button in Discord messages
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

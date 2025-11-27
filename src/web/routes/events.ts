@@ -41,6 +41,52 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
     return events;
   });
 
+  // Public event view (no authentication required) - MUST be before /:id route
+  server.get<{
+    Params: { id: string };
+  }>('/:id/public', async (request, reply) => {
+    const { id } = request.params;
+
+    try {
+      const event = await prisma.event.findUnique({
+        where: { id },
+        include: {
+          participants: {
+            where: { status: 'confirmed' },
+            orderBy: { joinedAt: 'asc' },
+            select: {
+              id: true,
+              userId: true,
+              role: true,
+              status: true,
+              note: true,
+              username: true,
+              joinedAt: true,
+            },
+          },
+          _count: {
+            select: { participants: true },
+          },
+        },
+      });
+
+      if (!event) {
+        return reply.code(404).send({ error: 'Event not found' });
+      }
+
+      // Enrich participant data with Discord info
+      const enrichedParticipants = await enrichParticipantData(event.participants, event.guildId);
+
+      return {
+        ...event,
+        participants: enrichedParticipants,
+      };
+    } catch (error) {
+      logger.error({ error, eventId: id }, 'Failed to fetch public event');
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
   // Get event details by ID only
   server.get<{
     Params: { id: string };

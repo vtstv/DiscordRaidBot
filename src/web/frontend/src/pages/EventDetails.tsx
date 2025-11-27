@@ -390,6 +390,9 @@ export default function EventDetails() {
                             {participant.role && (
                               <p className="text-sm text-gray-600 dark:text-gray-400">{participant.role}</p>
                             )}
+                            {participant.note && (
+                              <p className="text-sm text-gray-500 dark:text-gray-500 italic">_{participant.note}_</p>
+                            )}
                           </div>
                         </div>
                         {participant.status && (

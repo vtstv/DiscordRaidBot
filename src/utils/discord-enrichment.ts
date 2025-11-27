@@ -22,6 +22,7 @@ export interface EnrichedParticipant {
   status: string;
   joinedAt: Date;
   noShow?: boolean;
+  note?: string | null;
 }
 
 /**
@@ -108,6 +109,7 @@ export async function enrichParticipantData(
     status: string;
     joinedAt: Date;
     noShow?: boolean;
+    note?: string | null;
   }>,
   guildId: string
 ): Promise<EnrichedParticipant[]> {
@@ -134,6 +136,7 @@ export async function enrichParticipantData(
               status: participant.status,
               joinedAt: participant.joinedAt,
               noShow: participant.noShow,
+              note: participant.note,
             };
           } catch (error) {
             logger.debug({ error, userId: participant.userId }, 'Could not fetch Discord member via client');
@@ -146,6 +149,7 @@ export async function enrichParticipantData(
               status: participant.status,
               joinedAt: participant.joinedAt,
               noShow: participant.noShow,
+              note: participant.note,
             };
           }
         })
@@ -180,6 +184,7 @@ export async function enrichParticipantData(
             status: participant.status,
             joinedAt: participant.joinedAt,
             noShow: participant.noShow,
+            note: participant.note,
           };
         }
         
@@ -200,6 +205,7 @@ export async function enrichParticipantData(
             status: participant.status,
             joinedAt: participant.joinedAt,
             noShow: participant.noShow,
+            note: participant.note,
           };
         }
         
@@ -212,6 +218,7 @@ export async function enrichParticipantData(
           status: participant.status,
           joinedAt: participant.joinedAt,
           noShow: participant.noShow,
+          note: participant.note,
         };
       } catch (error) {
         logger.debug({ error, userId: participant.userId }, 'Could not enrich participant');
@@ -224,6 +231,7 @@ export async function enrichParticipantData(
           status: participant.status,
           joinedAt: participant.joinedAt,
           noShow: participant.noShow,
+          note: participant.note,
         };
       }
     })
