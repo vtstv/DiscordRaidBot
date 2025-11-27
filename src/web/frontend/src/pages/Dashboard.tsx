@@ -6,10 +6,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
+import { useI18n } from '../contexts/I18nContext';
 
 export default function Dashboard() {
   const { guildId } = useParams<{ guildId: string }>();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +27,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-center min-h-screen dark:bg-gray-900">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t.dashboard.loadingDashboard}</p>
           </div>
         </div>
       </Layout>
@@ -38,8 +40,8 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
-            <p className="text-gray-600 dark:text-gray-400">Overview of your server's events and statistics</p>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{t.dashboard.title}</h1>
+            <p className="text-gray-600 dark:text-gray-400">{t.dashboard.subtitle}</p>
           </div>
 
           {/* Quick Actions */}
@@ -51,7 +53,7 @@ export default function Dashboard() {
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              <span className="font-semibold">Create Event</span>
+              <span className="font-semibold">{t.dashboard.createEvent}</span>
             </button>
             <button
               onClick={() => navigate(`/guild/${guildId}/templates`)}
@@ -60,7 +62,7 @@ export default function Dashboard() {
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
               </svg>
-              <span className="font-semibold">Templates</span>
+              <span className="font-semibold">{t.nav.templates}</span>
             </button>
             <button
               onClick={() => navigate(`/guild/${guildId}/settings`)}
@@ -70,7 +72,7 @@ export default function Dashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span className="font-semibold">Settings</span>
+              <span className="font-semibold">{t.nav.settings}</span>
             </button>
           </div>
 
@@ -84,7 +86,7 @@ export default function Dashboard() {
                   </svg>
                 </div>
               </div>
-              <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Total Events</h3>
+              <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{t.dashboard.stats.totalEvents}</h3>
               <div className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">{stats?.totalEvents || 0}</div>
             </div>
 
@@ -96,7 +98,7 @@ export default function Dashboard() {
                   </svg>
                 </div>
               </div>
-              <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Active Events</h3>
+              <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{t.dashboard.stats.activeEvents}</h3>
               <div className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">{stats?.activeEvents || 0}</div>
             </div>
 
@@ -108,7 +110,7 @@ export default function Dashboard() {
                   </svg>
                 </div>
               </div>
-              <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Templates</h3>
+              <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{t.dashboard.stats.templates}</h3>
               <div className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">{stats?.totalTemplates || 0}</div>
             </div>
 
@@ -120,14 +122,14 @@ export default function Dashboard() {
                   </svg>
                 </div>
               </div>
-              <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Total Participants</h3>
+              <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{t.dashboard.stats.totalParticipants}</h3>
               <div className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">{stats?.totalParticipants || 0}</div>
             </div>
           </div>
 
           {/* Recent Activity */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-200">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Quick Access</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t.dashboard.quickAccess}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button
                 onClick={() => navigate(`/guild/${guildId}/events`)}
@@ -140,8 +142,8 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">View All Events</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Manage your server events</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">{t.dashboard.quickActions.viewAllEvents}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{t.dashboard.quickActions.viewAllEventsDesc}</div>
                   </div>
                 </div>
                 <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,8 +162,8 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">Event Calendar</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">View events in calendar format</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">{t.dashboard.quickActions.eventCalendar}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{t.dashboard.quickActions.eventCalendarDesc}</div>
                   </div>
                 </div>
                 <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

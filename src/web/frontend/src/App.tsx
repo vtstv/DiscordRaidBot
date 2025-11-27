@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { GuildProvider } from './contexts/GuildContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { I18nProvider } from './contexts/I18nContext';
 import { loadConfig, getConfig } from './config';
 import { api } from './services/api';
 
@@ -100,13 +101,15 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <GuildProvider>
-          <ThemeProvider>
-            <AppRoutes />
-          </ThemeProvider>
-        </GuildProvider>
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <GuildProvider>
+            <ThemeProvider>
+              <AppRoutes />
+            </ThemeProvider>
+          </GuildProvider>
+        </AuthProvider>
+      </I18nProvider>
     </BrowserRouter>
   );
 }

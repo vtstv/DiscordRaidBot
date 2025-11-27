@@ -7,6 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
+import { useI18n } from '../contexts/I18nContext';
 import PresetButtons from './create-template/PresetButtons';
 import FormFields from './create-template/FormFields';
 import HelpBox from './create-template/HelpBox';
@@ -16,6 +17,7 @@ import { templateToFormData, formDataToConfig } from './create-template/utils';
 export default function CreateTemplate() {
   const { guildId, templateId } = useParams<{ guildId: string; templateId?: string }>();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
@@ -91,15 +93,15 @@ export default function CreateTemplate() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span>Back to Templates</span>
+            <span>{t.createTemplate.backToTemplates}</span>
           </button>
 
           <div className="mb-6">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-              {isEditMode ? 'Edit Template' : 'Create New Template'}
+              {isEditMode ? t.createTemplate.titleEdit : t.createTemplate.title}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              {isEditMode ? 'Update your event template settings' : 'Create a reusable template for events'}
+              {isEditMode ? t.createTemplate.subtitleEdit : t.createTemplate.subtitle}
             </p>
           </div>
 
@@ -127,7 +129,7 @@ export default function CreateTemplate() {
                   onClick={() => navigate(`/guild/${guildId}/templates`)}
                   className="w-full sm:w-auto px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
                 >
-                  Cancel
+                  {t.createTemplate.cancel}
                 </button>
                 <button
                   type="submit"
@@ -140,10 +142,10 @@ export default function CreateTemplate() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      {isEditMode ? 'Updating...' : 'Creating...'}
+                      {isEditMode ? t.createTemplate.updating : t.createTemplate.creating}
                     </span>
                   ) : (
-                    isEditMode ? 'Update Template' : 'Create Template'
+                    isEditMode ? t.createTemplate.updateButton : t.createTemplate.createButton
                   )}
                 </button>
               </div>

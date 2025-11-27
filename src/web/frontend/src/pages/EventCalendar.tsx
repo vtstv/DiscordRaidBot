@@ -6,10 +6,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api, Event } from '../services/api';
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
+import { useI18n } from '../contexts/I18nContext';
 
 export default function EventCalendar() {
   const { guildId } = useParams<{ guildId: string }>();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -55,7 +57,7 @@ export default function EventCalendar() {
         <div className="flex items-center justify-center min-h-screen dark:bg-gray-900">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading calendar...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t.calendar.loading}</p>
           </div>
         </div>
       </Layout>
@@ -69,8 +71,8 @@ export default function EventCalendar() {
           {/* Header */}
           <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Event Calendar</h1>
-              <p className="text-gray-600 dark:text-gray-400">View all events in calendar format</p>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{t.calendar.title}</h1>
+              <p className="text-gray-600 dark:text-gray-400">{t.calendar.title.toLowerCase()} {t.common.viewAll.toLowerCase()}</p>
             </div>
             <button
               onClick={() => navigate(`/guild/${guildId}/events/create`)}
@@ -79,7 +81,7 @@ export default function EventCalendar() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Create Event
+              {t.events.createEvent}
             </button>
           </div>
 

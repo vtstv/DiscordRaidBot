@@ -6,6 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api, Event } from '../services/api';
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
+import { useI18n } from '../contexts/I18nContext';
 
 const statusColors = {
   scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
@@ -17,6 +18,7 @@ const statusColors = {
 export default function Events() {
   const { guildId } = useParams<{ guildId: string }>();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -26,6 +28,14 @@ export default function Events() {
   const [endDate, setEndDate] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filtersExpanded, setFiltersExpanded] = useState<boolean>(false);
+
+  const statusTranslations: Record<string, string> = {
+    all: t.events.filters.all,
+    scheduled: t.events.filters.scheduled,
+    active: t.events.filters.active,
+    completed: t.events.filters.completed,
+    cancelled: t.events.filters.cancelled,
+  };
 
   const loadEvents = (isRefresh = false) => {
     if (!guildId) return;
@@ -98,7 +108,7 @@ export default function Events() {
         <div className="flex items-center justify-center min-h-screen dark:bg-gray-900">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading events...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t.events.loadingEvents}</p>
           </div>
         </div>
       </Layout>
@@ -115,13 +125,13 @@ export default function Events() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">Access Denied</h2>
+            <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">{t.errors.accessDenied}</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
             <button
               onClick={() => navigate(`/guild/${guildId}/dashboard`)}
               className="px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors"
             >
-              Go to Dashboard
+              {t.errors.goToDashboard}
             </button>
           </div>
         </div>
@@ -136,8 +146,8 @@ export default function Events() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Events</h1>
-              <p className="text-gray-600 dark:text-gray-400">{filteredEvents.length} events found</p>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{t.events.title}</h1>
+              <p className="text-gray-600 dark:text-gray-400">{filteredEvents.length} {t.events.eventsFound}</p>
             </div>
             <div className="flex gap-3">
               <button
@@ -154,7 +164,7 @@ export default function Events() {
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                {refreshing ? 'Updating...' : 'Refresh'}
+                {refreshing ? t.common.updating : t.common.refresh}
               </button>
               <button
                 onClick={() => navigate(`/guild/${guildId}/events/create`)}
@@ -163,7 +173,7 @@ export default function Events() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Create Event
+                {t.events.createEvent}
               </button>
             </div>
           </div>
@@ -178,7 +188,7 @@ export default function Events() {
               </div>
               <input
                 type="text"
-                placeholder="Search events by title or description..."
+                placeholder={t.events.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
@@ -206,7 +216,7 @@ export default function Events() {
                 <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t.common.filter}s</h3>
                 {(filter !== 'all' || startDate || endDate) && (
                   <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-semibold rounded-full">
                     Active
@@ -227,7 +237,7 @@ export default function Events() {
               <div className="px-6 pb-6 border-t border-gray-200 dark:border-gray-700 pt-6">
                 {/* Status Filter */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.events.status.scheduled.slice(0, -1)}</label>
                   <div className="flex flex-wrap gap-2">
                     {['all', 'scheduled', 'active', 'completed', 'cancelled'].map(status => (
                       <button
@@ -239,7 +249,7 @@ export default function Events() {
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                         }`}
                       >
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                        {statusTranslations[status]}
                       </button>
                     ))}
                   </div>
@@ -248,7 +258,7 @@ export default function Events() {
                 {/* Date Range Filter */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Date</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.events.filters.startDate}</label>
                     <input
                       type="date"
                       value={startDate}
@@ -257,7 +267,7 @@ export default function Events() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">End Date</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.events.filters.endDate}</label>
                     <input
                       type="date"
                       value={endDate}
@@ -278,7 +288,7 @@ export default function Events() {
                     }}
                     className="mt-4 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
                   >
-                    Clear All Filters
+                    {t.events.filters.clearFilters}
                   </button>
                 )}
               </div>
@@ -291,13 +301,13 @@ export default function Events() {
               <svg className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No events found</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">Get started by creating your first event</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t.events.noEvents}</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">{t.events.noEventsDesc}</p>
               <button
                 onClick={() => navigate(`/guild/${guildId}/events/create`)}
                 className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
               >
-                Create Event
+                {t.events.createEvent}
               </button>
             </div>
           ) : (
@@ -313,7 +323,7 @@ export default function Events() {
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white">{event.title}</h3>
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[event.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>
-                          {event.status}
+                          {t.events.status[event.status as keyof typeof t.events.status] || event.status}
                         </span>
                       </div>
                       {event.description && (
@@ -336,7 +346,7 @@ export default function Events() {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                           </svg>
-                          <span>{event._count?.participants || 0} participants</span>
+                          <span>{event._count?.participants || 0} {t.events.participants.toLowerCase()}</span>
                         </div>
                       </div>
                     </div>

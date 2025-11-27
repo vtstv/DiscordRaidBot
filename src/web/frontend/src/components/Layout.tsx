@@ -6,6 +6,7 @@ import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGuild } from '../contexts/GuildContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useI18n } from '../contexts/I18nContext';
 import './Layout.css';
 
 interface LayoutProps {
@@ -17,6 +18,7 @@ export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const { selectedGuild, permissions } = useGuild();
   const { theme, toggleTheme } = useTheme();
+  const { t, locale, setLocale } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -56,6 +58,15 @@ export default function Layout({ children }: LayoutProps) {
         </button>
         <h2 className="font-bold text-lg">{selectedGuild?.name || 'RaidBot'}</h2>
         <div className="flex items-center gap-2">
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as 'en' | 'ru' | 'de')}
+            className="px-2 py-1 text-xs rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-0 focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="en">EN</option>
+            <option value="ru">RU</option>
+            <option value="de">DE</option>
+          </select>
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -118,21 +129,33 @@ export default function Layout({ children }: LayoutProps) {
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{user?.username}</p>
               </div>
             </div>
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex-shrink-0"
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {theme === 'dark' ? (
-                <svg className="w-5 h-5 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex-shrink-0"
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {theme === 'dark' ? (
+                  <svg className="w-5 h-5 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
+              </button>
+              <select
+                value={locale}
+                onChange={(e) => setLocale(e.target.value as 'en' | 'ru' | 'de')}
+                className="px-2 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-0 focus:ring-2 focus:ring-purple-500 transition-colors flex-shrink-0"
+                title="Select Language"
+              >
+                <option value="en">EN</option>
+                <option value="ru">RU</option>
+                <option value="de">DE</option>
+              </select>
+            </div>
           </div>
           
           <h2 className="dark:text-white font-bold text-xl hidden lg:block">{selectedGuild?.name || 'RaidBot'}</h2>
@@ -143,7 +166,7 @@ export default function Layout({ children }: LayoutProps) {
               closeSidebar();
             }}
           >
-            Change Server
+            {locale === 'ru' ? 'Сменить сервер' : 'Change Server'}
           </button>
         </div>
         
@@ -157,7 +180,7 @@ export default function Layout({ children }: LayoutProps) {
             }`}
             onClick={closeSidebar}
           >
-            <span>📊</span> Dashboard
+            <span>📊</span> {t.nav.dashboard}
           </Link>
           {(permissions?.events || permissions?.isManager) && (
             <Link 
@@ -169,7 +192,7 @@ export default function Layout({ children }: LayoutProps) {
               }`}
               onClick={closeSidebar}
             >
-              <span>📅</span> Events
+              <span>📅</span> {t.nav.events}
             </Link>
           )}
           {(permissions?.compositions || permissions?.isManager) && (
@@ -182,7 +205,7 @@ export default function Layout({ children }: LayoutProps) {
               }`}
               onClick={closeSidebar}
             >
-              <span>👥</span> Compositions
+              <span>👥</span> {t.nav.compositions}
             </Link>
           )}
           <Link 
@@ -194,7 +217,7 @@ export default function Layout({ children }: LayoutProps) {
             }`}
             onClick={closeSidebar}
           >
-            <span>📆</span> Calendar
+            <span>📆</span> {t.nav.calendar}
           </Link>
           {(permissions?.templates || permissions?.isManager) && (
             <Link 
@@ -206,7 +229,7 @@ export default function Layout({ children }: LayoutProps) {
               }`}
               onClick={closeSidebar}
             >
-              <span>📋</span> Templates
+              <span>📋</span> {t.nav.templates}
             </Link>
           )}
           {(permissions?.settings || permissions?.isManager) && (
@@ -219,7 +242,7 @@ export default function Layout({ children }: LayoutProps) {
               }`}
               onClick={closeSidebar}
             >
-              <span>⚙️</span> Settings
+              <span>⚙️</span> {t.nav.settings}
             </Link>
           )}
         </div>
@@ -233,7 +256,7 @@ export default function Layout({ children }: LayoutProps) {
               closeSidebar();
             }}
           >
-            Logout
+            {locale === 'ru' ? 'Выйти' : 'Logout'}
           </button>
         </div>
       </nav>

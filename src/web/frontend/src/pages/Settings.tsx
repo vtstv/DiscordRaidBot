@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom';
 import { api, GuildSettings, DiscordRole, DiscordChannel } from '../services/api';
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
+import { useI18n } from '../contexts/I18nContext';
 
 // Import settings components
 import LanguageTimezoneCard from './settings/LanguageTimezoneCard';
@@ -20,6 +21,7 @@ import { RolePermissionsMap } from './settings/types';
 
 export default function Settings() {
   const { guildId } = useParams<{ guildId: string }>();
+  const { t } = useI18n();
   const [settings, setSettings] = useState<GuildSettings | null>(null);
   const [roles, setRoles] = useState<DiscordRole[]>([]);
   const [channels, setChannels] = useState<DiscordChannel[]>([]);
@@ -100,10 +102,10 @@ export default function Settings() {
         
         await Promise.all([...permissionUpdates, ...deletePromises]);
         
-        alert('✅ Settings saved successfully!');
+        alert(t.settings.saveSuccess);
       } catch (error) {
         console.error('Failed to save settings:', error);
-        alert('❌ Failed to save settings');
+        alert(t.settings.saveFailed);
       } finally {
         setSaving(false);
       }
@@ -116,7 +118,7 @@ export default function Settings() {
         <div className="flex items-center justify-center min-h-screen dark:bg-gray-900">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading settings...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t.settings.loadingSettings}</p>
           </div>
         </div>
       </Layout>
@@ -133,13 +135,13 @@ export default function Settings() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">Access Denied</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">{error || 'Settings not found'}</p>
+            <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">{t.errors.accessDenied}</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{error || t.errors.notFound}</p>
             <button
               onClick={() => window.history.back()}
               className="px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors"
             >
-              Go Back
+              {t.common.goBack}
             </button>
           </div>
         </div>
