@@ -247,6 +247,7 @@ export default function CompositionTool() {
             saving={saving}
             onBack={() => navigate(`/guild/${guildId}/events/${eventId}`)}
             onOpenPresets={() => setShowPresetModal(true)}
+            raidPlanId={raidPlan?.id}
           />
 
           <div className="mb-4">
