@@ -112,6 +112,9 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
         },
         template: true,
         guild: true,
+        _count: {
+          select: { participants: true },
+        },
       },
     });
 
