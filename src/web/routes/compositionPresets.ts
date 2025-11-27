@@ -82,6 +82,10 @@ export async function compositionPresetsRoutes(server: FastifyInstance): Promise
       return reply.code(401).send({ error: 'Unauthorized' });
     }
 
+    if (strategy && strategy.length > 2000) {
+      return reply.code(400).send({ error: 'Strategy text is too long (max 2000 characters)' });
+    }
+
     try {
       // Strip participantId from groups (presets should be templates)
       const cleanGroups = JSON.parse(JSON.stringify(groups)).map((group: any) => ({
@@ -118,11 +122,16 @@ export async function compositionPresetsRoutes(server: FastifyInstance): Promise
       guildId: string;
       name?: string;
       description?: string;
+      strategy?: string;
       groups?: any;
     };
   }>('/:id', { preHandler: requireGuildManager }, async (request, reply) => {
     const { id } = request.params;
-    const { guildId, name, description, groups } = request.body;
+    const { guildId, name, description, groups, strategy } = request.body;
+
+    if (strategy && strategy.length > 2000) {
+      return reply.code(400).send({ error: 'Strategy text is too long (max 2000 characters)' });
+    }
 
     try {
       const existing = await prisma.compositionPreset.findFirst({
@@ -136,6 +145,7 @@ export async function compositionPresetsRoutes(server: FastifyInstance): Promise
       const updateData: any = { updatedAt: new Date() };
       if (name) updateData.name = name;
       if (description !== undefined) updateData.description = description;
+      if (request.body.strategy !== undefined) updateData.strategy = request.body.strategy;
       if (groups) {
         // Clean groups
         const cleanGroups = JSON.parse(JSON.stringify(groups)).map((group: any) => ({

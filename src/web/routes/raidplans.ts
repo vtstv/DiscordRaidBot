@@ -265,6 +265,10 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
 
+    if (strategy && strategy.length > 2000) {
+      return reply.code(400).send({ error: 'Strategy text is too long (max 2000 characters)' });
+    }
+
     try {
       // Check if event exists
       const event = await prisma.event.findUnique({
@@ -347,6 +351,10 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
 
     if (!guildId) {
       return reply.code(400).send({ error: 'guildId is required' });
+    }
+
+    if (strategy && strategy.length > 2000) {
+      return reply.code(400).send({ error: 'Strategy text is too long (max 2000 characters)' });
     }
 
     // Check permission

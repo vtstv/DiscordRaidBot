@@ -3,6 +3,8 @@
 
 import { useState } from 'react';
 
+const MAX_STRATEGY_LENGTH = 2000;
+
 interface StrategyEditorProps {
   strategy: string;
   onSave: (strategy: string) => void;
@@ -64,11 +66,21 @@ export default function StrategyEditor({ strategy, onSave }: StrategyEditorProps
       
       <textarea
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => {
+          const newValue = e.target.value;
+          if (newValue.length <= 2000) {
+            setValue(newValue);
+          }
+        }}
         placeholder="Describe your raid strategy, boss mechanics, player assignments, etc..."
         rows={8}
+        maxLength={2000}
         className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-vertical"
       />
+      
+      <div className="text-right mt-1 text-xs text-gray-500 dark:text-gray-400">
+        {value.length}/2000 characters
+      </div>
       
       <div className="flex items-center gap-3 mt-4">
         <button

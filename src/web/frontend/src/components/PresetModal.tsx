@@ -7,13 +7,14 @@ interface Preset {
   id: string;
   name: string;
   description?: string;
+  strategy?: string;
   groups: any;
 }
 
 interface PresetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoad: (groups: any) => void;
+  onLoad: (groups: any, strategy?: string) => void;
   onSave: (name: string, description: string) => void;
   guildId: string;
 }
@@ -52,7 +53,7 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
   const handleLoad = () => {
     const preset = presets.find(p => p.id === selectedPreset);
     if (preset) {
-      onLoad(preset.groups);
+      onLoad(preset.groups, preset.strategy);
       onClose();
     }
   };
@@ -167,6 +168,9 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
                         <h3 className="font-bold text-gray-900 dark:text-white">{preset.name}</h3>
                         {preset.description && (
                           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{preset.description}</p>
+                        )}
+                        {preset.strategy && (
+                          <p className="text-sm text-purple-600 dark:text-purple-400 mt-1 italic">Has strategy notes</p>
                         )}
                         <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
                           {preset.groups.length} groups • {preset.groups.reduce((sum: number, g: any) => sum + g.positions.length, 0)} positions

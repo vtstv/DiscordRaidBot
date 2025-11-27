@@ -196,10 +196,10 @@ export default function CompositionTool() {
     saveGroups(updated);
   };
 
-  const handleLoadPreset = (presetGroups: any) => {
+  const handleLoadPreset = (presetGroups: any, presetStrategy?: string) => {
     const newGroups = regeneratePresetGroups(presetGroups);
     setGroups(newGroups);
-    saveGroups(newGroups);
+    saveGroups(newGroups, undefined, presetStrategy);
   };
 
   const handleSavePreset = async (name: string, description: string) => {

@@ -25,6 +25,7 @@ interface Group {
 interface RaidPlan {
   id: string;
   title: string;
+  strategy?: string;
   groups: Group[];
   event?: {
     title: string;
@@ -74,6 +75,20 @@ export default function PublicRaidPlan() {
             <p className="text-lg text-gray-600 dark:text-gray-400">{raidPlan.event.title}</p>
           )}
         </div>
+
+        {raidPlan.strategy && (
+          <div className="mb-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Strategy
+            </h2>
+            <div className="prose dark:prose-invert max-w-none">
+              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{raidPlan.strategy}</p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {raidPlan.groups.map(group => (
