@@ -25,6 +25,7 @@ export async function compositionPresetsRoutes(server: FastifyInstance): Promise
           id: true,
           name: true,
           description: true,
+          strategy: true,
           groups: true,
           createdBy: true,
           createdAt: true,
@@ -69,10 +70,11 @@ export async function compositionPresetsRoutes(server: FastifyInstance): Promise
       guildId: string;
       name: string;
       description?: string;
+      strategy?: string;
       groups: any;
     };
   }>('/', { preHandler: requireGuildManager }, async (request, reply) => {
-    const { guildId, name, description, groups } = request.body;
+    const { guildId, name, description, strategy, groups } = request.body;
     const authSession = (request as any).authSession;
     const userId = authSession?.user?.id;
 
@@ -95,6 +97,7 @@ export async function compositionPresetsRoutes(server: FastifyInstance): Promise
           guildId,
           name,
           description,
+          strategy,
           groups: cleanGroups,
           createdBy: userId,
         },

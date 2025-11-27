@@ -37,7 +37,8 @@ export async function createRaidPlan(
   eventId: string,
   guildId: string,
   title: string,
-  groups: Group[]
+  groups: Group[],
+  strategy?: string
 ): Promise<RaidPlanData> {
   const response = await fetch('/api/raidplans', {
     method: 'POST',
@@ -47,6 +48,7 @@ export async function createRaidPlan(
       eventId,
       guildId,
       title,
+      strategy,
       groups,
     }),
   });
@@ -65,7 +67,8 @@ export async function updateRaidPlan(
   raidPlanId: string,
   guildId: string,
   title: string,
-  groups: Group[]
+  groups: Group[],
+  strategy?: string
 ): Promise<void> {
   const response = await fetch(`/api/raidplans/${raidPlanId}`, {
     method: 'PUT',
@@ -74,6 +77,7 @@ export async function updateRaidPlan(
     body: JSON.stringify({
       guildId,
       title,
+      strategy,
       groups,
     }),
   });
@@ -90,7 +94,8 @@ export async function savePreset(
   guildId: string,
   name: string,
   description: string,
-  groups: Group[]
+  groups: Group[],
+  strategy?: string
 ): Promise<void> {
   const response = await fetch('/api/composition-presets', {
     method: 'POST',
@@ -100,6 +105,7 @@ export async function savePreset(
       guildId,
       name,
       description,
+      strategy,
       groups,
     }),
   });

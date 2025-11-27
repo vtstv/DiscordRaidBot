@@ -39,6 +39,7 @@ import {
 } from './composition-tool/groupActions';
 import Header from './composition-tool/Header';
 import TitleEditor from './composition-tool/TitleEditor';
+import StrategyEditor from './composition-tool/StrategyEditor';
 import UnassignedPanel from './composition-tool/UnassignedPanel';
 import GroupsPanel from './composition-tool/GroupsPanel';
 
@@ -88,7 +89,7 @@ export default function CompositionTool() {
     }
   };
 
-  const saveGroups = async (updatedGroups: Group[], title?: string) => {
+  const saveGroups = async (updatedGroups: Group[], title?: string, strategy?: string) => {
     setSaving(true);
     try {
       if (!raidPlan) {
@@ -96,13 +97,31 @@ export default function CompositionTool() {
         const newPlan = await createRaidPlan(
           eventId!,
           guildId!,
-          title || `Raid Plan: ${event?.title || 'Event'}`,
-          updatedGroups
+          title || `Raid Composition - ${event?.title || 'Event'}`,
+          updatedGroups,
+          strategy
         );
         setRaidPlan(newPlan);
       } else {
         // Update existing raid plan
-        await updateRaidPlan(raidPlan.id, guildId!, title || raidPlan.title, updatedGroups);
+        const updatedTitle = title !== undefined ? title : raidPlan.title;
+        const updatedStrategy = strategy !== undefined ? strategy : raidPlan.strategy;
+        
+        await updateRaidPlan(
+          raidPlan.id, 
+          guildId!, 
+          updatedTitle, 
+          updatedGroups,
+          updatedStrategy
+        );
+        
+        // Update local state
+        setRaidPlan({ 
+          ...raidPlan, 
+          title: updatedTitle,
+          strategy: updatedStrategy,
+          groups: updatedGroups
+        });
       }
     } catch (error) {
       console.error('Failed to save:', error);
@@ -126,8 +145,11 @@ export default function CompositionTool() {
 
   const handleTitleSave = (newTitle: string) => {
     if (raidPlan) {
-      saveGroups(groups, newTitle);
+      saveGroups(groups, newTitle, raidPlan.strategy);
       setRaidPlan({ ...raidPlan, title: newTitle });
+    } else {
+      // If no raidPlan yet, this will create it with the new title
+      saveGroups(groups, newTitle);
     }
   };
 
@@ -182,12 +204,16 @@ export default function CompositionTool() {
 
   const handleSavePreset = async (name: string, description: string) => {
     try {
-      await savePreset(guildId!, name, description, groups);
+      await savePreset(guildId!, name, description, groups, raidPlan?.strategy);
       alert('Preset saved successfully!');
     } catch (error) {
       console.error('Failed to save preset:', error);
       alert('Failed to save preset');
     }
+  };
+
+  const handleStrategySave = (strategy: string) => {
+    saveGroups(groups, undefined, strategy);
   };
 
   const unassignedParticipants = getUnassignedParticipants(event, groups);
@@ -216,8 +242,15 @@ export default function CompositionTool() {
 
           <div className="mb-4">
             <TitleEditor
-              title={raidPlan?.title || 'Raid Composition'}
+              title={raidPlan?.title || `Raid Composition - ${event?.title || 'Event'}`}
               onSave={handleTitleSave}
+            />
+          </div>
+
+          <div className="mb-4">
+            <StrategyEditor
+              strategy={raidPlan?.strategy || ''}
+              onSave={handleStrategySave}
             />
           </div>
 

@@ -210,6 +210,7 @@ model RaidPlan {
   guildId     String   @map("guildid")
   
   title       String   @default("Raid Composition")
+  strategy    String?  // Optional strategy description (visible in public view)
   groups      Json     // Array of groups: [{ id, name, positions: [{ id, participantId, label, roleClass }] }]
   
   createdBy   String   @map("createdby")  // Discord user ID
@@ -230,6 +231,7 @@ model CompositionPreset {
   
   name        String   // User-defined preset name
   description String?  // Optional description
+  strategy    String?  // Optional strategy description
   groups      Json     // Same structure as RaidPlan groups (without participantId)
   
   createdBy   String   @map("createdby")  // Discord user ID

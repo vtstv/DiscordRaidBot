@@ -74,6 +74,7 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
             id: rp.id,
             eventId: rp.eventId,
             title: rp.title,
+            strategy: rp.strategy,
             groups: rp.groups,
           },
         }));
@@ -180,7 +181,15 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
     try {
       const raidPlan = await prisma.raidPlan.findUnique({
         where: { eventId },
-        select: { id: true, eventId: true, guildId: true, title: true, groups: true, createdAt: true, updatedAt: true,
+        select: { 
+          id: true, 
+          eventId: true, 
+          guildId: true, 
+          title: true, 
+          strategy: true,
+          groups: true, 
+          createdAt: true, 
+          updatedAt: true,
           event: {
             select: {
               id: true,
@@ -229,10 +238,11 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
       eventId: string;
       guildId: string;
       title?: string;
+      strategy?: string;
       groups?: any[];
     };
   }>('/', async (request, reply) => {
-    const { eventId, guildId, title, groups } = request.body;
+    const { eventId, guildId, title, strategy, groups } = request.body;
 
     // Manually set params for middleware (since guildId is in body, not params)
     if (!request.params) {
@@ -289,7 +299,8 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
         data: {
           eventId,
           guildId,
-          title: title || 'Raid Composition',
+          title: title || `Raid Composition - ${event.title}`,
+          strategy: strategy || null,
           groups: defaultGroups,
           createdBy,
         },
@@ -327,11 +338,12 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
     Body: {
       guildId: string;
       title?: string;
+      strategy?: string;
       groups?: any[];
     };
   }>('/:id', async (request, reply) => {
     const { id } = request.params;
-    const { guildId, title, groups } = request.body;
+    const { guildId, title, strategy, groups } = request.body;
 
     if (!guildId) {
       return reply.code(400).send({ error: 'guildId is required' });
@@ -357,6 +369,7 @@ export async function raidPlansRoutes(server: FastifyInstance): Promise<void> {
 
       const updateData: any = {};
       if (title !== undefined) updateData.title = title;
+      if (strategy !== undefined) updateData.strategy = strategy;
       if (groups !== undefined) updateData.groups = groups;
 
       const raidPlan = await prisma.raidPlan.update({

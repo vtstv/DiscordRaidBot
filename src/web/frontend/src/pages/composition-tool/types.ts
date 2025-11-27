@@ -14,6 +14,7 @@ export interface RaidPlanData {
   eventId: string;
   guildId: string;
   title: string;
+  strategy?: string;  // Optional strategy description
   groups: Group[];
 }
 

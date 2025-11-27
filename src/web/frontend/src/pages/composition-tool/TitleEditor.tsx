@@ -37,7 +37,7 @@ export default function TitleEditor({ title, onSave }: TitleEditorProps) {
       className="text-2xl font-bold text-gray-900 dark:text-white cursor-pointer hover:text-purple-600 dark:hover:text-purple-400"
       title="Click to edit title"
     >
-      {title || 'Raid Composition'}
+      {title || 'Raid Composition - Event'}
     </h1>
   );
 }
