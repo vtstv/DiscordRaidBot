@@ -2,7 +2,8 @@
 // path: src/web/frontend/src/pages/PublicEvent.tsx
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import { BOT_VERSION } from '@config/version';
 import { api, Event } from '../services/api';
 
 const statusColors = {
@@ -187,7 +188,7 @@ export default function PublicEvent() {
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-500">Created by {event.createdByUser.displayName}</p>
           )}
           <div className="mt-4 text-xs text-gray-400 dark:text-gray-600">
-            <p>© 2025 <a href="https://github.com/vtstv" target="_blank" rel="noopener noreferrer" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">Murr</a> • RaidBot v1.0.0</p>
+            <p>© 2025 <a href="https://github.com/vtstv" target="_blank" rel="noopener noreferrer" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">Murr</a> • RaidBot v{BOT_VERSION}</p>
           </div>
         </div>
       </div>

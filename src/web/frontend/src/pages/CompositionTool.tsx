@@ -53,6 +53,9 @@ export default function CompositionTool() {
   const [saving, setSaving] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showPresetModal, setShowPresetModal] = useState(false);
+  const [strategyPosition, setStrategyPosition] = useState<'top' | 'bottom'>(
+    () => (localStorage.getItem('strategyPosition') as 'top' | 'bottom') || 'top'
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -216,6 +219,12 @@ export default function CompositionTool() {
     saveGroups(groups, undefined, strategy);
   };
 
+  const toggleStrategyPosition = () => {
+    const newPosition = strategyPosition === 'top' ? 'bottom' : 'top';
+    setStrategyPosition(newPosition);
+    localStorage.setItem('strategyPosition', newPosition);
+  };
+
   const unassignedParticipants = getUnassignedParticipants(event, groups);
 
   if (loading) {
@@ -247,12 +256,29 @@ export default function CompositionTool() {
             />
           </div>
 
-          <div className="mb-4">
-            <StrategyEditor
-              strategy={raidPlan?.strategy || ''}
-              onSave={handleStrategySave}
-            />
+          {/* Strategy Position Toggle */}
+          <div className="mb-2 flex justify-end">
+            <button
+              onClick={toggleStrategyPosition}
+              className="text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1"
+              title="Toggle strategy position"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+              Strategy {strategyPosition === 'top' ? 'above' : 'below'} groups
+            </button>
           </div>
+
+          {/* Strategy Editor - shown above groups */}
+          {strategyPosition === 'top' && (
+            <div className="mb-4">
+              <StrategyEditor
+                strategy={raidPlan?.strategy || ''}
+                onSave={handleStrategySave}
+              />
+            </div>
+          )}
 
           <DndContext
             sensors={sensors}
@@ -288,6 +314,16 @@ export default function CompositionTool() {
               ) : null}
             </DragOverlay>
           </DndContext>
+
+          {/* Strategy Editor - shown below groups */}
+          {strategyPosition === 'bottom' && (
+            <div className="mt-4">
+              <StrategyEditor
+                strategy={raidPlan?.strategy || ''}
+                onSave={handleStrategySave}
+              />
+            </div>
+          )}
 
           <PresetModal
             isOpen={showPresetModal}

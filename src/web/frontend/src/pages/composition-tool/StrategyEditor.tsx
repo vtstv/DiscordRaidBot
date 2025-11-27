@@ -4,6 +4,7 @@
 import { useState } from 'react';
 
 const MAX_STRATEGY_LENGTH = 2000;
+const PREVIEW_LENGTH = 200;
 
 interface StrategyEditorProps {
   strategy: string;
@@ -12,6 +13,7 @@ interface StrategyEditorProps {
 
 export default function StrategyEditor({ strategy, onSave }: StrategyEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [value, setValue] = useState(strategy);
 
   const handleSave = () => {
@@ -43,8 +45,20 @@ export default function StrategyEditor({ strategy, onSave }: StrategyEditorProps
         </div>
         
         {strategy ? (
-          <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-            {strategy}
+          <div>
+            <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+              {isExpanded || strategy.length <= PREVIEW_LENGTH
+                ? strategy
+                : `${strategy.slice(0, PREVIEW_LENGTH)}...`}
+            </div>
+            {strategy.length > PREVIEW_LENGTH && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="mt-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+              >
+                {isExpanded ? 'Show less' : 'Show more'}
+              </button>
+            )}
           </div>
         ) : (
           <p className="text-gray-500 dark:text-gray-400 italic">

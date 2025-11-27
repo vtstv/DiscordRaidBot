@@ -23,7 +23,11 @@
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@config/*": ["src/config/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests", "src/web/frontend"]

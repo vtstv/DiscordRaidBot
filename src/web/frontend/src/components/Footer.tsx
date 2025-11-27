@@ -2,9 +2,9 @@
 // path: src/web/frontend/src/components/Footer.tsx
 // Compact footer component
 
+import { BOT_VERSION, WEB_VERSION } from '@config/version';
+
 export default function Footer() {
-  const botVersion = '1.2.5';
-  const webVersion = '1.2.8';
 
   return (
     <footer className="mt-12 py-6 border-t border-white/10">
@@ -36,9 +36,9 @@ export default function Footer() {
             </a>
             
             <div className="flex items-center gap-4 text-xs">
-              <span className="text-gray-500">Bot v{botVersion}</span>
-              <span className="text-gray-600">•</span>
-              <span className="text-gray-500">Web v{webVersion}</span>
+              <span className="text-gray-500">Bot v{BOT_VERSION}</span>
+              <span className="text-gray-400">•</span>
+              <span className="text-gray-500">Web v{WEB_VERSION}</span>
             </div>
           </div>
         </div>
