@@ -94,6 +94,16 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       autoDeleteHours?: number;
       logRetentionDays?: number;
       threadChannels?: string[];
+      noteChannels?: string[];
+      allowParticipantNotes?: boolean;
+      participantNoteMaxLength?: number;
+      showViewOnlineButton?: boolean;
+      statsEnabled?: boolean;
+      statsChannelId?: string;
+      statsUpdateInterval?: string;
+      statsAutoRoleEnabled?: boolean;
+      statsTop10RoleId?: string;
+      statsMinEvents?: number;
     };
   }>('/:guildId/settings', async (request, reply) => {
     // Add guildId to request for middleware
@@ -116,6 +126,16 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
     if (request.body.autoDeleteHours !== undefined) updateData.autoDeleteHours = request.body.autoDeleteHours;
     if (request.body.logRetentionDays !== undefined) updateData.logRetentionDays = request.body.logRetentionDays;
     if (request.body.threadChannels !== undefined) updateData.threadChannels = request.body.threadChannels;
+    if (request.body.noteChannels !== undefined) updateData.noteChannels = request.body.noteChannels;
+    if (request.body.allowParticipantNotes !== undefined) updateData.allowParticipantNotes = request.body.allowParticipantNotes;
+    if (request.body.participantNoteMaxLength !== undefined) updateData.participantNoteMaxLength = request.body.participantNoteMaxLength;
+    if (request.body.showViewOnlineButton !== undefined) updateData.showViewOnlineButton = request.body.showViewOnlineButton;
+    if (request.body.statsEnabled !== undefined) updateData.statsEnabled = request.body.statsEnabled;
+    if (request.body.statsChannelId !== undefined) updateData.statsChannelId = request.body.statsChannelId;
+    if (request.body.statsUpdateInterval !== undefined) updateData.statsUpdateInterval = request.body.statsUpdateInterval;
+    if (request.body.statsAutoRoleEnabled !== undefined) updateData.statsAutoRoleEnabled = request.body.statsAutoRoleEnabled;
+    if (request.body.statsTop10RoleId !== undefined) updateData.statsTop10RoleId = request.body.statsTop10RoleId;
+    if (request.body.statsMinEvents !== undefined) updateData.statsMinEvents = request.body.statsMinEvents;
 
     try {
       const guild = await prisma.guild.update({
@@ -212,7 +232,6 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
   server.get<{
     Params: { guildId: string };
   }>('/:guildId/role-permissions', async (request, reply) => {
-    (request as any).params = { guildId: request.params.guildId };
     await requireGuildAdmin(request as any, reply);
     if (reply.sent) return;
 
@@ -241,7 +260,6 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       canAccessSettings?: boolean;
     };
   }>('/:guildId/role-permissions', async (request, reply) => {
-    (request as any).params = { guildId: request.params.guildId };
     await requireGuildAdmin(request as any, reply);
     if (reply.sent) return;
 
@@ -284,7 +302,6 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
   server.delete<{
     Params: { guildId: string; roleId: string };
   }>('/:guildId/role-permissions/:roleId', async (request, reply) => {
-    (request as any).params = { guildId: request.params.guildId };
     await requireGuildAdmin(request as any, reply);
     if (reply.sent) return;
 

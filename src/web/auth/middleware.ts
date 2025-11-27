@@ -10,6 +10,21 @@ import { getModuleLogger } from '../../utils/logger.js';
 const prisma = getPrismaClient();
 const logger = getModuleLogger('auth-middleware');
 
+// Cache for guild member checks to avoid rate limiting
+// Key: `userId:guildId`, Value: { member: GuildMemberInfo, expiresAt: number }
+const guildMemberCache = new Map<string, { member: any; expiresAt: number }>();
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
+// Clean up expired cache entries every minute
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of guildMemberCache.entries()) {
+    if (value.expiresAt <= now) {
+      guildMemberCache.delete(key);
+    }
+  }
+}, 60 * 1000);
+
 /**
  * Get auth session from request.session (Fastify session)
  */
@@ -134,14 +149,32 @@ export async function requireGuildAdmin(
       return;
     }
 
-    // Check if user is guild member via bot
-    const member = await getGuildMember(guildId, session.user.id);
-    if (!member) {
-      reply.code(403).send({
-        error: 'Forbidden',
-        message: 'You are not a member of this guild',
+    // Check cache first to avoid rate limiting
+    const cacheKey = `${session.user.id}:${guildId}`;
+    const cached = guildMemberCache.get(cacheKey);
+    
+    let member: any;
+    if (cached && cached.expiresAt > Date.now()) {
+      // Use cached member data
+      member = cached.member;
+      logger.debug({ userId: session.user.id, guildId }, 'Using cached guild member data');
+    } else {
+      // Fetch from Discord API
+      member = await getGuildMember(guildId, session.user.id);
+      if (!member) {
+        reply.code(403).send({
+          error: 'Forbidden',
+          message: 'You are not a member of this guild',
+        });
+        return;
+      }
+      
+      // Cache the result
+      guildMemberCache.set(cacheKey, {
+        member,
+        expiresAt: Date.now() + CACHE_DURATION_MS,
       });
-      return;
+      logger.debug({ userId: session.user.id, guildId }, 'Cached guild member data');
     }
 
     // getGuildMember already returns member with roles

@@ -149,14 +149,17 @@ export async function getGuildMember(
 
     if (!response.ok) {
       if (response.status === 404) {
+        logger.warn({ guildId, userId, status: 404 }, 'Guild member not found (404)');
         return null;
       }
-      throw new Error(`HTTP ${response.status}`);
+      const errorText = await response.text();
+      logger.error({ guildId, userId, status: response.status, errorText }, 'Discord API error getting guild member');
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
     return (await response.json()) as GuildMemberInfo;
   } catch (error) {
-    logger.error({ error, guildId, userId }, 'Failed to get guild member');
+    logger.error({ error, guildId, userId, message: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get guild member');
     return null;
   }
 }
