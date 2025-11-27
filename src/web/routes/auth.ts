@@ -9,6 +9,7 @@ import {
   exchangeCode,
   getDiscordUser,
   getUserGuilds,
+  getGuildMember,
   hasAdminPermissions,
 } from '../auth/discord-oauth.js';
 import { config } from '../../config/env.js';
@@ -100,9 +101,59 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       const guilds = await getUserGuilds(tokenData.access_token);
       
       // Find guilds where user has admin permissions
-      const adminGuilds = guilds.filter(guild => 
+      let adminGuilds = guilds.filter(guild => 
         guild.owner || hasAdminPermissions(guild.permissions)
       );
+
+      // Also check guilds with dashboardRoles configured
+      const dbGuildsWithDashboardRoles = await prisma.guild.findMany({
+        where: {
+          dashboardRoles: {
+            isEmpty: false
+          }
+        },
+        select: {
+          id: true,
+          name: true,
+          dashboardRoles: true
+        }
+      });
+
+      // For each guild with dashboardRoles, check if user has any of those roles
+      for (const dbGuild of dbGuildsWithDashboardRoles) {
+        // Skip if already in adminGuilds
+        if (adminGuilds.some(g => g.id === dbGuild.id)) {
+          continue;
+        }
+
+        // Get user's member info in this guild
+        const memberInfo = await getGuildMember(dbGuild.id, user.id);
+        
+        if (memberInfo) {
+          // Check if user has any role in dashboardRoles
+          const hasRequiredRole = memberInfo.roles.some(roleId => 
+            dbGuild.dashboardRoles.includes(roleId)
+          );
+
+          if (hasRequiredRole) {
+            // Find the guild in user's guilds list
+            const guildInfo = guilds.find(g => g.id === dbGuild.id);
+            if (guildInfo) {
+              adminGuilds.push(guildInfo);
+            } else {
+              // User is in the guild but it didn't come from Discord API
+              // This shouldn't happen, but add it anyway with minimal info
+              adminGuilds.push({
+                id: dbGuild.id,
+                name: dbGuild.name,
+                icon: null,
+                owner: false,
+                permissions: '0'
+              });
+            }
+          }
+        }
+      }
 
       // Store user in session using direct assignment
       (request as any).session.user = {

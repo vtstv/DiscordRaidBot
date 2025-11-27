@@ -87,6 +87,7 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       logChannelId?: string;
       archiveChannelId?: string;
       managerRoleId?: string;
+      dashboardRoles?: string[];
       commandPrefix?: string;
       approvalChannels?: string[];
       reminderIntervals?: string[];
@@ -108,6 +109,7 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
     if (request.body.logChannelId !== undefined) updateData.logChannelId = request.body.logChannelId;
     if (request.body.archiveChannelId !== undefined) updateData.archiveChannelId = request.body.archiveChannelId;
     if (request.body.managerRoleId !== undefined) updateData.managerRoleId = request.body.managerRoleId;
+    if (request.body.dashboardRoles !== undefined) updateData.dashboardRoles = request.body.dashboardRoles;
     if (request.body.commandPrefix !== undefined) updateData.commandPrefix = request.body.commandPrefix;
     if (request.body.approvalChannels !== undefined) updateData.approvalChannels = request.body.approvalChannels;
     if (request.body.reminderIntervals !== undefined) updateData.reminderIntervals = request.body.reminderIntervals;

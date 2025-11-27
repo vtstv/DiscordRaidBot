@@ -259,28 +259,79 @@ export default function Settings() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                           Dashboard Access Roles
-                          <InfoIcon onClick={() => alert('Select roles that can access the dashboard. If empty, only managers can access. Hold Ctrl/Cmd to select multiple roles.')} />
+                          <InfoIcon onClick={() => alert('Select roles that can access the dashboard. If empty, only managers can access.')} />
                         </label>
-                        <select 
-                          multiple
-                          value={settings.dashboardRoles || []} 
-                          onChange={e => {
-                            const selected = Array.from(e.target.selectedOptions).map(o => o.value);
-                            setSettings({...settings, dashboardRoles: selected});
-                          }}
-                          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all min-h-[120px]"
-                        >
-                          {roles.map(role => (
-                            <option key={role.id} value={role.id}>
-                              @{role.name}
-                            </option>
-                          ))}
-                        </select>
-                        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                          {settings.dashboardRoles && settings.dashboardRoles.length > 0 
-                            ? `${settings.dashboardRoles.length} role(s) selected` 
-                            : 'No additional roles selected (managers only)'}
-                        </p>
+                        <div className="space-y-2">
+                          {/* Current dashboard roles list */}
+                          {(settings.dashboardRoles || []).length > 0 && (
+                            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current roles:</div>
+                              <div className="flex flex-wrap gap-2">
+                                {(settings.dashboardRoles || []).map(roleId => {
+                                  const role = roles.find(r => r.id === roleId);
+                                  return (
+                                    <span key={roleId} className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 text-xs rounded-full">
+                                      @{role?.name || 'Unknown'}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const current = settings.dashboardRoles || [];
+                                          setSettings({...settings, dashboardRoles: current.filter(id => id !== roleId)});
+                                        }}
+                                        className="ml-1 hover:text-red-600 dark:hover:text-red-400"
+                                      >
+                                        ×
+                                      </button>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Add role */}
+                          <div className="flex gap-2">
+                            <select
+                              className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                              defaultValue=""
+                            >
+                              <option value="" disabled>Select role to add</option>
+                              {roles
+                                .filter(role => !(settings.dashboardRoles || []).includes(role.id))
+                                .map(role => (
+                                  <option key={role.id} value={role.id}>
+                                    @{role.name}
+                                  </option>
+                                ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                const select = e.currentTarget.previousElementSibling as HTMLSelectElement;
+                                const roleId = select.value;
+                                if (roleId) {
+                                  const current = settings.dashboardRoles || [];
+                                  setSettings({...settings, dashboardRoles: [...current, roleId]});
+                                  select.value = '';
+                                }
+                              }}
+                              className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors"
+                            >
+                              Add
+                            </button>
+                          </div>
+
+                          {/* Clear all button */}
+                          {(settings.dashboardRoles || []).length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setSettings({...settings, dashboardRoles: []})}
+                              className="w-full px-4 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-800/30 text-red-700 dark:text-red-300 rounded-xl transition-colors text-sm"
+                            >
+                              Clear all roles
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
