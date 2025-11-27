@@ -3,8 +3,8 @@
 // Compact footer component
 
 export default function Footer() {
-  const botVersion = '1.2.4';
-  const webVersion = '1.2.4';
+  const botVersion = '1.2.5';
+  const webVersion = '1.2.8';
 
   return (
     <footer className="mt-12 py-6 border-t border-white/10">
