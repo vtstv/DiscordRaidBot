@@ -14,9 +14,8 @@ build/
 .env.local
 .env.*.local
 
-# Documentation and reports (keep templates only)
-docs/
-!docs/TEMPLATES.md
+# Documentation and reports (keep public docs)
+docs_prv/
 .github/
 
 # Logs
