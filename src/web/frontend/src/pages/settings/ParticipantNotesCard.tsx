@@ -4,6 +4,7 @@
 
 import { GuildSettings, DiscordChannel } from '../../services/api';
 import { InfoIcon } from './icons';
+import { useI18n } from '../../contexts/I18nContext';
 
 interface ParticipantNotesCardProps {
   settings: GuildSettings;
@@ -12,6 +13,8 @@ interface ParticipantNotesCardProps {
 }
 
 export default function ParticipantNotesCard({ settings, setSettings, channels }: ParticipantNotesCardProps) {
+  const { t } = useI18n();
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200">
       <div className="p-6">
@@ -19,12 +22,12 @@ export default function ParticipantNotesCard({ settings, setSettings, channels }
           <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Participant Notes</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t.settings.sections.participantNotes}</h2>
         </div>
 
         <div className="space-y-4">
           <label className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Allow participant notes</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.settings.participantNotes.allowNotes}</span>
             <input
               type="checkbox"
               checked={settings.allowParticipantNotes || false}
@@ -35,8 +38,8 @@ export default function ParticipantNotesCard({ settings, setSettings, channels }
 
           <label className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer">
             <div>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block">Show 'View online' button</span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">Display link to public event view in Discord messages</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block">{t.settings.participantNotes.showViewOnline}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{t.settings.participantNotes.showViewOnlineDesc}</span>
             </div>
             <input
               type="checkbox"
@@ -50,8 +53,8 @@ export default function ParticipantNotesCard({ settings, setSettings, channels }
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  Max note length
-                  <InfoIcon onClick={() => alert('Maximum characters allowed in participant notes (default: 30)')} />
+                  {t.settings.participantNotes.maxNoteLength}
+                  <InfoIcon onClick={() => alert(t.settings.participantNotes.maxNoteLengthHint)} />
                 </label>
                 <input
                   type="number"
@@ -66,14 +69,14 @@ export default function ParticipantNotesCard({ settings, setSettings, channels }
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  Note channels
-                  <InfoIcon onClick={() => alert('Channels where participants can add notes to their signups. If empty, notes are allowed in all channels.')} />
+                  {t.settings.participantNotes.noteChannels}
+                  <InfoIcon onClick={() => alert(t.settings.participantNotes.noteChannelsHint)} />
                 </label>
                 <div className="space-y-2">
                   {/* Current note channels list */}
                   {(settings.noteChannels || []).length > 0 && (
                     <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current channels:</div>
+                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.settings.participantNotes.currentChannels}</div>
                       <div className="flex flex-wrap gap-2">
                         {(settings.noteChannels || []).map(channelId => {
                           const channel = channels.find(c => c.id === channelId);

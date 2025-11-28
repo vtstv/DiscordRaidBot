@@ -4,6 +4,7 @@
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import SortableGroup from '../../components/SortableGroup';
 import { Group, Participant } from '../../types/composition';
+import { useI18n } from '../../contexts/I18nContext';
 
 interface GroupsPanelProps {
   groups: Group[];
@@ -28,6 +29,8 @@ export default function GroupsPanel({
   onRemoveParticipant,
   onAddGroup,
 }: GroupsPanelProps) {
+  const { t } = useI18n();
+
   return (
     <>
       <SortableContext
@@ -55,7 +58,7 @@ export default function GroupsPanel({
         onClick={onAddGroup}
         className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400 transition-all font-medium"
       >
-        + Add Group
+        {t.compositionTool.addGroup}
       </button>
     </>
   );

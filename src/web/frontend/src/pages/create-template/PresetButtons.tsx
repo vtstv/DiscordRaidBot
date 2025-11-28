@@ -3,16 +3,19 @@
 
 import type { TemplateFormData } from './types';
 import { TEMPLATE_PRESETS } from './presets';
+import { useI18n } from '../../contexts/I18nContext';
 
 interface PresetButtonsProps {
   onSelectPreset: (data: TemplateFormData) => void;
 }
 
 export default function PresetButtons({ onSelectPreset }: PresetButtonsProps) {
+  const { t } = useI18n();
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6 transition-colors duration-200">
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-        Quick Presets
+        {t.createTemplate.presets.title}
       </label>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {TEMPLATE_PRESETS.map((preset) => (

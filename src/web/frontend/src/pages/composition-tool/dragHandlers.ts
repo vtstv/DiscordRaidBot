@@ -23,10 +23,26 @@ export function handleDragEnd(
   // Participant dragged to position
   if (activeData?.type === 'participant' && overData?.type === 'position') {
     const participant = activeData.participant as Participant;
+    const sourceGroupId = activeData.sourceGroupId;
+    const sourcePositionId = activeData.sourcePositionId;
     const targetGroupId = overData.groupId;
     const targetPositionId = overData.positionId;
 
     const updatedGroups = groups.map(group => {
+      // Clear source position if moving from another position
+      if (sourceGroupId && sourcePositionId && group.id === sourceGroupId) {
+        return {
+          ...group,
+          positions: group.positions.map(pos =>
+            pos.id === sourcePositionId
+              ? { ...pos, participantId: undefined }
+              : pos
+          ),
+        };
+      }
+      return group;
+    }).map(group => {
+      // Set target position
       if (group.id === targetGroupId) {
         return {
           ...group,

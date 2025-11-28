@@ -5,6 +5,7 @@
 import { GuildSettings, DiscordRole } from '../../services/api';
 import { RolePermissionsMap } from './types';
 import { InfoIcon } from './icons';
+import { useI18n } from '../../contexts/I18nContext';
 
 interface ManagerAccessCardProps {
   settings: GuildSettings;
@@ -21,15 +22,17 @@ export default function ManagerAccessCard({
   rolePermissions, 
   setRolePermissions 
 }: ManagerAccessCardProps) {
+  const { t } = useI18n();
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200">
       <div className="p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">👤 Manager & Access</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">👤 {t.settings.sections.managerAccess}</h2>
         
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-              Manager Role
+              {t.settings.managerRoles.managerRole}
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
                 @Manager
               </span>
@@ -39,7 +42,7 @@ export default function ManagerAccessCard({
               onChange={e => setSettings({...settings, managerRoleId: e.target.value || undefined})}
               className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
             >
-              <option value="">-- No manager role --</option>
+              <option value="">{t.settings.managerRoles.noManagerRole}</option>
               {roles.map(role => (
                 <option key={role.id} value={role.id}>
                   @{role.name}
@@ -50,14 +53,14 @@ export default function ManagerAccessCard({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-              Dashboard Access Roles
-              <InfoIcon onClick={() => alert('Select roles that can access the dashboard. If empty, only managers can access.')} />
+              {t.settings.managerRoles.dashboardAccessRoles}
+              <InfoIcon onClick={() => alert(t.settings.managerRoles.dashboardAccessHint)} />
             </label>
             <div className="space-y-2">
               {/* Current dashboard roles list */}
               {(settings.dashboardRoles || []).length > 0 && (
                 <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current roles:</div>
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.settings.managerRoles.currentRoles}</div>
                   <div className="flex flex-wrap gap-2">
                     {(settings.dashboardRoles || []).map(roleId => {
                       const role = roles.find(r => r.id === roleId);
@@ -92,7 +95,7 @@ export default function ManagerAccessCard({
                   className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   defaultValue=""
                 >
-                  <option value="" disabled>Select role to add</option>
+                  <option value="" disabled>{t.settings.managerRoles.selectRoleToAdd}</option>
                   {roles
                     .filter(role => !(settings.dashboardRoles || []).includes(role.id))
                     .map(role => (

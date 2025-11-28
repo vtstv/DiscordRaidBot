@@ -2,6 +2,7 @@
 // path: src/web/frontend/src/pages/composition-tool/StrategyEditor.tsx
 
 import { useState } from 'react';
+import { useI18n } from '../../contexts/I18nContext';
 
 const MAX_STRATEGY_LENGTH = 2000;
 const PREVIEW_LENGTH = 200;
@@ -12,6 +13,7 @@ interface StrategyEditorProps {
 }
 
 export default function StrategyEditor({ strategy, onSave }: StrategyEditorProps) {
+  const { t } = useI18n();
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [value, setValue] = useState(strategy);
@@ -34,13 +36,13 @@ export default function StrategyEditor({ strategy, onSave }: StrategyEditorProps
             <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Strategy Description</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t.compositionTool.strategyDescription}</h3>
           </div>
           <button
             onClick={() => setIsEditing(true)}
             className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
-            {strategy ? 'Edit' : 'Add Strategy'}
+            {strategy ? t.compositionTool.editStrategy : t.compositionTool.addStrategy}
           </button>
         </div>
         
@@ -56,13 +58,13 @@ export default function StrategyEditor({ strategy, onSave }: StrategyEditorProps
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="mt-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
               >
-                {isExpanded ? 'Show less' : 'Show more'}
+                {isExpanded ? t.compositionTool.showLess : t.compositionTool.showMore}
               </button>
             )}
           </div>
         ) : (
           <p className="text-gray-500 dark:text-gray-400 italic">
-            No strategy description yet. Click "Add Strategy" to add one.
+            {t.compositionTool.noStrategyYet}
           </p>
         )}
       </div>
@@ -75,7 +77,7 @@ export default function StrategyEditor({ strategy, onSave }: StrategyEditorProps
         <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Strategy Description</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t.compositionTool.editStrategyDescription}</h3>
       </div>
       
       <textarea
@@ -86,14 +88,14 @@ export default function StrategyEditor({ strategy, onSave }: StrategyEditorProps
             setValue(newValue);
           }
         }}
-        placeholder="Describe your raid strategy, boss mechanics, player assignments, etc..."
+        placeholder={t.compositionTool.strategyPlaceholder}
         rows={8}
         maxLength={2000}
         className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-vertical"
       />
       
       <div className="text-right mt-1 text-xs text-gray-500 dark:text-gray-400">
-        {value.length}/2000 characters
+        {value.length}/2000 {t.compositionTool.characters}
       </div>
       
       <div className="flex items-center gap-3 mt-4">
@@ -101,13 +103,13 @@ export default function StrategyEditor({ strategy, onSave }: StrategyEditorProps
           onClick={handleSave}
           className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-medium"
         >
-          Save Strategy
+          {t.compositionTool.saveStrategy}
         </button>
         <button
           onClick={handleCancel}
           className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
         >
-          Cancel
+          {t.compositionTool.cancel}
         </button>
       </div>
     </div>

@@ -1,7 +1,11 @@
 // Copyright (c) 2025 Murr (https://github.com/vtstv)
 // path: src/web/frontend/src/pages/create-template/HelpBox.tsx
 
+import { useI18n } from '../../contexts/I18nContext';
+
 export default function HelpBox() {
+  const { t } = useI18n();
+
   return (
     <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 transition-colors duration-200">
       <div className="flex items-start gap-4">
@@ -11,12 +15,12 @@ export default function HelpBox() {
           </svg>
         </div>
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Template Tips</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t.createTemplate.help.title}</h3>
           <ul className="text-gray-600 dark:text-gray-400 space-y-1 text-sm">
-            <li>• Templates can be reused for multiple events</li>
-            <li>• Allowed roles help participants choose their position</li>
-            <li>• Emoji mapping makes signups more visual and engaging</li>
-            <li>• Set max participants to enforce group size limits</li>
+            <li>• {t.createTemplate.help.tip1}</li>
+            <li>• {t.createTemplate.help.tip2}</li>
+            <li>• {t.createTemplate.help.tip3}</li>
+            <li>• {t.createTemplate.help.tip4}</li>
           </ul>
         </div>
       </div>

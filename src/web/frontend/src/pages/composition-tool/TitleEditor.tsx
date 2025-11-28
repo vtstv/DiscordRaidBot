@@ -2,6 +2,7 @@
 // path: src/web/frontend/src/pages/composition-tool/TitleEditor.tsx
 
 import { useState } from 'react';
+import { useI18n } from '../../contexts/I18nContext';
 
 interface TitleEditorProps {
   title: string;
@@ -9,6 +10,7 @@ interface TitleEditorProps {
 }
 
 export default function TitleEditor({ title, onSave }: TitleEditorProps) {
+  const { t } = useI18n();
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(title);
 
@@ -35,9 +37,9 @@ export default function TitleEditor({ title, onSave }: TitleEditorProps) {
     <h1
       onClick={() => setIsEditing(true)}
       className="text-2xl font-bold text-gray-900 dark:text-white cursor-pointer hover:text-purple-600 dark:hover:text-purple-400"
-      title="Click to edit title"
+      title={t.compositionTool.clickToEditTitle}
     >
-      {title || 'Raid Composition - Event'}
+      {title || t.compositionTool.defaultTitle}
     </h1>
   );
 }
