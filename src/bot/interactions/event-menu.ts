@@ -59,6 +59,7 @@ export async function handleEventMenu(interaction: ButtonInteraction, eventId: s
       title: true,
       channelId: true,
       allowNotes: true,
+      requireApproval: true,
       guild: {
         select: {
           allowParticipantNotes: true,
@@ -163,6 +164,33 @@ export async function handleEventMenu(interaction: ButtonInteraction, eventId: s
         .setLabel('⚙️ Edit Event')
         .setStyle(ButtonStyle.Success)
     );
+
+    // Count participants needing approval or promotion
+    const waitlistCount = await prisma.participant.count({
+      where: { eventId, status: 'waitlist' },
+    });
+    const pendingCount = await prisma.participant.count({
+      where: { eventId, status: 'pending' },
+    });
+
+    // Show Approve button for requireApproval events with pending participants
+    if (event.requireApproval && pendingCount > 0) {
+      buttons.push(
+        new ButtonBuilder()
+          .setCustomId(`event_approve:${eventId}`)
+          .setLabel(`✅ Approve (${pendingCount})`)
+          .setStyle(ButtonStyle.Success)
+      );
+    }
+    // Show Promote button for waitlist participants (or pending when not requireApproval mode)
+    else if (waitlistCount > 0 || pendingCount > 0) {
+      buttons.push(
+        new ButtonBuilder()
+          .setCustomId(`event_promote:${eventId}`)
+          .setLabel(`⏫ Promote (${waitlistCount + pendingCount})`)
+          .setStyle(ButtonStyle.Primary)
+      );
+    }
   }
 
   // If no buttons available, show info message

@@ -3,6 +3,6 @@
 // Central version configuration - SINGLE SOURCE OF TRUTH
 // Update versions here and they will be reflected everywhere
 
-export const BOT_VERSION = '1.2.7';
-export const WEB_VERSION = '1.3.2';
+export const BOT_VERSION = '1.2.9';
+export const WEB_VERSION = '1.3.8';
 export const APP_VERSION = '1.2.5';

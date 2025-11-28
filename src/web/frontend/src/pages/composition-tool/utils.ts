@@ -27,7 +27,11 @@ export function getUnassignedParticipants(event: Event | null, groups: Group[]) 
     groups.flatMap(g => g.positions.map(p => p.participantId).filter(Boolean))
   );
 
-  return event.participants.filter(p => !assignedParticipantIds.has(p.id));
+  // Only show confirmed participants in unassigned list
+  // Exclude: waitlist, pending (not approved), declined, tentative
+  return event.participants.filter(p => 
+    !assignedParticipantIds.has(p.id) && p.status === 'confirmed'
+  );
 }
 
 /**

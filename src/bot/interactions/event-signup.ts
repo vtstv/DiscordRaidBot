@@ -226,24 +226,44 @@ export async function handlePromote(interaction: ButtonInteraction, eventId: str
       return;
     }
 
-    // Get waitlisted participants
-    const waitlisted = await prisma.participant.findMany({
-      where: { eventId, status: 'waitlisted' },
-      select: { userId: true, username: true, role: true },
+    // Get participants from waitlist and pending approval
+    const promotable = await prisma.participant.findMany({
+      where: { 
+        eventId, 
+        status: { in: ['waitlist', 'pending'] }
+      },
+      select: { userId: true, username: true, role: true, status: true },
       orderBy: { joinedAt: 'asc' },
     });
 
-    if (waitlisted.length === 0) {
-      await interaction.editReply('❌ No participants in waitlist.');
+    if (promotable.length === 0) {
+      await interaction.editReply('❌ No participants in waitlist or pending approval.');
       return;
     }
 
-    // Build waitlist text
-    let waitlistText = `⏫ **Promote from Waitlist** (${waitlisted.length} waiting)\n\n`;
-    waitlistText += waitlisted.map((p: any, i: number) => {
-      const roleInfo = p.role ? ` [${p.role}]` : '';
-      return `${i + 1}. <@${p.userId}>${roleInfo}`;
-    }).join('\n');
+    // Separate by status
+    const waitlisted = promotable.filter(p => p.status === 'waitlist');
+    const pending = promotable.filter(p => p.status === 'pending');
+
+    // Build text
+    let text = `⏫ **Promote Participants**\n\n`;
+    
+    if (pending.length > 0) {
+      text += `**Pending Approval** (${pending.length}):\n`;
+      text += pending.map((p: any, i: number) => {
+        const roleInfo = p.role ? ` [${p.role}]` : '';
+        return `${i + 1}. <@${p.userId}>${roleInfo}`;
+      }).join('\n');
+      text += '\n\n';
+    }
+
+    if (waitlisted.length > 0) {
+      text += `**Waitlist / Bench** (${waitlisted.length}):\n`;
+      text += waitlisted.map((p: any, i: number) => {
+        const roleInfo = p.role ? ` [${p.role}]` : '';
+        return `${i + 1}. <@${p.userId}>${roleInfo}`;
+      }).join('\n');
+    }
 
     const components: any[] = [];
 
@@ -258,16 +278,18 @@ export async function handlePromote(interaction: ButtonInteraction, eventId: str
     components.push(promoteNextRow);
 
     // Add individual promotion buttons
-    for (let i = 0; i < Math.min(waitlisted.length, 20); i += 4) {
+    for (let i = 0; i < Math.min(promotable.length, 20); i += 4) {
       const row = new ActionRowBuilder<any>();
       
-      for (let j = i; j < Math.min(i + 4, waitlisted.length, 20); j++) {
-        const p = waitlisted[j];
+      for (let j = i; j < Math.min(i + 4, promotable.length, 20); j++) {
+        const p = promotable[j];
+        const emoji = p.status === 'pending' ? '⏳' : '📋';
         row.addComponents(
           new ButtonBuilder()
             .setCustomId(`promote_user:${eventId}:${p.userId}`)
             .setLabel(`${j + 1}. ${p.username}`)
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(p.status === 'pending' ? ButtonStyle.Secondary : ButtonStyle.Primary)
+            .setEmoji(emoji)
         );
       }
       
@@ -275,7 +297,7 @@ export async function handlePromote(interaction: ButtonInteraction, eventId: str
     }
 
     await interaction.editReply({
-      content: waitlistText,
+      content: text,
       components,
     });
   } catch (error: any) {

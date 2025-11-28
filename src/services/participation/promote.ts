@@ -38,8 +38,8 @@ export async function promoteParticipant(
     where: { eventId_userId: { eventId, userId } },
   });
 
-  if (!participant || participant.status !== 'waitlist') {
-    return { success: false, message: 'Participant is not on the waitlist' };
+  if (!participant || !['waitlist', 'pending'].includes(participant.status)) {
+    return { success: false, message: 'Participant is not on the waitlist or pending approval' };
   }
 
   // Check if there's space in the event
@@ -120,18 +120,22 @@ export async function promoteNext(
     throw new ValidationError('Event not found');
   }
 
-  // Get first person in waitlist
-  const waitlist = await prisma.participant.findMany({
-    where: { eventId, status: 'waitlist' },
-    orderBy: { position: 'asc' },
-    take: 1,
+  // Get first person in waitlist or pending approval (prioritize pending, then waitlist by position)
+  const pending = await prisma.participant.findFirst({
+    where: { eventId, status: 'pending' },
+    orderBy: { joinedAt: 'asc' },
   });
 
-  if (waitlist.length === 0) {
-    return { success: false, message: 'No participants on the waitlist' };
-  }
+  const waitlist = await prisma.participant.findFirst({
+    where: { eventId, status: 'waitlist' },
+    orderBy: { position: 'asc' },
+  });
 
-  const nextParticipant = waitlist[0];
+  const nextParticipant = pending || waitlist;
+
+  if (!nextParticipant) {
+    return { success: false, message: 'No participants on the waitlist or pending approval' };
+  }
 
   // Use the promoteParticipant function
   return promoteParticipant(eventId, nextParticipant.userId, promoterId);

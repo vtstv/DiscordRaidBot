@@ -61,7 +61,6 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
         where: { id },
         include: {
           participants: {
-            where: { status: 'confirmed' },
             orderBy: { joinedAt: 'asc' },
             select: {
               id: true,

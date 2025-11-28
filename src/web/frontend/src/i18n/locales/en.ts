@@ -19,6 +19,7 @@ export const en = {
     goBack: 'Go Back',
     viewAll: 'View All',
     noData: 'No data available',
+    of: 'of',
   },
   nav: {
     dashboard: 'Dashboard',
@@ -49,6 +50,9 @@ export const en = {
   },
   events: {
     title: 'Events',
+    event: 'event',
+    events: 'events',
+    showing: 'Showing',
     eventsFound: 'events found',
     loadingEvents: 'Loading events...',
     createEvent: 'Create Event',
@@ -405,6 +409,19 @@ export const en = {
       positionsCount: 'positions',
       deleteConfirm: 'Delete this preset?',
     },
+  },
+  publicEvent: {
+    loading: 'Loading event...',
+    notFound: 'Event not found',
+    notFoundDesc: 'This event may not exist or is not publicly accessible',
+    description: 'Description',
+    participants: 'Participants',
+    confirmed: 'Confirmed',
+    pending: 'Pending Approval',
+    waitlist: 'Waitlist / Bench',
+    noParticipants: 'No participants yet',
+    viewRaidPlan: 'View Raid Plan',
+    raidPlanAvailable: 'Raid composition plan is available for this event',
   },
   errors: {
     accessDenied: 'Access Denied',

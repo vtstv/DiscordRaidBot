@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { BOT_VERSION } from '@config/version';
 import { api, Event } from '../services/api';
+import { useTheme } from '../contexts/ThemeContext';
+import { useI18n } from '../contexts/I18nContext';
 
 const statusColors = {
   scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
@@ -19,6 +21,8 @@ export default function PublicEvent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [raidPlanId, setRaidPlanId] = useState<string | null>(null);
+  const { theme, toggleTheme } = useTheme();
+  const { locale, setLocale, t } = useI18n();
 
   useEffect(() => {
     if (eventId) {
@@ -48,7 +52,7 @@ export default function PublicEvent() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors duration-200">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading event...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t.publicEvent.loading}</p>
         </div>
       </div>
     );
@@ -61,8 +65,8 @@ export default function PublicEvent() {
           <svg className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Event not found</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error || 'This event may not exist or is not publicly accessible'}</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t.publicEvent.notFound}</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{error || t.publicEvent.notFoundDesc}</p>
         </div>
       </div>
     );
@@ -71,6 +75,35 @@ export default function PublicEvent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8 transition-colors duration-200">
       <div className="max-w-4xl mx-auto px-4">
+        {/* Top Bar with Theme and Language Switchers */}
+        <div className="flex justify-end items-center gap-2 mb-6">
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {theme === 'dark' ? (
+              <svg className="w-5 h-5 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            )}
+          </button>
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as 'en' | 'ru' | 'de')}
+            className="px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-purple-500 transition-colors"
+            title="Select Language"
+          >
+            <option value="en">EN</option>
+            <option value="ru">RU</option>
+            <option value="de">DE</option>
+          </select>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{event.title}</h1>
@@ -96,7 +129,7 @@ export default function PublicEvent() {
         {/* Description */}
         {event.description && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6 transition-colors duration-200">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Description</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t.publicEvent.description}</h2>
             <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed whitespace-pre-wrap">{event.description}</p>
           </div>
         )}
@@ -127,54 +160,146 @@ export default function PublicEvent() {
         {/* Participants */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-200">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Participants ({event._count?.participants || 0}{event.maxParticipants ? `/${event.maxParticipants}` : ''})
+            {t.publicEvent.participants} ({event._count?.participants || 0}{event.maxParticipants ? `/${event.maxParticipants}` : ''})
           </h2>
 
           {event.participants && event.participants.length > 0 ? (
-            <div className="space-y-3">
-              {event.participants.map((participant: any, index: number) => (
-                <div key={participant.id} className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400 min-w-[20px]">
-                    {index + 1}.
-                  </span>
-                  <div className="flex items-start gap-3 flex-1">
-                    {participant.discordAvatar && (
-                      <img
-                        src={participant.discordAvatar}
-                        alt={participant.discordDisplayName || participant.discordUsername || participant.username || participant.userId}
-                        className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-600 shadow-sm flex-shrink-0"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-white truncate">
-                        {participant.discordDisplayName || participant.discordUsername || participant.username || participant.userId}
-                      </p>
-                      {participant.role && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{participant.role}</p>
-                      )}
-                      {participant.note && (
-                        <p className="text-sm text-gray-500 dark:text-gray-500 italic mt-1">_{participant.note}_</p>
-                      )}
-                    </div>
-                    {participant.status && (
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                        participant.status === 'confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                        participant.status === 'waitlist' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
-                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                      }`}>
-                        {participant.status}
-                      </span>
-                    )}
+            <div className="space-y-6">
+              {/* Confirmed Participants */}
+              {event.participants.filter((p: any) => p.status === 'confirmed').length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {t.publicEvent.confirmed} ({event.participants.filter((p: any) => p.status === 'confirmed').length})
+                  </h3>
+                  <div className="space-y-3">
+                    {event.participants
+                      .filter((p: any) => p.status === 'confirmed')
+                      .map((participant: any, index: number) => (
+                        <div key={participant.id} className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-l-4 border-green-500">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 min-w-[20px]">
+                            {index + 1}.
+                          </span>
+                          <div className="flex items-start gap-3 flex-1">
+                            {participant.discordAvatar && (
+                              <img
+                                src={participant.discordAvatar}
+                                alt={participant.discordDisplayName || participant.discordUsername || participant.username || participant.userId}
+                                className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-600 shadow-sm flex-shrink-0"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 dark:text-white truncate">
+                                {participant.discordDisplayName || participant.discordUsername || participant.username || participant.userId}
+                              </p>
+                              {participant.role && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{participant.role}</p>
+                              )}
+                              {participant.note && (
+                                <p className="text-sm text-gray-500 dark:text-gray-500 italic mt-1">_{participant.note}_</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 </div>
-              ))}
+              )}
+
+              {/* Pending (Waiting for Approval) */}
+              {event.participants.filter((p: any) => p.status === 'pending').length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {t.publicEvent.pending} ({event.participants.filter((p: any) => p.status === 'pending').length})
+                  </h3>
+                  <div className="space-y-3">
+                    {event.participants
+                      .filter((p: any) => p.status === 'pending')
+                      .map((participant: any, index: number) => (
+                        <div key={participant.id} className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border-l-4 border-yellow-500">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 min-w-[20px]">
+                            {index + 1}.
+                          </span>
+                          <div className="flex items-start gap-3 flex-1">
+                            {participant.discordAvatar && (
+                              <img
+                                src={participant.discordAvatar}
+                                alt={participant.discordDisplayName || participant.discordUsername || participant.username || participant.userId}
+                                className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-600 shadow-sm flex-shrink-0"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 dark:text-white truncate">
+                                {participant.discordDisplayName || participant.discordUsername || participant.username || participant.userId}
+                              </p>
+                              {participant.role && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{participant.role}</p>
+                              )}
+                              {participant.note && (
+                                <p className="text-sm text-gray-500 dark:text-gray-500 italic mt-1">_{participant.note}_</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Waitlist */}
+              {event.participants.filter((p: any) => p.status === 'waitlist').length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                    </svg>
+                    {t.publicEvent.waitlist} ({event.participants.filter((p: any) => p.status === 'waitlist').length})
+                  </h3>
+                  <div className="space-y-3">
+                    {event.participants
+                      .filter((p: any) => p.status === 'waitlist')
+                      .map((participant: any, index: number) => (
+                        <div key={participant.id} className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border-l-4 border-blue-500">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 min-w-[20px]">
+                            {index + 1}.
+                          </span>
+                          <div className="flex items-start gap-3 flex-1">
+                            {participant.discordAvatar && (
+                              <img
+                                src={participant.discordAvatar}
+                                alt={participant.discordDisplayName || participant.discordUsername || participant.username || participant.userId}
+                                className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-600 shadow-sm flex-shrink-0"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 dark:text-white truncate">
+                                {participant.discordDisplayName || participant.discordUsername || participant.username || participant.userId}
+                              </p>
+                              {participant.role && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{participant.role}</p>
+                              )}
+                              {participant.note && (
+                                <p className="text-sm text-gray-500 dark:text-gray-500 italic mt-1">_{participant.note}_</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-8">
               <svg className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <p className="text-gray-600 dark:text-gray-400">No participants yet</p>
+              <p className="text-gray-600 dark:text-gray-400">{t.publicEvent.noParticipants}</p>
             </div>
           )}
         </div>

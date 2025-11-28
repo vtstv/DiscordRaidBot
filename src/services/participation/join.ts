@@ -19,12 +19,27 @@ const prisma = getPrismaClient();
 export async function joinEvent(params: JoinEventParams): Promise<ParticipationResult> {
   const { eventId, userId, username, role, spec, userRoleIds = [] } = params;
 
+  // Check if user is already participating
+  const existingParticipant = await prisma.participant.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+  });
+
+  if (existingParticipant) {
+    // User already signed up
+    if (existingParticipant.status === 'declined') {
+      // Allow re-joining if they previously declined
+      // Will be handled below by updating the participant
+    } else {
+      throw new ValidationError('You are already signed up for this event');
+    }
+  }
+
   // Get event with participants
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     include: {
       participants: {
-        where: { status: { in: ['confirmed', 'waitlist'] } },
+        where: { status: { in: ['confirmed', 'waitlist', 'pending'] } },
       },
     },
   });
@@ -108,9 +123,10 @@ export async function joinEvent(params: JoinEventParams): Promise<ParticipationR
     }
   }
 
-  // Create participant
-  await prisma.participant.create({
-    data: {
+  // Create or update participant (if they previously declined)
+  await prisma.participant.upsert({
+    where: { eventId_userId: { eventId, userId } },
+    create: {
       eventId,
       userId,
       username,
@@ -118,6 +134,14 @@ export async function joinEvent(params: JoinEventParams): Promise<ParticipationR
       spec,
       status,
       position,
+    },
+    update: {
+      username,
+      role,
+      spec,
+      status,
+      position,
+      joinedAt: new Date(),
     },
   });
 

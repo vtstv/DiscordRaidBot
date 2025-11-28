@@ -236,26 +236,6 @@ export async function createEventMessage(event: any) {
           .setStyle(ButtonStyle.Danger)
       );
 
-      // Add approve button if there are pending participants
-      if (event.requireApproval && pending.length > 0) {
-        actionRow.addComponents(
-          new ButtonBuilder()
-            .setCustomId(`event_approve:${event.id}`)
-            .setLabel(t('buttons.approve'))
-            .setStyle(ButtonStyle.Success)
-        );
-      }
-
-      // Add promote button if there are waitlisted participants
-      if (waitlist.length > 0) {
-        actionRow.addComponents(
-          new ButtonBuilder()
-            .setCustomId(`event_promote:${event.id}`)
-            .setLabel('Promote')
-            .setStyle(ButtonStyle.Success)
-        );
-      }
-
       actionRow.addComponents(
         new ButtonBuilder()
           .setCustomId(`event_menu:${event.id}`)
@@ -291,24 +271,6 @@ export async function createEventMessage(event: any) {
           .setStyle(ButtonStyle.Danger)
       );
 
-      // Add approve button if there are pending participants
-      if (event.requireApproval && pending.length > 0) {
-        buttonRow.addComponents(
-          new ButtonBuilder()
-            .setCustomId(`event_approve:${event.id}`)
-            .setLabel(t('buttons.approve'))
-            .setStyle(ButtonStyle.Success)
-        );
-      }
-      // Add promote button if there are waitlisted participants
-      if (waitlist.length > 0) {
-        buttonRow.addComponents(
-          new ButtonBuilder()
-            .setCustomId(`event_promote:${event.id}`)
-            .setLabel('Promote')
-            .setStyle(ButtonStyle.Success)
-        );
-      }
       buttonRow.addComponents(
         new ButtonBuilder()
           .setCustomId(`event_menu:${event.id}`)

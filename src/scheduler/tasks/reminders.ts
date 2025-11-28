@@ -2,7 +2,7 @@
 // Reminder task for event scheduler
 
 import { DateTime } from 'luxon';
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import getPrismaClient from '../../database/db.js';
 import { getModuleLogger } from '../../utils/logger.js';
 import { getClient } from '../../bot/index.js';
@@ -119,9 +119,26 @@ async function sendReminder(event: any, interval: string): Promise<void> {
       )
       .setTimestamp();
 
+    // Create button with link to event message in Discord
+    const components = [];
+    if (event.messageId && event.channelId) {
+      const guildId = event.guildId;
+      const messageUrl = `https://discord.com/channels/${guildId}/${event.channelId}/${event.messageId}`;
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setLabel('Go to Event')
+            .setStyle(ButtonStyle.Link)
+            .setURL(messageUrl)
+            .setEmoji('📅')
+        );
+      components.push(row);
+    }
+
     const message = await channel.send({
       content: mentions || 'No participants yet',
       embeds: [embed],
+      components,
     });
 
     // Save reminder to database

@@ -19,6 +19,7 @@ export const ru = {
     goBack: 'Вернуться',
     viewAll: 'Показать все',
     noData: 'Нет данных',
+    of: 'из',
   },
   nav: {
     dashboard: 'Панель управления',
@@ -49,6 +50,9 @@ export const ru = {
   },
   events: {
     title: 'События',
+    event: 'событие',
+    events: 'событий',
+    showing: 'Показано',
     eventsFound: 'событий найдено',
     loadingEvents: 'Загрузка событий...',
     createEvent: 'Создать событие',
@@ -404,6 +408,19 @@ export const ru = {
       positionsCount: 'позиций',
       deleteConfirm: 'Удалить этот профиль?',
     },
+  },
+  publicEvent: {
+    loading: 'Загрузка события...',
+    notFound: 'Событие не найдено',
+    notFoundDesc: 'Это событие может не существовать или недоступно публично',
+    description: 'Описание',
+    participants: 'Участники',
+    confirmed: 'Подтверждённые',
+    pending: 'Ожидают одобрения',
+    waitlist: 'Очередь / Резерв',
+    noParticipants: 'Участников пока нет',
+    viewRaidPlan: 'Посмотреть план рейда',
+    raidPlanAvailable: 'Для этого события доступен план состава рейда',
   },
   errors: {
     accessDenied: 'Доступ запрещён',

@@ -39,6 +39,34 @@ export async function handleButton(interaction: ButtonInteraction): Promise<void
       return;
     }
 
+    // Approve buttons (not prefixed with event_)
+    if (action === 'approve_user') {
+      const eventId = params[0];
+      const userId = params[1];
+      await handleApproveUser(interaction, eventId, userId);
+      return;
+    }
+
+    if (action === 'approve_all') {
+      const eventId = params[0];
+      await handleApproveAll(interaction, eventId);
+      return;
+    }
+
+    // Promote buttons (not prefixed with event_)
+    if (action === 'promote_user') {
+      const eventId = params[0];
+      const userId = params[1];
+      await handlePromoteUser(interaction, eventId, userId);
+      return;
+    }
+
+    if (action === 'promote_next') {
+      const eventId = params[0];
+      await handlePromoteNext(interaction, eventId);
+      return;
+    }
+
     // Event participation buttons
     if (action.startsWith('event_')) {
       const eventId = params[0];
@@ -93,20 +121,8 @@ export async function handleButton(interaction: ButtonInteraction): Promise<void
         case 'event_approve':
           await handleApprove(interaction, eventId);
           break;
-        case 'approve_all':
-          await handleApproveAll(interaction, eventId);
-          break;
-        case 'approve_user':
-          await handleApproveUser(interaction, eventId, params[1]);
-          break;
         case 'event_promote':
           await handlePromote(interaction, eventId);
-          break;
-        case 'promote_user':
-          await handlePromoteUser(interaction, eventId, params[1]);
-          break;
-        case 'promote_next':
-          await handlePromoteNext(interaction, eventId);
           break;
         case 'event_menu':
           await handleEventMenu(interaction, eventId);

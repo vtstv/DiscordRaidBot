@@ -28,6 +28,8 @@ export default function Events() {
   const [endDate, setEndDate] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filtersExpanded, setFiltersExpanded] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const eventsPerPage = 30;
 
   const statusTranslations: Record<string, string> = {
     all: t.events.filters.all,
@@ -101,6 +103,17 @@ export default function Events() {
     
     return true;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
+  const startIndex = (currentPage - 1) * eventsPerPage;
+  const endIndex = startIndex + eventsPerPage;
+  const paginatedEvents = filteredEvents.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchQuery, startDate, endDate]);
 
   if (loading) {
     return (
@@ -295,6 +308,13 @@ export default function Events() {
             )}
           </div>
 
+          {/* Results count */}
+          {filteredEvents.length > 0 && (
+            <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+              {t.events.showing || 'Showing'} {startIndex + 1}-{Math.min(endIndex, filteredEvents.length)} {t.common.of || 'of'} {filteredEvents.length} {filteredEvents.length === 1 ? t.events.event : t.events.events}
+            </div>
+          )}
+
           {/* Events Grid */}
           {filteredEvents.length === 0 ? (
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center transition-colors duration-200">
@@ -311,9 +331,10 @@ export default function Events() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4">
-              {filteredEvents.map(event => (
-                <div
+            <>
+              <div className="grid grid-cols-1 gap-4">
+                {paginatedEvents.map(event => (
+                  <div
                   key={event.id}
                   onClick={() => navigate(`/guild/${guildId}/events/${event.id}`)}
                   className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all cursor-pointer hover:scale-[1.01]"
@@ -358,7 +379,66 @@ export default function Events() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-8">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Page numbers */}
+                  <div className="flex gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                      // Show first page, last page, current page, and pages around current
+                      const showPage = page === 1 || 
+                                      page === totalPages || 
+                                      Math.abs(page - currentPage) <= 1;
+                      
+                      const showEllipsis = (page === 2 && currentPage > 3) || 
+                                          (page === totalPages - 1 && currentPage < totalPages - 2);
+
+                      if (showEllipsis) {
+                        return <span key={page} className="px-3 py-2 text-gray-500 dark:text-gray-500">...</span>;
+                      }
+
+                      if (!showPage) return null;
+
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-4 py-2 rounded-lg transition-colors ${
+                            currentPage === page
+                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                              : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
