@@ -2,12 +2,15 @@
 // path: src/web/frontend/src/pages/event-details/ParticipantsList.tsx
 
 import type { Event } from '../../services/api';
+import { useI18n } from '../../contexts/I18nContext';
 
 interface ParticipantsListProps {
   event: Event;
 }
 
 export default function ParticipantsList({ event }: ParticipantsListProps) {
+  const { t } = useI18n();
+  
   if (!event.participants || event.participants.length === 0) {
     return null;
   }
@@ -15,7 +18,7 @@ export default function ParticipantsList({ event }: ParticipantsListProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-200">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-        Participants ({event.participants.length}{event.maxParticipants ? `/${event.maxParticipants}` : ''})
+        {t.eventDetails.participants} ({event.participants.length}{event.maxParticipants ? `/${event.maxParticipants}` : ''})
       </h2>
       <div className="space-y-2">
         {event.participants.map((participant: any) => (

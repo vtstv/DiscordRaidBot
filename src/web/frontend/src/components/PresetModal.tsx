@@ -2,6 +2,7 @@
 // path: src/web/frontend/src/components/PresetModal.tsx
 
 import { useState, useEffect } from 'react';
+import { useI18n } from '../contexts/I18nContext';
 
 interface Preset {
   id: string;
@@ -20,6 +21,7 @@ interface PresetModalProps {
 }
 
 export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }: PresetModalProps) {
+  const { t } = useI18n();
   const [mode, setMode] = useState<'load' | 'save'>('load');
   const [presets, setPresets] = useState<Preset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
@@ -88,9 +90,9 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="border-b border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Composition Profiles</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t.compositionTool.profilesModal.title}</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Save your current Composition into a profile and load it later. The profiles are saved so that other managers of this server can use them as well.
+            {t.compositionTool.profilesModal.description}
           </p>
           
           <div className="flex gap-2">
@@ -102,7 +104,7 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
             >
-              Save Profile
+              {t.compositionTool.profilesModal.saveProfile}
             </button>
             <button
               onClick={() => setMode('load')}
@@ -112,7 +114,7 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
             >
-              Load Profile
+              {t.compositionTool.profilesModal.loadProfile}
             </button>
           </div>
         </div>
@@ -123,24 +125,24 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Profile Name
+                  {t.compositionTool.profilesModal.profileName}
                 </label>
                 <input
                   type="text"
                   value={saveName}
                   onChange={(e) => setSaveName(e.target.value)}
-                  placeholder="Enter a profile name..."
+                  placeholder={t.compositionTool.profilesModal.profileNamePlaceholder}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description (optional)
+                  {t.compositionTool.profilesModal.profileDescription}
                 </label>
                 <textarea
                   value={saveDescription}
                   onChange={(e) => setSaveDescription(e.target.value)}
-                  placeholder="Add a description..."
+                  placeholder={t.compositionTool.profilesModal.profileDescriptionPlaceholder}
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                 />
@@ -149,9 +151,9 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
           ) : (
             <div className="space-y-3">
               {loading ? (
-                <div className="text-center py-8 text-gray-400">Loading presets...</div>
+                <div className="text-center py-8 text-gray-400">{t.compositionTool.profilesModal.loadingPresets}</div>
               ) : presets.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">No presets found. Save one first!</div>
+                <div className="text-center py-8 text-gray-400">{t.compositionTool.profilesModal.noPresets}</div>
               ) : (
                 presets.map(preset => (
                   <div
@@ -170,10 +172,10 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
                           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{preset.description}</p>
                         )}
                         {preset.strategy && (
-                          <p className="text-sm text-purple-600 dark:text-purple-400 mt-1 italic">Has strategy notes</p>
+                          <p className="text-sm text-purple-600 dark:text-purple-400 mt-1 italic">{t.compositionTool.profilesModal.hasStrategyNotes}</p>
                         )}
                         <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                          {preset.groups.length} groups • {preset.groups.reduce((sum: number, g: any) => sum + g.positions.length, 0)} positions
+                          {preset.groups.length} {t.compositionTool.profilesModal.groupsCount} • {preset.groups.reduce((sum: number, g: any) => sum + g.positions.length, 0)} {t.compositionTool.profilesModal.positionsCount}
                         </p>
                       </div>
                       <button
@@ -201,7 +203,7 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
             onClick={onClose}
             className="px-6 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
           >
-            Cancel
+            {t.common.cancel}
           </button>
           {mode === 'save' ? (
             <button
@@ -209,7 +211,7 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
               disabled={!saveName.trim()}
               className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Save
+              {t.common.save}
             </button>
           ) : (
             <button
@@ -217,7 +219,7 @@ export default function PresetModal({ isOpen, onClose, onLoad, onSave, guildId }
               disabled={!selectedPreset}
               className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Load
+              {t.compositionTool.profilesModal.loadProfile}
             </button>
           )}
         </div>

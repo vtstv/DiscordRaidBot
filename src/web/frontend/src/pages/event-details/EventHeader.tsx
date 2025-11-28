@@ -2,6 +2,7 @@
 // path: src/web/frontend/src/pages/event-details/EventHeader.tsx
 
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '../../contexts/I18nContext';
 import type { Event } from '../../services/api';
 import type { EditValues, EditableFieldName, StatusConfig } from './types';
 import EditableField from './EditableField';
@@ -36,6 +37,7 @@ export default function EventHeader({
   onDelete,
 }: EventHeaderProps) {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-6 transition-colors duration-200">
@@ -64,13 +66,13 @@ export default function EventHeader({
                       disabled={saving}
                       className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 disabled:opacity-50"
                     >
-                      {saving ? 'Saving...' : 'Save'}
+                      {saving ? t.eventDetails.saving : t.eventDetails.save}
                     </button>
                     <button
                       onClick={onCancelEdit}
                       className="px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-500"
                     >
-                      Cancel
+                      {t.eventDetails.cancel}
                     </button>
                   </div>
                 </div>
@@ -78,7 +80,7 @@ export default function EventHeader({
                 <h1
                   onClick={() => onEdit('title')}
                   className="text-3xl font-bold text-gray-900 dark:text-white cursor-pointer hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                  title="Click to edit"
+                  title={t.eventDetails.clickToEdit}
                 >
                   {event.title}
                   <svg className="inline-block w-5 h-5 ml-2 opacity-0 hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,21 +115,21 @@ export default function EventHeader({
           <button
             onClick={() => navigate(`/guild/${guildId}/events/${eventId}/composition`)}
             className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
-            title="Manage raid composition"
+            title={t.eventDetails.composition}
           >
-            Composition
+            {t.eventDetails.composition}
           </button>
           <button
             onClick={() => navigate(`/guild/${guildId}/events/${eventId}/edit`)}
             className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-md transition-all font-medium"
           >
-            Full Edit
+            {t.eventDetails.fullEdit}
           </button>
           <button
             onClick={onDelete}
             className="px-4 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 hover:shadow-md transition-all font-medium"
           >
-            Delete
+            {t.common.delete}
           </button>
         </div>
       </div>

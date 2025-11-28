@@ -54,7 +54,7 @@ export default function ChannelsCard({ settings, setSettings, channels }: Channe
                 onChange={e => setSettings({...settings, archiveChannelId: e.target.value || undefined})}
                 className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               >
-                <option value="">Select a channel...</option>
+                <option value="">{t.settings.selectAChannel}</option>
                 {channels.map(channel => (
                   <option key={channel.id} value={channel.id}>
                     # {channel.name}
@@ -62,7 +62,7 @@ export default function ChannelsCard({ settings, setSettings, channels }: Channe
                 ))}
               </select>
               <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Archive after (hours)</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t.settings.archiveAfterHours}</label>
                 <input 
                   type="number" 
                   min="0"

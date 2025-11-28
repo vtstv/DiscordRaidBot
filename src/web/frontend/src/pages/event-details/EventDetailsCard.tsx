@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Murr (https://github.com/vtstv)
 // path: src/web/frontend/src/pages/event-details/EventDetailsCard.tsx
 
+import { useI18n } from '../../contexts/I18nContext';
 import type { Event } from '../../services/api';
 import type { EditValues, EditableFieldName } from './types';
 
@@ -25,9 +26,11 @@ export default function EventDetailsCard({
   onSaveField,
   onCancelEdit,
 }: EventDetailsCardProps) {
+  const { t } = useI18n();
+  
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-200">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Event Details</h2>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t.eventDetails.title}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Editable Start Time */}
         <div className="flex items-start gap-3">
@@ -37,7 +40,7 @@ export default function EventDetailsCard({
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Start Time</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{t.eventDetails.startTime}</p>
             {editingField === 'startTime' ? (
               <div className="space-y-2">
                 <input
@@ -53,13 +56,13 @@ export default function EventDetailsCard({
                     disabled={saving}
                     className="px-2 py-1 bg-green-500 text-white rounded text-xs font-medium hover:bg-green-600 disabled:opacity-50"
                   >
-                    {saving ? 'Saving...' : 'Save'}
+                    {saving ? t.eventDetails.saving : t.eventDetails.save}
                   </button>
                   <button
                     onClick={onCancelEdit}
                     className="px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-500"
                   >
-                    Cancel
+                    {t.eventDetails.cancel}
                   </button>
                 </div>
               </div>
@@ -67,7 +70,7 @@ export default function EventDetailsCard({
               <div
                 onClick={() => onEdit('startTime')}
                 className="cursor-pointer hover:text-purple-600 dark:hover:text-purple-400 transition-colors group"
-                title="Click to edit"
+                title={t.eventDetails.clickToEdit}
               >
                 <p className="font-semibold text-gray-900 dark:text-white">{new Date(event.startTime).toLocaleDateString()}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
@@ -89,7 +92,7 @@ export default function EventDetailsCard({
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Max Participants</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{t.eventDetails.maxParticipants}</p>
             {editingField === 'maxParticipants' ? (
               <div className="space-y-2">
                 <input
@@ -106,13 +109,13 @@ export default function EventDetailsCard({
                     disabled={saving}
                     className="px-2 py-1 bg-green-500 text-white rounded text-xs font-medium hover:bg-green-600 disabled:opacity-50"
                   >
-                    {saving ? 'Saving...' : 'Save'}
+                    {saving ? t.eventDetails.saving : t.eventDetails.save}
                   </button>
                   <button
                     onClick={onCancelEdit}
                     className="px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-500"
                   >
-                    Cancel
+                    {t.eventDetails.cancel}
                   </button>
                 </div>
               </div>
@@ -120,9 +123,9 @@ export default function EventDetailsCard({
               <p
                 onClick={() => onEdit('maxParticipants')}
                 className="font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-purple-600 dark:hover:text-purple-400 transition-colors group"
-                title="Click to edit"
+                title={t.eventDetails.clickToEdit}
               >
-                {event.maxParticipants || 'Unlimited'}
+                {event.maxParticipants || t.eventDetails.unlimited}
                 <svg className="inline-block w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>

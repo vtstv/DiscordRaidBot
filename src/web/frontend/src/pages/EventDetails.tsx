@@ -7,6 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api, Event } from '../services/api';
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
+import { useI18n } from '../contexts/I18nContext';
 import { STATUS_CONFIG } from './event-details/constants';
 import { EditValues, EditableFieldName, EventStatus } from './event-details/types';
 import EventHeader from './event-details/EventHeader';
@@ -18,6 +19,7 @@ import CreatorInfo from './event-details/CreatorInfo';
 export default function EventDetails() {
   const { guildId, eventId } = useParams<{ guildId: string; eventId: string }>();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -47,13 +49,13 @@ export default function EventDetails() {
   }, [guildId, eventId]);
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
+    if (!confirm(t.eventDetails.deleteConfirm)) return;
 
     try {
       await api.deleteEvent(guildId!, eventId!);
       navigate(`/guild/${guildId}/events`);
     } catch (error) {
-      alert('Failed to delete event');
+      alert(t.eventDetails.failedToDelete);
     }
   };
 
@@ -102,7 +104,7 @@ export default function EventDetails() {
         <div className="flex items-center justify-center min-h-screen dark:bg-gray-900">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading event details...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t.eventDetails.loadingDetails}</p>
           </div>
         </div>
       </Layout>
@@ -117,13 +119,13 @@ export default function EventDetails() {
             <svg className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Event not found</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">This event may have been deleted</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t.eventDetails.notFound}</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{t.eventDetails.notFoundDesc}</p>
             <button
               onClick={() => navigate(`/guild/${guildId}/events`)}
               className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
             >
-              Back to Events
+              {t.eventDetails.backButton}
             </button>
           </div>
         </div>
@@ -145,7 +147,7 @@ export default function EventDetails() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Events
+            {t.eventDetails.backButton}
           </button>
 
           <EventHeader

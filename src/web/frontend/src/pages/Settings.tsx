@@ -160,10 +160,10 @@ export default function Settings() {
               className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
             >
               <ChevronLeftIcon />
-              <span className="ml-1">Back</span>
+              <span className="ml-1">{t.common.goBack}</span>
             </button>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Settings</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">Configure your server preferences</p>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{t.settings.title}</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">{t.settings.subtitle}</p>
           </div>
           
           <form onSubmit={handleSave} className="space-y-6">
@@ -206,10 +206,10 @@ export default function Settings() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Saving...
+                    {t.settings.savingSettings}
                   </span>
                 ) : (
-                  'SAVE SETTINGS'
+                  t.settings.saveSettings
                 )}
               </button>
             </div>

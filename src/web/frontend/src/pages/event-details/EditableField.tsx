@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Murr (https://github.com/vtstv)
 // path: src/web/frontend/src/pages/event-details/EditableField.tsx
 
+import { useI18n } from '../../contexts/I18nContext';
 import type { EditValues, EditableFieldName } from './types';
 
 interface EditableFieldProps {
@@ -30,10 +31,11 @@ export default function EditableField({
   onSave,
   onCancel,
   renderDisplay,
-  className = '',
+  className,
   placeholder,
   type = 'text',
 }: EditableFieldProps) {
+  const { t } = useI18n();
   if (isEditing) {
     return (
       <div className="space-y-2">
@@ -69,13 +71,13 @@ export default function EditableField({
             disabled={saving}
             className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 disabled:opacity-50 transition-colors"
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? t.eventDetails.saving : t.eventDetails.save}
           </button>
           <button
             onClick={onCancel}
             className="px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
           >
-            Cancel
+            {t.eventDetails.cancel}
           </button>
         </div>
       </div>
@@ -86,7 +88,7 @@ export default function EditableField({
     <div
       onClick={onEdit}
       className="cursor-pointer hover:text-purple-600 dark:hover:text-purple-400 transition-colors group"
-      title="Click to edit"
+      title={t.eventDetails.clickToEdit}
     >
       {renderDisplay ? renderDisplay() : (
         <span className={className}>
