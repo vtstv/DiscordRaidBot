@@ -1,6 +1,13 @@
 # Discord Raid Bot
 
-A powerful Discord event management system, built with TypeScript and discord.js v14.
+A powerful Discord event management system with automatic voice channels, web dashboard, and advanced scheduling.
+
+[![Discord](https://img.shields.io/badge/Discord-Bot-5865F2?logo=discord&logoColor=white)](https://discord.com/developers/applications)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+---
 
 ## 📸 Screenshots
 
@@ -9,250 +16,176 @@ A powerful Discord event management system, built with TypeScript and discord.js
 ### Discord Event Management
 <img src="Media/discord.png" alt="Discord Event Interface" width="700"/>
 
-### Web Admin Panel
+### Web Admin Panel  
 <img src="Media/botadmin.png" alt="Admin Panel" width="700"/>
-
-### Panel Selection
-<img src="Media/selectpanel.png" alt="Server Selection" width="700"/>
-
-### Template Creation & Editing
-<img src="Media/create_edit_template.png" alt="Template Editor" width="700"/>
 
 </div>
 
-## Features
+---
 
-- 📅 **Event Management** - Create, edit, delete events with slash commands
-- 🎯 **Interactive Signups** - Buttons and select menus for participant management
-- 📊 **Role Limits** - Configure per-role participant limits
-- 📝 **Templates** - Reusable event templates for quick creation
-- ⏰ **Scheduler** - Automated reminders and archiving
-- 🌍 **Timezone Support** - Per-guild timezone settings
-- 🌐 **Web Dashboard** - Manage events through browser interface
-- 👥 **Admin Panel** - Global statistics and bulk operations
-- 🔍 **Audit Logging** - Complete action history
-- 🐳 **Docker Ready** - Full containerization with Docker Compose
-- 🏗️ **Multi-Platform** - Native ARM64 and AMD64 support
+## ✨ Key Features
 
-## Tech Stack
+🎯 **Interactive Events** - Slash commands with buttons/menus for signup  
+🎤 **Auto Voice Channels** - Temporary channels created/deleted automatically  
+📝 **Templates** - Reusable configurations with role limits  
+⏰ **Smart Scheduler** - Reminders, archiving, voice cleanup  
+🌐 **Web Dashboard** - Full management via browser  
+📊 **Statistics** - Track participation and attendance  
+🌍 **Multi-language** - EN, RU, DE support  
+🐳 **Docker Ready** - One command deployment  
 
-- **Backend**: TypeScript, Node.js 18+, discord.js v14
-- **Database**: PostgreSQL with Prisma ORM
-- **Web**: Fastify, React, Tailwind CSS
-- **Scheduler**: node-cron
-- **Container**: Docker + Docker Compose
+---
 
-## Quick Start
+## 🚀 Quick Start
 
-### 1. Prerequisites
-
-- Docker & Docker Compose (recommended) OR Node.js 18+
-- Discord Bot Token ([Get one here](https://discord.com/developers/applications))
-
-### 2. Setup
-
-Clone and configure:
+### Installation
 
 ```bash
 git clone https://github.com/vtstv/DiscordRaidBot.git
 cd DiscordRaidBot
 cp .env.example .env
+# Edit .env with your Discord token
+docker-compose up -d
 ```
 
-Edit `.env` with your values:
+**Invite bot:** `https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=2147485696&scope=bot%20applications.commands`
 
-```env
-DISCORD_TOKEN=your_bot_token_here
-DISCORD_CLIENT_ID=your_client_id_here
-DATABASE_URL=postgresql://raidbot:password@postgres:5432/raidbot
-ADMIN_USER_IDS=your_discord_user_id
+**Web dashboard:** http://localhost:3000
+
+📖 **[Full Installation Guide](docs/INSTALLATION.md)**
+
+### Basic Usage
+
+```bash
+/event create        # Create event
+/config              # Configure settings  
+/template create     # Create template
+/stats               # View statistics
 ```
 
-### 3. Run with Docker
+📖 **[Complete User Guide](docs/USER_GUIDE.md)**
 
+---
+
+## 📚 Documentation
+
+| Guide | Description |
+|-------|-------------|
+| **[Installation](docs/INSTALLATION.md)** | Setup with Docker or manual install |
+| **[User Guide](docs/USER_GUIDE.md)** | Commands and features walkthrough |
+| **[Configuration](docs/CONFIGURATION.md)** | All settings explained |
+| **[Voice Channels](docs/VOICE_CHANNELS.md)** | Automatic voice channel setup |
+
+---
+
+## 🛠️ Tech Stack
+
+**Backend:** TypeScript, Node.js 18+, discord.js v14  
+**Database:** PostgreSQL + Prisma ORM  
+**Frontend:** React, Tailwind CSS, Vite  
+**Infrastructure:** Docker, Redis, nginx (optional)
+
+---
+
+## 🎯 Core Features
+
+### Event Management
+- Create/edit/delete events via Discord or web
+- Interactive signup with buttons and select menus
+- Role-based participant limits with waitlist
+- Automatic reminders and archiving
+- Participant notes for managers
+
+### Voice Channels
+- Auto-create temporary channels before events
+- Participant-only restriction option
+- Auto-delete after configurable duration
+- Extend lifetime for long-running events
+
+### Templates
+- Reusable event configurations
+- Role limits (Tank: 2, Healer: 3, DPS: 10)
+- Custom emoji and descriptions
+- Quick event creation
+
+### Web Dashboard
+- Modern responsive UI
+- OAuth login with Discord
+- Event calendar and list views
+- Template editor
+- Statistics and analytics
+- Admin panel for global management
+
+---
+
+## 🐳 Docker Deployment
+
+**Full stack:**
 ```bash
 docker-compose up -d
 ```
 
-The bot will start automatically along with:
-- PostgreSQL database
-- Web dashboard at http://localhost:3000
-
-### 4. Invite Bot to Server
-
-Use this URL (replace `YOUR_CLIENT_ID`):
-
-```
-https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=2147485696&scope=bot%20applications.commands
+**Bot only (minimal):**
+```bash
+docker-compose up -d bot postgres redis
 ```
 
-## Usage
+## ⚙️ Configuration
 
-### Discord Commands
+Configure via `/config` command or web dashboard:
 
-- `/event create` - Create new event
-- `/event list` - View all events
-- `/event delete` - Delete event
-- `/template create` - Create event template
-- `/template list` - View templates
-- `/settings` - Configure guild settings
-- `/ping` - Check bot status
+- **Language** - EN, RU, DE
+- **Timezone** - Auto time conversion
+- **Reminders** - Custom intervals
+- **Voice Channels** - Category, duration, timing
+- **Permissions** - Manager roles, approval channels
 
-### Web Dashboard
+📖 **[Configuration Reference](docs/CONFIGURATION.md)**
 
-Access at **http://localhost:3000**
+---
 
-- **User Panel**: Manage events for your guilds
-- **Admin Panel**: Global overview (requires ADMIN_USER_IDS)
+## 📊 Statistics
 
-Features:
-- View and create events
-- Manage templates
-- Configure guild settings
-- Search across all events
-- Analytics and audit logs
+Track engagement with `/stats`:
+- Events attended/created
+- Most used roles
+- Attendance rate
+- Automated reports (weekly/monthly)
 
-## Configuration
+---
 
-Edit guild settings via `/settings` command or web dashboard:
-
-- **Timezone**: Default timezone for events
-- **Language**: Bot response language (en, ru, de)
-- **Reminder Intervals**: When to send reminders (e.g., "1h", "15m")
-- **Archive Channel**: Where to move completed events
-- **Manager Role**: Who can manage events
-- **Approval Channels**: Channels requiring approval for signups
-- **Thread Settings**: Auto-create threads for events
-
-## Development
-
-### Local Setup
+## 🔧 Development
 
 ```bash
 npm install
 cp .env.example .env
-# Edit .env with your settings
-
-# Database
-npx prisma generate
 npx prisma migrate deploy
-
-# Run
 npm run dev
 ```
 
-### Build
+**Build:** `npm run build`  
+**Test:** `npm test`
 
-```bash
-npm run build
-npm start
-```
+---
 
-## Docker Services
+## 🤝 Contributing
 
-The bot uses a **multi-container architecture** with separate services:
+Contributions welcome! Please open issues or pull requests.
 
-- **bot**: Discord bot service
-- **web**: Web dashboard (port 3000) - *optional*
-- **postgres**: PostgreSQL database (port 5432)
-- **redis**: Redis pub/sub for bot↔web communication
+---
 
-### Resource-Efficient Mode
+## 📄 License
 
-For servers with limited RAM, you can run **bot-only** mode:
+MIT License - see [LICENSE](LICENSE) file.
 
-```bash
-# Bot only (no web dashboard)
-docker-compose up -d bot postgres redis
+---
 
-# With web dashboard (default)
-docker-compose --profile with-web up -d
-```
+## 🆘 Support
 
-The bot and web services communicate via Redis pub/sub, allowing them to run independently or together.
+- 📖 [Documentation](docs/)
+- 🐛 [Issues](https://github.com/vtstv/DiscordRaidBot/issues)
+- 💬 [Discussions](https://github.com/vtstv/DiscordRaidBot/discussions)
 
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DISCORD_TOKEN` | Bot token from Discord Developer Portal | Yes |
-| `DISCORD_CLIENT_ID` | Application ID | Yes |
-| `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `ADMIN_USER_IDS` | Comma-separated Discord user IDs for admin access | No |
-| `PORT` | Web dashboard port (default: 3000) | No |
-| `NODE_ENV` | Environment (development/production) | No |
-
-## Features in Detail
-
-### Event Templates
-
-Create reusable templates with:
-- Pre-configured roles (Tank, Healer, DPS, etc.)
-- Participant limits per role
-- Custom emoji mapping
-- Optional banner images
-
-### Participation Management
-
-- **Confirmed** - Main roster
-- **Waitlist** - Overflow participants
-- **Bench** - Players without allowed roles (if enabled)
-- **Pending** - Awaiting approval
-- **Declined** - Opted out
-
-### Advanced Settings
-
-- **Deadline**: Close signups X hours before/after event start
-- **Allowed Roles**: Restrict signups to specific Discord roles
-- **Bench Overflow**: Move unauthorized users to bench instead of denying
-- **Thread Creation**: Auto-create discussion threads
-- **Auto-delete**: Remove event messages after archiving
-
-## Troubleshooting
-
-**Bot not responding?**
-- Check `docker logs raidbot-bot`
-- Verify `DISCORD_TOKEN` is correct
-- Ensure bot has proper permissions
-
-**Web dashboard not loading?**
-- Check `docker logs raidbot-web`
-- Verify port 3000 is not in use
-- Check `DATABASE_URL` connection
-
-**Database errors?**
-- Run `npx prisma migrate deploy`
-- Check PostgreSQL is running: `docker ps`
-
-## Docker Multi-Platform Support
-
-This project supports **ARM64** (aarch64) and **AMD64** (x86_64) architectures.
-
-### Quick Build
-
-```bash
-# Auto-detect platform (recommended)
-docker-compose build
-
-# Build and load locally for current platform
-.\docker-build.ps1 -LoadLocal          # Windows
-./docker-build.sh latest "" false true # Linux/macOS
-
-# Build for ARM64 specifically
-make docker-build-arm64
-
-# Build for AMD64 specifically
-make docker-build-amd64
-
-# Build and push to registry (both platforms)
-.\docker-build.ps1 -Registry "vtstv" -Push          # Windows/Docker Hub
-./docker-build.sh latest "vtstv" true               # Linux/Docker Hub
-./docker-build.sh latest "ghcr.io/vtstv" true       # GitHub Container Registry
-```
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
+---
 
 **Made with ❤️ by [Murr](https://github.com/vtstv)**

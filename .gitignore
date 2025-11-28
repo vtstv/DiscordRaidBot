@@ -42,9 +42,6 @@ Thumbs.db
 coverage/
 .nyc_output/
 
-# Prisma
-prisma/migrations/**/migration.sql
-
 # Docker
 *.pid
 *.seed
