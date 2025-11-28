@@ -152,8 +152,73 @@ async function sendReminder(event: any, interval: string): Promise<void> {
     });
 
     logger.info({ eventId: event.id, interval, messageId: message.id }, 'Reminder sent');
+
+    // Send DM reminders if enabled
+    if (event.guild.dmRemindersEnabled) {
+      await sendDMReminders(event, timestamp, components);
+    }
   } catch (error) {
     logger.error({ error, eventId: event.id }, 'Failed to send reminder');
+  }
+}
+
+/**
+ * Send DM reminders to confirmed participants
+ */
+async function sendDMReminders(event: any, timestamp: string, components: any[]): Promise<void> {
+  try {
+    const client = getClient();
+    if (!client) return;
+
+    // Get confirmed participants only
+    const confirmedParticipants = event.participants.filter((p: any) => p.status === 'confirmed');
+    
+    if (confirmedParticipants.length === 0) {
+      logger.debug({ eventId: event.id }, 'No confirmed participants for DM reminders');
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(0xffaa00)
+      .setTitle(`⏰ Event Reminder: ${event.title}`)
+      .setDescription(`Your event starts ${timestamp}!`)
+      .addFields(
+        { name: 'Event', value: event.title, inline: false },
+        { name: 'Description', value: event.description || 'No description', inline: false }
+      )
+      .setTimestamp();
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const participant of confirmedParticipants) {
+      try {
+        const user = await client.users.fetch(participant.userId);
+        await user.send({
+          embeds: [embed],
+          components,
+        });
+        successCount++;
+        logger.debug({ userId: participant.userId, eventId: event.id }, 'DM reminder sent');
+      } catch (error: any) {
+        failCount++;
+        // User might have DMs disabled or blocked the bot
+        if (error.code === 50007) {
+          logger.debug({ userId: participant.userId, eventId: event.id }, 'Cannot send DM - user has DMs disabled');
+        } else {
+          logger.warn({ error, userId: participant.userId, eventId: event.id }, 'Failed to send DM reminder');
+        }
+      }
+    }
+
+    logger.info({ 
+      eventId: event.id, 
+      successCount, 
+      failCount, 
+      totalConfirmed: confirmedParticipants.length 
+    }, 'DM reminders completed');
+  } catch (error) {
+    logger.error({ error, eventId: event.id }, 'Failed to send DM reminders');
   }
 }
 

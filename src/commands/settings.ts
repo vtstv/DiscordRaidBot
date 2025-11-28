@@ -17,7 +17,7 @@ import { handleLanguage, handleTimezone } from './settings/handlers/locale.js';
 import { handleLogChannel, handleArchiveChannel } from './settings/handlers/channels.js';
 import { handleReminders } from './settings/handlers/reminders.js';
 import { handleManagerRole, handlePrefix } from './settings/handlers/roles.js';
-import { handleApprovalChannels, handleAutoDelete, handleThreadChannels, handleNoteChannels } from './settings/handlers/advanced.js';
+import { handleApprovalChannels, handleAutoDelete, handleThreadChannels, handleNoteChannels, handleDMReminders } from './settings/handlers/advanced.js';
 
 const logger = getModuleLogger('settings-command');
 
@@ -201,6 +201,17 @@ const command: Command = {
             .addChannelTypes(ChannelType.GuildText)
             .setRequired(false)
         )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('dm-reminders')
+        .setDescription('Enable or disable DM reminders for confirmed participants')
+        .addBooleanOption(option =>
+          option
+            .setName('enabled')
+            .setDescription('Enable DM reminders')
+            .setRequired(true)
+        )
     ),
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -252,6 +263,9 @@ const command: Command = {
         break;
       case 'note-channels':
         await handleNoteChannels(interaction);
+        break;
+      case 'dm-reminders':
+        await handleDMReminders(interaction);
         break;
     }
   },

@@ -87,6 +87,7 @@ export interface GuildSettings {
   logRetentionDays?: number;
   threadChannels?: string[];
   noteChannels?: string[];
+  dmRemindersEnabled?: boolean;
   // Statistics settings
   statsEnabled?: boolean;
   statsChannelId?: string;

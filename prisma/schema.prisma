@@ -42,6 +42,9 @@ model Guild {
   // View online button settings
   showViewOnlineButton Boolean @default(true) @map("showviewonlinebutton")  // Show 'View online' button in Discord messages
   
+  // DM reminder settings
+  dmRemindersEnabled Boolean @default(false) @map("dmremindersenabled")  // Send DM reminders to confirmed participants
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

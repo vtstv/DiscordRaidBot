@@ -326,3 +326,34 @@ export async function handleNoteChannels(interaction: ChatInputCommandInteractio
       break;
   }
 }
+
+export async function handleDMReminders(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply();
+
+  const guildId = interaction.guild!.id;
+  const enabled = interaction.options.getBoolean('enabled', true);
+  const prisma = getPrismaClient();
+
+  await prisma.guild.upsert({
+    where: { id: guildId },
+    create: {
+      id: guildId,
+      name: interaction.guild!.name,
+      dmRemindersEnabled: enabled,
+    },
+    update: {
+      dmRemindersEnabled: enabled,
+    },
+  });
+
+  logger.info({ guildId, enabled }, 'DM reminders setting updated');
+
+  const status = enabled ? 'enabled ✅' : 'disabled ❌';
+  await interaction.editReply(
+    `DM reminders are now **${status}**\n\n` +
+    (enabled
+      ? '📬 Confirmed participants will receive direct messages before events start.\n' +
+        '⚠️ Note: Users with DMs disabled will not receive reminders.'
+      : '📭 Participants will only see reminders in the event channel.')
+  );
+}

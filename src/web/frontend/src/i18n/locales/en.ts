@@ -277,6 +277,8 @@ export const en = {
       reminderIntervals: 'Reminder Intervals',
       reminderIntervalsHint: 'Comma-separated hours before event',
       reminderIntervalsPlaceholder: '24, 1',
+      dmReminders: 'DM Reminders',
+      dmRemindersDesc: 'Send direct messages to confirmed participants before events',
       logRetention: 'Log Retention (days)',
       logRetentionHint: 'How long to keep audit logs (0 = forever)',
       logRetentionPlaceholder: '30',

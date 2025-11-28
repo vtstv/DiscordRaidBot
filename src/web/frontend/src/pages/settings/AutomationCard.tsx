@@ -58,6 +58,22 @@ export default function AutomationCard({ settings, setSettings }: AutomationCard
               placeholder={t.settings.automation.logRetentionPlaceholder}
             />
           </div>
+
+          <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+            <div className="flex-1">
+              <div className="text-sm font-medium text-gray-900 dark:text-white">{t.settings.automation.dmReminders}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t.settings.automation.dmRemindersDesc}</div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer ml-4">
+              <input
+                type="checkbox"
+                checked={settings.dmRemindersEnabled || false}
+                onChange={e => setSettings({...settings, dmRemindersEnabled: e.target.checked})}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+            </label>
+          </div>
         </div>
       </div>
     </div>

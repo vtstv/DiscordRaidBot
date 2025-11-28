@@ -40,6 +40,9 @@ export async function handleView(interaction: ChatInputCommandInteraction): Prom
     ? guild.threadChannels.map(id => `<#${id}>`).join(', ')
     : 'None configured';
 
+  // DM reminders
+  const dmRemindersText = guild.dmRemindersEnabled ? 'Enabled ✅' : 'Disabled ❌';
+
   await interaction.editReply(
     `**Server Settings**\n\n` +
     `🌐 **Language:** ${languageName}\n` +
@@ -47,6 +50,7 @@ export async function handleView(interaction: ChatInputCommandInteraction): Prom
     `📋 **Log Channel:** ${logChannel}\n` +
     `📦 **Archive Channel:** ${archiveChannel}\n` +
     `⏰ **Reminder Intervals:** ${reminders}\n` +
+    `📬 **DM Reminders:** ${dmRemindersText}\n` +
     `🗑️ **Auto-delete messages:** ${autoDeleteText}\n` +
     `💬 **Auto-create threads in:** ${threadChannelsText}`
   );

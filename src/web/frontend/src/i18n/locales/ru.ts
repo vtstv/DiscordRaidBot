@@ -269,7 +269,7 @@ export const ru = {
       allPages: 'Все страницы',
     },
     automation: {
-      autoArchive: 'Автоархивация завершённых событий',
+      autoArchive: 'Автоматическая архивация завершенных событий',
       autoArchiveDesc: 'Автоматически архивировать события после завершения',
       enableReminders: 'Включить напоминания о событиях',
       enableRemindersDesc: 'Отправлять напоминания перед началом событий',
@@ -277,8 +277,10 @@ export const ru = {
       reminderIntervals: 'Интервалы напоминаний',
       reminderIntervalsHint: 'Часы до события через запятую',
       reminderIntervalsPlaceholder: '24, 1',
+      dmReminders: 'DM-напоминания',
+      dmRemindersDesc: 'Отправлять личные сообщения подтвержденным участникам перед событиями',
       logRetention: 'Хранение логов (дней)',
-      logRetentionHint: 'Как долго хранить журналы аудита (0 = навсегда)',
+      logRetentionHint: 'Сколько хранить логи аудита (0 = всегда)',
       logRetentionPlaceholder: '30',
     },
     channels: {
