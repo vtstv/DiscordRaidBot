@@ -45,6 +45,11 @@ model Guild {
   // DM reminder settings
   dmRemindersEnabled Boolean @default(false) @map("dmremindersenabled")  // Send DM reminders to confirmed participants
   
+  // Voice channel settings
+  voiceChannelCategoryId String? @map("voicechannelcategoryid")  // Category for temporary voice channels
+  voiceChannelDuration Int @default(120) @map("voicechannelduration")  // Minutes to keep channel AFTER event ends
+  voiceChannelCreateBefore Int @default(60) @map("voicechannelcreatebefore")  // Minutes BEFORE event to create channel
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -108,6 +113,15 @@ model Event {
   benchOverflow   Boolean   @default(true)   // If true, users without allowed roles go to bench; if false, signup denied
   deadline        Int?                       // Hours before event start to close signups (negative = after start, null = closes at start)
   allowNotes      Boolean?  @map("allownotes")  // Override for participant notes (null = use guild setting)
+  
+  // Voice channel settings
+  createVoiceChannel Boolean @default(false) @map("createvoicechannel")  // Create temporary voice channel
+  voiceChannelId String? @map("voicechannelid")  // ID of created voice channel
+  voiceChannelName String? @map("voicechannelname")  // Custom name for voice channel
+  voiceChannelRestricted Boolean @default(false) @map("voicechannelrestricted")  // Restrict to participants only
+  voiceChannelCreateBefore Int? @map("voicechannelcreatebefore")  // Override: minutes before event to create channel
+  voiceChannelCreatedAt DateTime? @map("voicechannelcreatedat")  // When voice channel was created
+  voiceChannelDeleteAt DateTime? @map("voicechanneldeleteat")  // When voice channel should be deleted
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

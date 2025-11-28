@@ -14,6 +14,7 @@ import LanguageTimezoneCard from './settings/LanguageTimezoneCard';
 import ManagerAccessCard from './settings/ManagerAccessCard';
 import AutomationCard from './settings/AutomationCard';
 import ChannelsCard from './settings/ChannelsCard';
+import VoiceChannelsCard from './settings/VoiceChannelsCard';
 import StatisticsCard from './settings/StatisticsCard';
 import ParticipantNotesCard from './settings/ParticipantNotesCard';
 import { ChevronLeftIcon } from './settings/icons';
@@ -186,6 +187,7 @@ export default function Settings() {
               {/* RIGHT COLUMN */}
               <div className="space-y-6">
                 <ChannelsCard settings={settings} setSettings={setSettings} channels={channels} />
+                <VoiceChannelsCard settings={settings} setSettings={setSettings} guildId={guildId!} />
                 <StatisticsCard settings={settings} setSettings={setSettings} channels={channels} roles={roles} />
                 <ParticipantNotesCard settings={settings} setSettings={setSettings} channels={channels} />
               </div>

@@ -5,7 +5,7 @@
 import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
 import { requireGuildAdmin } from '../auth/middleware.js';
-import { getUserGuilds, getGuildRoles, getGuildChannels } from '../auth/discord-oauth.js';
+import { getUserGuilds, getGuildRoles, getGuildChannels, getGuildCategories } from '../auth/discord-oauth.js';
 import { getModuleLogger } from '../../utils/logger.js';
 
 const logger = getModuleLogger('guilds-routes');
@@ -105,6 +105,9 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       statsAutoRoleEnabled?: boolean;
       statsTop10RoleId?: string;
       statsMinEvents?: number;
+      voiceChannelCategoryId?: string;
+      voiceChannelDuration?: number;
+      voiceChannelCreateBefore?: number;
     };
   }>('/:guildId/settings', async (request, reply) => {
     // Add guildId to request for middleware
@@ -138,6 +141,9 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
     if (request.body.statsAutoRoleEnabled !== undefined) updateData.statsAutoRoleEnabled = request.body.statsAutoRoleEnabled;
     if (request.body.statsTop10RoleId !== undefined) updateData.statsTop10RoleId = request.body.statsTop10RoleId;
     if (request.body.statsMinEvents !== undefined) updateData.statsMinEvents = request.body.statsMinEvents;
+    if (request.body.voiceChannelCategoryId !== undefined) updateData.voiceChannelCategoryId = request.body.voiceChannelCategoryId;
+    if (request.body.voiceChannelDuration !== undefined) updateData.voiceChannelDuration = request.body.voiceChannelDuration;
+    if (request.body.voiceChannelCreateBefore !== undefined) updateData.voiceChannelCreateBefore = request.body.voiceChannelCreateBefore;
 
     try {
       const guild = await prisma.guild.update({
@@ -227,6 +233,26 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
     } catch (error) {
       logger.error({ error, guildId }, 'Failed to get guild channels');
       return reply.code(500).send({ error: 'Failed to get channels' });
+    }
+  });
+
+  // Get guild categories (for voice channel settings)
+  server.get<{
+    Params: { guildId: string };
+  }>('/:guildId/categories', async (request, reply) => {
+    // Add guildId to request for middleware
+    (request as any).params = { guildId: request.params.guildId };
+    await requireGuildAdmin(request as any, reply);
+    if (reply.sent) return;
+
+    const { guildId } = request.params;
+
+    try {
+      const categories = await getGuildCategories(guildId);
+      return categories;
+    } catch (error) {
+      logger.error({ error, guildId }, 'Failed to get guild categories');
+      return reply.code(500).send({ error: 'Failed to get categories' });
     }
   });
 

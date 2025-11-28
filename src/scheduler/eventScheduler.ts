@@ -7,6 +7,7 @@ import { checkReminders } from './tasks/reminders.js';
 import { checkEventStart, checkArchiving } from './tasks/archiving.js';
 import { checkMessageDeletion } from './tasks/cleanup.js';
 import { cleanupOldLogs } from './tasks/logs.js';
+import { manageVoiceChannels } from './tasks/voiceChannels.js';
 
 const logger = getModuleLogger('scheduler');
 
@@ -32,6 +33,7 @@ export function startScheduler(): void {
       await checkEventStart();
       await checkMessageDeletion();
       await cleanupOldLogs();
+      await manageVoiceChannels();
     } catch (error) {
       logger.error({ error }, 'Scheduler task failed');
     }

@@ -16,6 +16,7 @@ import { handleList } from './event/list.js';
 import { handleCancel } from './event/cancel.js';
 import { handleAddUser } from './event/add-user.js';
 import { handleRemoveUser } from './event/remove-user.js';
+import { handleExtendVoice } from './event/extend-voice.js';
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -109,6 +110,33 @@ const command: Command = {
             .setMaxValue(168)  // Max 7 days before
             .setRequired(false)
         )
+        .addBooleanOption(option =>
+          option
+            .setName('create-voice-channel')
+            .setDescription('Create a temporary voice channel for this event')
+            .setRequired(false)
+        )
+        .addStringOption(option =>
+          option
+            .setName('voice-channel-name')
+            .setDescription('Custom name for the voice channel (default: event title)')
+            .setMaxLength(50)
+            .setRequired(false)
+        )
+        .addBooleanOption(option =>
+          option
+            .setName('voice-restricted')
+            .setDescription('Restrict voice channel to participants only')
+            .setRequired(false)
+        )
+        .addIntegerOption(option =>
+          option
+            .setName('voice-create-before')
+            .setDescription('Minutes before event to create voice channel (overrides server default)')
+            .setMinValue(5)
+            .setMaxValue(1440)
+            .setRequired(false)
+        )
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -186,6 +214,26 @@ const command: Command = {
             .setDescription('User to remove from the event')
             .setRequired(true)
         )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('extend-voice')
+        .setDescription('Extend voice channel duration for an event')
+        .addStringOption(option =>
+          option
+            .setName('event-id')
+            .setDescription('Event ID')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addIntegerOption(option =>
+          option
+            .setName('minutes')
+            .setDescription('Minutes to extend (1-1440)')
+            .setMinValue(1)
+            .setMaxValue(1440)
+            .setRequired(true)
+        )
     ),
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -210,6 +258,9 @@ const command: Command = {
         break;
       case 'remove-user':
         await handleRemoveUser(interaction);
+        break;
+      case 'extend-voice':
+        await handleExtendVoice(interaction);
         break;
     }
   },

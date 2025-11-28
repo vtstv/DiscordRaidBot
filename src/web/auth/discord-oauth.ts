@@ -230,6 +230,19 @@ export async function getGuildChannels(guildId: string): Promise<any[]> {
 }
 
 /**
+ * Get guild categories (channel type 4)
+ */
+export async function getGuildCategories(guildId: string): Promise<any[]> {
+  try {
+    const channels = await getGuildChannels(guildId);
+    return channels.filter(channel => channel.type === 4); // ChannelType.GuildCategory = 4
+  } catch (error) {
+    logger.error({ error, guildId }, 'Failed to get guild categories');
+    return [];
+  }
+}
+
+/**
  * Refresh access token
  */
 export async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {

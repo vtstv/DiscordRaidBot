@@ -18,6 +18,7 @@ import { handleLogChannel, handleArchiveChannel } from './settings/handlers/chan
 import { handleReminders } from './settings/handlers/reminders.js';
 import { handleManagerRole, handlePrefix } from './settings/handlers/roles.js';
 import { handleApprovalChannels, handleAutoDelete, handleThreadChannels, handleNoteChannels, handleDMReminders } from './settings/handlers/advanced.js';
+import { handleVoiceCategory, handleVoiceDuration, handleVoiceCreateBefore } from './settings/handlers/voice.js';
 
 const logger = getModuleLogger('settings-command');
 
@@ -212,6 +213,44 @@ const command: Command = {
             .setDescription('Enable DM reminders')
             .setRequired(true)
         )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('voice-category')
+        .setDescription('Set category for temporary voice channels')
+        .addChannelOption(option =>
+          option
+            .setName('category')
+            .setDescription('Category for voice channels')
+            .addChannelTypes(ChannelType.GuildCategory)
+            .setRequired(false)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('voice-duration')
+        .setDescription('Set how long voice channels stay after event ends (minutes)')
+        .addIntegerOption(option =>
+          option
+            .setName('minutes')
+            .setDescription('Minutes to keep channel after event ends')
+            .setRequired(true)
+            .setMinValue(0)
+            .setMaxValue(1440)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('voice-create-before')
+        .setDescription('Set when to create voice channels before event starts (minutes)')
+        .addIntegerOption(option =>
+          option
+            .setName('minutes')
+            .setDescription('Minutes before event to create channel')
+            .setRequired(true)
+            .setMinValue(0)
+            .setMaxValue(1440)
+        )
     ),
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -266,6 +305,15 @@ const command: Command = {
         break;
       case 'dm-reminders':
         await handleDMReminders(interaction);
+        break;
+      case 'voice-category':
+        await handleVoiceCategory(interaction);
+        break;
+      case 'voice-duration':
+        await handleVoiceDuration(interaction);
+        break;
+      case 'voice-create-before':
+        await handleVoiceCreateBefore(interaction);
         break;
     }
   },

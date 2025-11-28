@@ -233,6 +233,10 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
       allowedRoles?: string[];
       benchOverflow?: boolean;
       deadline?: number;
+      createVoiceChannel?: boolean;
+      voiceChannelName?: string;
+      voiceChannelRestricted?: boolean;
+      voiceChannelCreateBefore?: number;
     };
   }>(
     '/',
@@ -272,6 +276,10 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
         allowedRoles: eventData.allowedRoles,
         benchOverflow: eventData.benchOverflow,
         deadline: eventData.deadline,
+        createVoiceChannel: eventData.createVoiceChannel,
+        voiceChannelName: eventData.voiceChannelName,
+        voiceChannelRestricted: eventData.voiceChannelRestricted,
+        voiceChannelCreateBefore: eventData.voiceChannelCreateBefore,
       },
     });
 
@@ -305,6 +313,10 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
       allowedRoles?: string[];
       benchOverflow?: boolean;
       deadline?: number;
+      createVoiceChannel?: boolean;
+      voiceChannelName?: string;
+      voiceChannelRestricted?: boolean;
+      voiceChannelCreateBefore?: number;
     };
   }>(
     '/:id',
@@ -346,6 +358,10 @@ export async function eventsRoutes(server: FastifyInstance): Promise<void> {
     if (request.body.allowedRoles !== undefined) updateData.allowedRoles = request.body.allowedRoles;
     if (request.body.benchOverflow !== undefined) updateData.benchOverflow = request.body.benchOverflow;
     if (request.body.deadline !== undefined) updateData.deadline = request.body.deadline;
+    if (request.body.createVoiceChannel !== undefined) updateData.createVoiceChannel = request.body.createVoiceChannel;
+    if (request.body.voiceChannelName !== undefined) updateData.voiceChannelName = request.body.voiceChannelName;
+    if (request.body.voiceChannelRestricted !== undefined) updateData.voiceChannelRestricted = request.body.voiceChannelRestricted;
+    if (request.body.voiceChannelCreateBefore !== undefined) updateData.voiceChannelCreateBefore = request.body.voiceChannelCreateBefore;
 
     try {
       const event = await prisma.event.update({

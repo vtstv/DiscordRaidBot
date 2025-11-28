@@ -1,0 +1,75 @@
+// Copyright (c) 2025 Murr (https://github.com/vtstv)
+// Select menu interaction handler for config command
+
+import { StringSelectMenuInteraction } from 'discord.js';
+import { showMainMenu } from '../menus/main.js';
+import { showLocaleMenu } from '../menus/locale.js';
+import { showAutomationMenu, showVoiceMenu, showChannelsMenu, showViewAll } from '../menus/others.js';
+import { handleLanguageSelect, handleTimezoneSelect } from './locale.js';
+import { handleAutomationAction } from './automation.js';
+import { handleVoiceAction } from './voice.js';
+import getPrismaClient from '../../../database/db.js';
+
+const prisma = getPrismaClient();
+
+export async function handleConfigSelectMenu(interaction: StringSelectMenuInteraction): Promise<void> {
+  const [action] = interaction.customId.split('_');
+  
+  if (action !== 'config') return;
+
+  const value = interaction.values[0];
+
+  switch (interaction.customId) {
+    case 'config_main_menu':
+      await handleMainMenuSelect(interaction, value);
+      break;
+
+    case 'config_set_language':
+      await handleLanguageSelect(interaction, value);
+      break;
+
+    case 'config_set_timezone':
+      await handleTimezoneSelect(interaction, value);
+      break;
+
+    case 'config_automation_action':
+      await handleAutomationAction(interaction, value);
+      break;
+
+    case 'config_voice_action':
+      await handleVoiceAction(interaction, value);
+      break;
+
+    case 'config_channels_action':
+      await interaction.update({ 
+        content: `Action "${value}" requires channel selection (not yet implemented in beta).`, 
+        components: [] 
+      });
+      break;
+  }
+}
+
+async function handleMainMenuSelect(interaction: StringSelectMenuInteraction, value: string): Promise<void> {
+  switch (value) {
+    case 'locale':
+      await showLocaleMenu(interaction);
+      break;
+    case 'automation':
+      await showAutomationMenu(interaction);
+      break;
+    case 'voice':
+      await showVoiceMenu(interaction);
+      break;
+    case 'channels':
+      await showChannelsMenu(interaction);
+      break;
+    case 'view_all':
+      await showViewAll(interaction);
+      break;
+    default:
+      await interaction.update({ 
+        content: `Category "${value}" is not yet implemented in this beta menu.`, 
+        components: [] 
+      });
+  }
+}

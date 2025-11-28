@@ -14,6 +14,12 @@ export async function handleModal(interaction: ModalSubmitInteraction): Promise<
   logger.debug({ action, params, user: interaction.user.tag }, 'Modal submit interaction');
 
   try {
+    // Config modals (use underscores)
+    if (interaction.customId.startsWith('config_modal_')) {
+      await handleConfigModal(interaction);
+      return;
+    }
+
     switch (action) {
       case 'event_edit':
         await handleEventEditSubmit(interaction, params[0]);
@@ -43,5 +49,17 @@ export async function handleModal(interaction: ModalSubmitInteraction): Promise<
         ephemeral: true,
       });
     }
+  }
+}
+
+async function handleConfigModal(interaction: ModalSubmitInteraction): Promise<void> {
+  const customId = interaction.customId;
+
+  if (customId === 'config_modal_voice_duration') {
+    const { handleVoiceDuration } = await import('../../commands/config/handlers/voice.js');
+    await handleVoiceDuration(interaction);
+  } else if (customId === 'config_modal_voice_create_before') {
+    const { handleVoiceCreateBefore } = await import('../../commands/config/handlers/voice.js');
+    await handleVoiceCreateBefore(interaction);
   }
 }

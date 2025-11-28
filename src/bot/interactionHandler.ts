@@ -27,6 +27,8 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
       await handleButton(interaction);
     } else if (interaction.isStringSelectMenu()) {
       await handleSelectMenu(interaction);
+    } else if (interaction.isChannelSelectMenu()) {
+      await handleChannelSelectMenu(interaction);
     } else if (interaction.isModalSubmit()) {
       await handleModal(interaction);
     }
@@ -72,11 +74,19 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
  * Handle select menu interactions
  */
 async function handleSelectMenu(interaction: any): Promise<void> {
-  const [action, ...params] = interaction.customId.split(':');
+  const customId = interaction.customId;
+  const [action, ...params] = customId.split(':');
 
-  logger.debug({ action, params, user: interaction.user.tag }, 'Select menu interaction');
+  logger.debug({ customId, action, params, user: interaction.user.tag }, 'Select menu interaction');
 
   try {
+    // Config menu (uses underscores instead of colons)
+    if (customId.startsWith('config_')) {
+      const { handleConfigSelectMenu } = await import('../commands/config.js');
+      await handleConfigSelectMenu(interaction);
+      return;
+    }
+
     switch (action) {
       case 'event_role':
         await handleEventRoleSelect(interaction, params[0]);
@@ -91,6 +101,43 @@ async function handleSelectMenu(interaction: any): Promise<void> {
     }
   } catch (error) {
     logger.error({ error, customId: interaction.customId }, 'Select menu interaction error');
+    
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    
+    if (interaction.deferred) {
+      await interaction.editReply(`❌ ${errorMessage}`);
+    } else if (!interaction.replied) {
+      await interaction.reply({
+        content: `❌ ${errorMessage}`,
+        ephemeral: true,
+      });
+    }
+  }
+}
+
+/**
+ * Handle channel select menu interactions
+ */
+async function handleChannelSelectMenu(interaction: any): Promise<void> {
+  const customId = interaction.customId;
+  
+  logger.debug({ customId, user: interaction.user.tag }, 'Channel select menu interaction');
+
+  try {
+    // Config voice category selection
+    if (customId === 'config_select_voice_category') {
+      const { handleVoiceCategory } = await import('../commands/config/handlers/voice.js');
+      await handleVoiceCategory(interaction);
+      return;
+    }
+
+    logger.warn({ customId }, 'Unknown channel select menu interaction');
+    await interaction.reply({
+      content: '❌ Unknown channel select menu interaction.',
+      ephemeral: true,
+    });
+  } catch (error) {
+    logger.error({ error, customId }, 'Channel select menu interaction error');
     
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     

@@ -38,6 +38,10 @@ export async function handleCreate(interaction: ChatInputCommandInteraction): Pr
   const allowedRolesInput = interaction.options.getString('allowed-roles');
   const benchOverflow = interaction.options.getBoolean('bench-overflow') ?? true; // Default to true
   const deadline = interaction.options.getInteger('deadline'); // Hours before event to close signups
+  const createVoiceChannel = interaction.options.getBoolean('create-voice-channel') ?? false;
+  const voiceChannelName = interaction.options.getString('voice-channel-name');
+  const voiceChannelRestricted = interaction.options.getBoolean('voice-restricted') ?? false;
+  const voiceChannelCreateBefore = interaction.options.getInteger('voice-create-before');
 
   // Input validation
   if (title.length < 1 || title.length > 256) {
@@ -148,6 +152,10 @@ export async function handleCreate(interaction: ChatInputCommandInteraction): Pr
       status: 'scheduled',
       requireApproval,
       createThread,
+      createVoiceChannel,
+      voiceChannelName,
+      voiceChannelRestricted,
+      voiceChannelCreateBefore,
       allowNotes,
       allowedRoles,
       benchOverflow,

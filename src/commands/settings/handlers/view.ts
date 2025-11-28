@@ -43,6 +43,13 @@ export async function handleView(interaction: ChatInputCommandInteraction): Prom
   // DM reminders
   const dmRemindersText = guild.dmRemindersEnabled ? 'Enabled ✅' : 'Disabled ❌';
 
+  // Voice channel settings
+  const voiceCategory = (guild as any).voiceChannelCategoryId 
+    ? `<#${(guild as any).voiceChannelCategoryId}>` 
+    : 'Not set';
+  const voiceDuration = `${(guild as any).voiceChannelDuration || 120} minutes after event`;
+  const voiceCreateBefore = `${(guild as any).voiceChannelCreateBefore || 60} minutes before event`;
+
   await interaction.editReply(
     `**Server Settings**\n\n` +
     `🌐 **Language:** ${languageName}\n` +
@@ -52,6 +59,10 @@ export async function handleView(interaction: ChatInputCommandInteraction): Prom
     `⏰ **Reminder Intervals:** ${reminders}\n` +
     `📬 **DM Reminders:** ${dmRemindersText}\n` +
     `🗑️ **Auto-delete messages:** ${autoDeleteText}\n` +
-    `💬 **Auto-create threads in:** ${threadChannelsText}`
+    `💬 **Auto-create threads in:** ${threadChannelsText}\n\n` +
+    `🔊 **Voice Channels**\n` +
+    `  Category: ${voiceCategory}\n` +
+    `  Duration: ${voiceDuration}\n` +
+    `  Create before: ${voiceCreateBefore}`
   );
 }

@@ -8,6 +8,10 @@ export interface EventFormData {
   maxParticipants: number;
   templateId?: string;
   channelId: string;
+  createVoiceChannel?: boolean;
+  voiceChannelName?: string;
+  voiceChannelRestricted?: boolean;
+  voiceChannelCreateBefore?: number;
 }
 
 export interface Channel {

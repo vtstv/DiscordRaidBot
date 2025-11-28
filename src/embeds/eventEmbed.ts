@@ -54,6 +54,15 @@ export async function createEventEmbed(event: any) {
     });
   }
 
+  // Voice channel
+  if (event.voiceChannelId) {
+    embed.addFields({
+      name: '🔊 Voice Channel',
+      value: `<#${event.voiceChannelId}>`,
+      inline: true,
+    });
+  }
+
   // Status
   embed.addFields({
     name: '📊 Status',

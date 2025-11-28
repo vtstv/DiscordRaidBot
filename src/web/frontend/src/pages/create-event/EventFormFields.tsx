@@ -154,6 +154,94 @@ export default function EventFormFields({ formData, onChange, channels, template
           Templates define roles, limits, and other event settings
         </p>
       </div>
+
+      {/* Voice Channel Section */}
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+        <div className="flex items-center gap-3 mb-4">
+          <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Voice Channel Settings</h3>
+        </div>
+
+        {/* Create Voice Channel Checkbox */}
+        <div className="mb-4">
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={formData.createVoiceChannel || false}
+              onChange={(e) => onChange({ createVoiceChannel: e.target.checked })}
+              className="w-5 h-5 text-purple-600 bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-purple-500 transition-all"
+            />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+              Create temporary voice channel for this event
+            </span>
+          </label>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-8">
+            A voice channel will be automatically created before the event starts and deleted after it ends
+          </p>
+        </div>
+
+        {/* Conditional Voice Channel Options */}
+        {formData.createVoiceChannel && (
+          <div className="space-y-4 ml-8 pl-4 border-l-2 border-purple-200 dark:border-purple-800">
+            {/* Voice Channel Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Voice Channel Name
+              </label>
+              <input
+                type="text"
+                maxLength={50}
+                value={formData.voiceChannelName || ''}
+                onChange={(e) => onChange({ voiceChannelName: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="Leave empty to use event title"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Maximum 50 characters. Leave empty to use the event title.
+              </p>
+            </div>
+
+            {/* Voice Channel Restricted */}
+            <div>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={formData.voiceChannelRestricted || false}
+                  onChange={(e) => onChange({ voiceChannelRestricted: e.target.checked })}
+                  className="w-5 h-5 text-purple-600 bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-purple-500 transition-all"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                  Restrict to participants only
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-8">
+                Only confirmed participants will be able to join the voice channel
+              </p>
+            </div>
+
+            {/* Create Before Time */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Create Before Event (minutes)
+              </label>
+              <input
+                type="number"
+                min="5"
+                max="1440"
+                value={formData.voiceChannelCreateBefore || ''}
+                onChange={(e) => onChange({ voiceChannelCreateBefore: parseInt(e.target.value) || undefined })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="Leave empty to use server default (60 minutes)"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                How many minutes before the event starts to create the voice channel (5-1440). Leave empty to use server settings.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -98,6 +98,10 @@ export interface GuildSettings {
   allowParticipantNotes?: boolean;
   participantNoteMaxLength?: number;
   showViewOnlineButton?: boolean;
+  // Voice channel settings
+  voiceChannelCategoryId?: string;
+  voiceChannelDuration?: number;
+  voiceChannelCreateBefore?: number;
 }
 
 export interface DiscordRole {

@@ -23,11 +23,19 @@ import getPrismaClient from '../../database/db.js';
 const logger = getModuleLogger('button-handler');
 
 export async function handleButton(interaction: ButtonInteraction): Promise<void> {
-  const [action, ...params] = interaction.customId.split(':');
+  const customId = interaction.customId;
+  const [action, ...params] = customId.split(':');
 
-  logger.debug({ action, params, user: interaction.user.tag }, 'Button interaction');
+  logger.debug({ customId, action, params, user: interaction.user.tag }, 'Button interaction');
 
   try {
+    // Config menu buttons (uses underscores)
+    if (customId.startsWith('config_')) {
+      const { handleConfigButton } = await import('../../commands/config.js');
+      await handleConfigButton(interaction);
+      return;
+    }
+
     // Stats buttons
     if (action === 'stats_view_personal') {
       await handleStatsViewPersonal(interaction);
