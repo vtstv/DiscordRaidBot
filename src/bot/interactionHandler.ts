@@ -29,6 +29,8 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
       await handleSelectMenu(interaction);
     } else if (interaction.isChannelSelectMenu()) {
       await handleChannelSelectMenu(interaction);
+    } else if (interaction.isRoleSelectMenu()) {
+      await handleRoleSelectMenu(interaction);
     } else if (interaction.isModalSubmit()) {
       await handleModal(interaction);
     }
@@ -131,6 +133,21 @@ async function handleChannelSelectMenu(interaction: any): Promise<void> {
       return;
     }
 
+    // Config channel selection (log/archive)
+    if (customId.startsWith('config_set_channel_')) {
+      const { handleChannelSelect } = await import('../commands/config/handlers/channels.js');
+      const channelType = customId.replace('config_set_channel_', '');
+      await handleChannelSelect(interaction, channelType);
+      return;
+    }
+
+    // Statistics stats channel selection
+    if (customId === 'config_set_stats_channel') {
+      const { handleStatsChannelSelect } = await import('../commands/config/handlers/statistics.js');
+      await handleStatsChannelSelect(interaction);
+      return;
+    }
+
     logger.warn({ customId }, 'Unknown channel select menu interaction');
     await interaction.reply({
       content: '❌ Unknown channel select menu interaction.',
@@ -138,6 +155,57 @@ async function handleChannelSelectMenu(interaction: any): Promise<void> {
     });
   } catch (error) {
     logger.error({ error, customId }, 'Channel select menu interaction error');
+    
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    
+    if (interaction.deferred) {
+      await interaction.editReply(`❌ ${errorMessage}`);
+    } else if (!interaction.replied) {
+      await interaction.reply({
+        content: `❌ ${errorMessage}`,
+        ephemeral: true,
+      });
+    }
+  }
+}
+
+/**
+ * Handle role select menu interactions
+ */
+async function handleRoleSelectMenu(interaction: any): Promise<void> {
+  const customId = interaction.customId;
+  
+  logger.debug({ customId, user: interaction.user.tag }, 'Role select menu interaction');
+
+  try {
+    // Permissions manager role
+    if (customId === 'config_set_manager_role') {
+      const { handleManagerRoleSelect } = await import('../commands/config/handlers/permissions.js');
+      await handleManagerRoleSelect(interaction);
+      return;
+    }
+
+    // Permissions dashboard roles
+    if (customId === 'config_set_dashboard_roles') {
+      const { handleDashboardRolesSelect } = await import('../commands/config/handlers/permissions.js');
+      await handleDashboardRolesSelect(interaction);
+      return;
+    }
+
+    // Statistics top 10 role
+    if (customId === 'config_set_top10_role') {
+      const { handleTop10RoleSelect } = await import('../commands/config/handlers/statistics.js');
+      await handleTop10RoleSelect(interaction);
+      return;
+    }
+
+    logger.warn({ customId }, 'Unknown role select menu interaction');
+    await interaction.reply({
+      content: '❌ Unknown role select menu interaction.',
+      ephemeral: true,
+    });
+  } catch (error) {
+    logger.error({ error, customId }, 'Role select menu interaction error');
     
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     

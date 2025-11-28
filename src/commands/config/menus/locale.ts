@@ -63,7 +63,7 @@ export async function showLocaleMenu(interaction: StringSelectMenuInteraction): 
         .setCustomId('config_back_main')
         .setLabel('Back to Main Menu')
         .setStyle(ButtonStyle.Secondary)
-        .setEmoji('◀️')
+        .setEmoji('◀')
     );
 
   await interaction.update({ embeds: [embed], components: [languageRow, timezoneRow, backRow] });

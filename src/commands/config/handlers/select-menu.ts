@@ -4,10 +4,13 @@
 import { StringSelectMenuInteraction } from 'discord.js';
 import { showMainMenu } from '../menus/main.js';
 import { showLocaleMenu } from '../menus/locale.js';
-import { showAutomationMenu, showVoiceMenu, showChannelsMenu, showViewAll } from '../menus/others.js';
+import { showAutomationMenu, showVoiceMenu, showChannelsMenu, showViewAll, showPermissionsMenu, showStatisticsMenu } from '../menus/others.js';
 import { handleLanguageSelect, handleTimezoneSelect } from './locale.js';
 import { handleAutomationAction } from './automation.js';
 import { handleVoiceAction } from './voice.js';
+import { handleChannelsAction } from './channels.js';
+import { handlePermissionsAction } from './permissions.js';
+import { handleStatisticsAction } from './statistics.js';
 import getPrismaClient from '../../../database/db.js';
 
 const prisma = getPrismaClient();
@@ -41,10 +44,20 @@ export async function handleConfigSelectMenu(interaction: StringSelectMenuIntera
       break;
 
     case 'config_channels_action':
-      await interaction.update({ 
-        content: `Action "${value}" requires channel selection (not yet implemented in beta).`, 
-        components: [] 
-      });
+      await handleChannelsAction(interaction, value);
+      break;
+
+    case 'config_permissions_action':
+      await handlePermissionsAction(interaction, value);
+      break;
+
+    case 'config_statistics_action':
+      await handleStatisticsAction(interaction, value);
+      break;
+
+    case 'config_set_stats_interval':
+      const { handleStatsIntervalSelect } = await import('./statistics.js');
+      await handleStatsIntervalSelect(interaction);
       break;
   }
 }
@@ -63,12 +76,18 @@ async function handleMainMenuSelect(interaction: StringSelectMenuInteraction, va
     case 'channels':
       await showChannelsMenu(interaction);
       break;
+    case 'permissions':
+      await showPermissionsMenu(interaction);
+      break;
+    case 'statistics':
+      await showStatisticsMenu(interaction);
+      break;
     case 'view_all':
       await showViewAll(interaction);
       break;
     default:
       await interaction.update({ 
-        content: `Category "${value}" is not yet implemented in this beta menu.`, 
+        content: `❌ Unknown category: "${value}". Please try again.`, 
         components: [] 
       });
   }

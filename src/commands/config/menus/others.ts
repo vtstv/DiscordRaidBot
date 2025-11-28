@@ -36,13 +36,13 @@ export async function showAutomationMenu(interaction: StringSelectMenuInteractio
         .addOptions([
           { label: 'Set Reminder Intervals', description: 'e.g., 1h, 30m, 15m', value: 'reminders', emoji: '⏰' },
           { label: 'Toggle DM Reminders', description: 'Send DM to confirmed participants', value: 'dm_reminders', emoji: '📬' },
-          { label: 'Set Auto-delete Timer', description: 'Hours after archiving to delete', value: 'auto_delete', emoji: '🗑️' },
+          { label: 'Set Auto-delete Timer', description: 'Hours after archiving to delete', value: 'auto_delete', emoji: '🗑' },
           { label: 'Set Log Retention', description: 'Days to keep audit logs', value: 'log_retention', emoji: '📋' },
         ])
     );
 
   const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId('config_back_main').setLabel('Back to Main Menu').setStyle(ButtonStyle.Secondary).setEmoji('◀️')
+    new ButtonBuilder().setCustomId('config_back_main').setLabel('Back to Main Menu').setStyle(ButtonStyle.Secondary).setEmoji('◀')
   );
 
   await interaction.update({ embeds: [embed], components: [row1, backRow] });
@@ -72,13 +72,13 @@ export async function showVoiceMenu(interaction: StringSelectMenuInteraction): P
         .setPlaceholder('Select setting to configure...')
         .addOptions([
           { label: 'Set Voice Category', description: 'Category for temporary voice channels', value: 'category', emoji: '📁' },
-          { label: 'Set Duration After Event', description: 'Minutes to keep channel after event', value: 'duration', emoji: '⏱️' },
+          { label: 'Set Duration After Event', description: 'Minutes to keep channel after event', value: 'duration', emoji: '⏱' },
           { label: 'Set Create Before Time', description: 'Minutes before event to create channel', value: 'create_before', emoji: '🕐' },
         ])
     );
 
   const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId('config_back_main').setLabel('Back to Main Menu').setStyle(ButtonStyle.Secondary).setEmoji('◀️')
+    new ButtonBuilder().setCustomId('config_back_main').setLabel('Back to Main Menu').setStyle(ButtonStyle.Secondary).setEmoji('◀')
   );
 
   await interaction.update({ embeds: [embed], components: [row1, backRow] });
@@ -109,7 +109,7 @@ export async function showChannelsMenu(interaction: StringSelectMenuInteraction)
     );
 
   const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId('config_back_main').setLabel('Back to Main Menu').setStyle(ButtonStyle.Secondary).setEmoji('◀️')
+    new ButtonBuilder().setCustomId('config_back_main').setLabel('Back to Main Menu').setStyle(ButtonStyle.Secondary).setEmoji('◀')
   );
 
   await interaction.update({ embeds: [embed], components: [row1, backRow] });
@@ -143,8 +143,80 @@ export async function showViewAll(interaction: StringSelectMenuInteraction): Pro
     );
 
   const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId('config_back_main').setLabel('Back to Main Menu').setStyle(ButtonStyle.Secondary).setEmoji('◀️')
+    new ButtonBuilder().setCustomId('config_back_main').setLabel('Back to Main Menu').setStyle(ButtonStyle.Secondary).setEmoji('◀')
   );
 
   await interaction.update({ embeds: [embed], components: [backRow] });
+}
+
+export async function showPermissionsMenu(interaction: StringSelectMenuInteraction): Promise<void> {
+  const guildId = interaction.guild!.id;
+  const guild = await prisma.guild.findUnique({ where: { id: guildId } });
+
+  const embed = new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setTitle('👥 Permission Settings')
+    .setDescription('Configure manager roles and dashboard access')
+    .addFields(
+      { name: 'Manager Role', value: guild?.managerRoleId ? `<@&${guild.managerRoleId}>` : 'Not set (Admins only)', inline: false },
+      { name: 'Dashboard Roles', value: guild?.dashboardRoles?.length ? guild.dashboardRoles.map(id => `<@&${id}>`).join(', ') : 'Managers only', inline: false },
+      { name: 'Command Prefix', value: guild?.commandPrefix || '!', inline: true },
+    );
+
+  const row1 = new ActionRowBuilder<StringSelectMenuBuilder>()
+    .addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId('config_permissions_action')
+        .setPlaceholder('Select setting to configure...')
+        .addOptions([
+          { label: 'Set Manager Role', description: 'Role that can manage events', value: 'manager_role', emoji: '👑' },
+          { label: 'Set Dashboard Roles', description: 'Roles allowed web dashboard access', value: 'dashboard_roles', emoji: '🌐' },
+          { label: 'Set Command Prefix', description: 'Prefix for text commands', value: 'command_prefix', emoji: '⚙️' },
+        ])
+    );
+
+  const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('config_back_main').setLabel('Back to Main Menu').setStyle(ButtonStyle.Secondary).setEmoji('◀')
+  );
+
+  await interaction.update({ embeds: [embed], components: [row1, backRow] });
+}
+
+export async function showStatisticsMenu(interaction: StringSelectMenuInteraction): Promise<void> {
+  const guildId = interaction.guild!.id;
+  const guild = await prisma.guild.findUnique({ where: { id: guildId } });
+
+  const embed = new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setTitle('📊 Statistics Settings')
+    .setDescription('Configure participant leaderboards and auto-roles')
+    .addFields(
+      { name: 'Statistics Enabled', value: (guild as any)?.statsEnabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+      { name: 'Update Interval', value: (guild as any)?.statsUpdateInterval || 'daily', inline: true },
+      { name: 'Minimum Events', value: ((guild as any)?.statsMinEvents || 3).toString(), inline: true },
+      { name: 'Stats Channel', value: (guild as any)?.statsChannelId ? `<#${(guild as any).statsChannelId}>` : 'Not set', inline: true },
+      { name: 'Auto-role', value: (guild as any)?.statsAutoRoleEnabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+      { name: 'Top 10 Role', value: (guild as any)?.statsTop10RoleId ? `<@&${(guild as any).statsTop10RoleId}>` : 'Not set', inline: true },
+    );
+
+  const row1 = new ActionRowBuilder<StringSelectMenuBuilder>()
+    .addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId('config_statistics_action')
+        .setPlaceholder('Select setting to configure...')
+        .addOptions([
+          { label: 'Toggle Statistics', description: 'Enable/disable leaderboards', value: 'toggle_stats', emoji: '📊' },
+          { label: 'Set Stats Channel', description: 'Channel for leaderboard embed', value: 'stats_channel', emoji: '📺' },
+          { label: 'Set Update Interval', description: 'daily, weekly, or monthly', value: 'stats_interval', emoji: '⏰' },
+          { label: 'Set Minimum Events', description: 'Events required for leaderboard', value: 'stats_min_events', emoji: '🎯' },
+          { label: 'Toggle Auto-role', description: 'Auto-assign role to top 10', value: 'toggle_auto_role', emoji: '🏆' },
+          { label: 'Set Top 10 Role', description: 'Role for top 10 participants', value: 'top10_role', emoji: '👑' },
+        ])
+    );
+
+  const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('config_back_main').setLabel('Back to Main Menu').setStyle(ButtonStyle.Secondary).setEmoji('◀')
+  );
+
+  await interaction.update({ embeds: [embed], components: [row1, backRow] });
 }

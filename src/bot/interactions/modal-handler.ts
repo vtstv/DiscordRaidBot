@@ -61,5 +61,18 @@ async function handleConfigModal(interaction: ModalSubmitInteraction): Promise<v
   } else if (customId === 'config_modal_voice_create_before') {
     const { handleVoiceCreateBefore } = await import('../../commands/config/handlers/voice.js');
     await handleVoiceCreateBefore(interaction);
+  } else if (
+    customId === 'config_modal_reminders' ||
+    customId === 'config_modal_auto_delete' ||
+    customId === 'config_modal_log_retention'
+  ) {
+    const { handleAutomationModal } = await import('../../commands/config/handlers/automation.js');
+    await handleAutomationModal(interaction);
+  } else if (customId === 'config_modal_command_prefix') {
+    const { handlePermissionsModal } = await import('../../commands/config/handlers/permissions.js');
+    await handlePermissionsModal(interaction);
+  } else if (customId === 'config_modal_stats_min_events') {
+    const { handleStatisticsModal } = await import('../../commands/config/handlers/statistics.js');
+    await handleStatisticsModal(interaction);
   }
 }
