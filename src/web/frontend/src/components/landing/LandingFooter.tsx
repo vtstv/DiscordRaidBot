@@ -1,4 +1,4 @@
-const WEB_VERSION = '1.3.6'; // Updated dynamically during build
+import { WEB_VERSION } from '../../../../../config/version';
 
 export const LandingFooter: React.FC = () => {
   return (

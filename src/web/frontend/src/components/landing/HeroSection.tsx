@@ -48,8 +48,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           {/* Logo */}
           <div className="inline-flex items-center justify-center mb-8 relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur-2xl opacity-30 group-hover:opacity-50 transition-opacity"></div>
-            <div className="relative p-5 bg-gradient-to-br from-purple-600 via-pink-600 to-rose-600 rounded-3xl shadow-2xl transform group-hover:scale-105 transition-transform duration-300 ring-2 ring-white/20">
-              <img src="/logo.png" alt="RaidBot Logo" className="w-24 h-24 object-contain" />
+            <div className="relative p-2 bg-gradient-to-br from-purple-600 via-pink-600 to-rose-600 rounded-3xl shadow-2xl transform group-hover:scale-105 transition-transform duration-300 ring-1 ring-white/30">
+              <img src="/logo.png" alt="RaidBot Logo" className="w-32 h-32 object-contain" />
             </div>
           </div>
           

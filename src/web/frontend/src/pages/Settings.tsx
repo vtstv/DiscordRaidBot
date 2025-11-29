@@ -1,6 +1,6 @@
 // Copyright (c) 2025 Murr (https://github.com/vtstv)
 // path: src/web/frontend/src/pages/Settings.tsx
-// Settings page - refactored with modular components
+// Settings page - refactored with modular components and tabs
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -20,6 +20,8 @@ import ParticipantNotesCard from './settings/ParticipantNotesCard';
 import { ChevronLeftIcon } from './settings/icons';
 import { RolePermissionsMap } from './settings/types';
 
+type TabKey = 'general' | 'access' | 'automation' | 'channels' | 'features';
+
 export default function Settings() {
   const { guildId } = useParams<{ guildId: string }>();
   const { t } = useI18n();
@@ -30,6 +32,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>('general');
 
   useEffect(() => {
     if (guildId) {
@@ -166,31 +169,133 @@ export default function Settings() {
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{t.settings.title}</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">{t.settings.subtitle}</p>
           </div>
+
+          {/* Tabs Navigation */}
+          <div className="mb-6 overflow-x-auto">
+            <div className="flex gap-2 min-w-max border-b border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setActiveTab('general')}
+                className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
+                  activeTab === 'general'
+                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  General
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('access')}
+                className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
+                  activeTab === 'access'
+                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Access Control
+                </div>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('automation')}
+                className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
+                  activeTab === 'automation'
+                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Automation
+                </div>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('channels')}
+                className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
+                  activeTab === 'channels'
+                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                  </svg>
+                  Channels
+                </div>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('features')}
+                className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
+                  activeTab === 'features'
+                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+                  </svg>
+                  Features
+                </div>
+              </button>
+            </div>
+          </div>
           
           <form onSubmit={handleSave} className="space-y-6">
-            {/* Settings Grid - Compact Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              
-              {/* LEFT COLUMN */}
-              <div className="space-y-6">
-                <LanguageTimezoneCard settings={settings} setSettings={setSettings} />
-                <ManagerAccessCard 
-                  settings={settings} 
-                  setSettings={setSettings} 
-                  roles={roles}
-                  rolePermissions={rolePermissions}
-                  setRolePermissions={setRolePermissions}
-                />
-                <AutomationCard settings={settings} setSettings={setSettings} />
-              </div>
+            {/* Tab Content */}
+            <div className="min-h-[500px]">
+              {activeTab === 'general' && (
+                <div className="space-y-6 animate-fadeIn">
+                  <LanguageTimezoneCard settings={settings} setSettings={setSettings} />
+                </div>
+              )}
 
-              {/* RIGHT COLUMN */}
-              <div className="space-y-6">
-                <ChannelsCard settings={settings} setSettings={setSettings} channels={channels} />
-                <VoiceChannelsCard settings={settings} setSettings={setSettings} guildId={guildId!} />
-                <StatisticsCard settings={settings} setSettings={setSettings} channels={channels} roles={roles} />
-                <ParticipantNotesCard settings={settings} setSettings={setSettings} channels={channels} />
-              </div>
+              {activeTab === 'access' && (
+                <div className="space-y-6 animate-fadeIn">
+                  <ManagerAccessCard 
+                    settings={settings} 
+                    setSettings={setSettings} 
+                    roles={roles}
+                    rolePermissions={rolePermissions}
+                    setRolePermissions={setRolePermissions}
+                  />
+                </div>
+              )}
+
+              {activeTab === 'automation' && (
+                <div className="space-y-6 animate-fadeIn">
+                  <AutomationCard settings={settings} setSettings={setSettings} />
+                </div>
+              )}
+
+              {activeTab === 'channels' && (
+                <div className="space-y-6 animate-fadeIn">
+                  <ChannelsCard settings={settings} setSettings={setSettings} channels={channels} />
+                  <VoiceChannelsCard settings={settings} setSettings={setSettings} guildId={guildId!} />
+                </div>
+              )}
+
+              {activeTab === 'features' && (
+                <div className="space-y-6 animate-fadeIn">
+                  <StatisticsCard settings={settings} setSettings={setSettings} channels={channels} roles={roles} />
+                  <ParticipantNotesCard settings={settings} setSettings={setSettings} channels={channels} />
+                </div>
+              )}
             </div>
 
             {/* Save Button - Fixed at bottom */}
