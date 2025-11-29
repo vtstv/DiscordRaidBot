@@ -4,6 +4,6 @@
 // Update versions here and they will be reflected everywhere
 
 export const BOT_VERSION = '1.4.0';
-export const WEB_VERSION = '1.3.6';
+export const WEB_VERSION = '1.3.7';
 export const APP_VERSION = '1.3.0';
 

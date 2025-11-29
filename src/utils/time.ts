@@ -15,8 +15,11 @@ const logger = getModuleLogger('time-utils');
  */
 export function parseTime(timeString: string, timezone = 'UTC'): DateTime | null {
   try {
+    let dt: DateTime | null = null;
+    let isTimeOnly = false;
+
     // Try parsing as ISO
-    let dt = DateTime.fromISO(timeString, { zone: timezone });
+    dt = DateTime.fromISO(timeString, { zone: timezone });
     
     if (!dt.isValid) {
       // Try parsing as SQL format
@@ -36,6 +39,36 @@ export function parseTime(timeString: string, timezone = 'UTC'): DateTime | null
     if (!dt.isValid) {
       // Try European format without time (DD.MM.YYYY)
       dt = DateTime.fromFormat(timeString, 'dd.MM.yyyy', { zone: timezone });
+    }
+
+    // Try parsing time-only formats (HH:MM or HH:mm)
+    if (!dt.isValid) {
+      dt = DateTime.fromFormat(timeString, 'HH:mm', { zone: timezone });
+      if (dt.isValid) {
+        isTimeOnly = true;
+        // Set to today's date
+        const now = DateTime.now().setZone(timezone);
+        dt = dt.set({ year: now.year, month: now.month, day: now.day });
+      }
+    }
+
+    if (!dt.isValid) {
+      dt = DateTime.fromFormat(timeString, 'H:mm', { zone: timezone });
+      if (dt.isValid) {
+        isTimeOnly = true;
+        // Set to today's date
+        const now = DateTime.now().setZone(timezone);
+        dt = dt.set({ year: now.year, month: now.month, day: now.day });
+      }
+    }
+
+    // If time-only input and result is in the past, adjust to next day
+    if (dt.isValid && isTimeOnly) {
+      const now = DateTime.now().setZone(timezone);
+      if (dt < now) {
+        dt = dt.plus({ days: 1 });
+        logger.info({ original: timeString, adjusted: dt.toISO() }, 'Time-only input was in past, adjusted to next day');
+      }
     }
 
     if (dt.isValid) {

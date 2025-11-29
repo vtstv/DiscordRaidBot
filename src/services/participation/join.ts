@@ -52,9 +52,14 @@ export async function joinEvent(params: JoinEventParams): Promise<ParticipationR
     throw new ValidationError('This event is not accepting signups');
   }
 
+  // Check if event has already started
+  const now = new Date();
+  if (event.startTime <= now) {
+    throw new ValidationError('Cannot join an event that has already started');
+  }
+
   // Check if signup deadline has passed
   if (event.deadline !== null && event.deadline !== undefined) {
-    const now = new Date();
     const deadlineTime = new Date(event.startTime);
     deadlineTime.setHours(deadlineTime.getHours() - event.deadline);
     
