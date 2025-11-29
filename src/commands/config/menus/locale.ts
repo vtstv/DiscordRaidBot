@@ -8,12 +8,13 @@ import {
   ButtonBuilder,
   ButtonStyle,
   StringSelectMenuInteraction,
+  MessageComponentInteraction,
 } from 'discord.js';
 import getPrismaClient from '../../../database/db.js';
 
 const prisma = getPrismaClient();
 
-export async function showLocaleMenu(interaction: StringSelectMenuInteraction): Promise<void> {
+export async function showLocaleMenu(interaction: StringSelectMenuInteraction | MessageComponentInteraction): Promise<void> {
   const guildId = interaction.guild!.id;
   const guild = await prisma.guild.findUnique({ where: { id: guildId } });
 

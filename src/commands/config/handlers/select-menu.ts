@@ -4,13 +4,14 @@
 import { StringSelectMenuInteraction } from 'discord.js';
 import { showMainMenu } from '../menus/main.js';
 import { showLocaleMenu } from '../menus/locale.js';
-import { showAutomationMenu, showVoiceMenu, showChannelsMenu, showViewAll, showPermissionsMenu, showStatisticsMenu } from '../menus/others.js';
+import { showAutomationMenu, showVoiceMenu, showChannelsMenu, showViewAll, showPermissionsMenu, showStatisticsMenu, showNotesMenu } from '../menus/others.js';
 import { handleLanguageSelect, handleTimezoneSelect } from './locale.js';
 import { handleAutomationAction } from './automation.js';
 import { handleVoiceAction } from './voice.js';
-import { handleChannelsAction } from './channels.js';
+import { handleChannelsAction, handleMultiChannelSelect } from './channels.js';
 import { handlePermissionsAction } from './permissions.js';
 import { handleStatisticsAction } from './statistics.js';
+import { handleNotesAction } from './notes.js';
 import getPrismaClient from '../../../database/db.js';
 
 const prisma = getPrismaClient();
@@ -55,6 +56,10 @@ export async function handleConfigSelectMenu(interaction: StringSelectMenuIntera
       await handleStatisticsAction(interaction, value);
       break;
 
+    case 'config_notes_action':
+      await handleNotesAction(interaction, value);
+      break;
+
     case 'config_set_stats_interval':
       const { handleStatsIntervalSelect } = await import('./statistics.js');
       await handleStatsIntervalSelect(interaction);
@@ -81,6 +86,9 @@ async function handleMainMenuSelect(interaction: StringSelectMenuInteraction, va
       break;
     case 'statistics':
       await showStatisticsMenu(interaction);
+      break;
+    case 'notes':
+      await showNotesMenu(interaction);
       break;
     case 'view_all':
       await showViewAll(interaction);

@@ -141,6 +141,14 @@ async function handleChannelSelectMenu(interaction: any): Promise<void> {
       return;
     }
 
+    // Config multi-channel selection (thread/note/approval)
+    if (customId.startsWith('config_set_channels_')) {
+      const { handleMultiChannelSelect } = await import('../commands/config/handlers/channels.js');
+      const channelType = customId.replace('config_set_channels_', '');
+      await handleMultiChannelSelect(interaction, channelType);
+      return;
+    }
+
     // Statistics stats channel selection
     if (customId === 'config_set_stats_channel') {
       const { handleStatsChannelSelect } = await import('../commands/config/handlers/statistics.js');

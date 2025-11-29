@@ -5,9 +5,11 @@ This guide explains how to deploy the Discord Raid Bot using pre-built Docker im
 ## Prerequisites
 
 - Docker Engine 20.10+ and Docker Compose V2
+- Node.js 20+ (for Prisma 7 compatibility)
 - A Discord Bot Token
 - A Discord Application with OAuth2 configured
 - A server with at least 1GB RAM and 10GB disk space
+- PostgreSQL 14+ (included in Docker setup)
 
 ## Quick Start
 
@@ -58,6 +60,7 @@ Create a `docker-compose.yml` file:
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: raidbot-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -65,6 +68,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
@@ -73,7 +78,12 @@ services:
 
   redis:
     image: redis:7-alpine
+    container_name: raidbot-redis
     restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -82,16 +92,26 @@ services:
 
   bot:
     image: vtstv/raidbot:latest
+    container_name: raidbot-bot
     restart: unless-stopped
-    command: ["npm", "run", "start:bot"]
-    env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
+      START_WEB: "false"
+      START_BOT: "true"
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "node", "/healthcheck.js"]
+      test: ["CMD", "/healthcheck.sh"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -99,18 +119,26 @@ services:
 
   web:
     image: vtstv/raidbot:latest
+    container_name: raidbot-web
     restart: unless-stopped
-    command: ["npm", "run", "start:web"]
-    env_file: .env
-    ports:
-      - "${WEB_PORT}:3000"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
+      START_WEB: "true"
+      START_BOT: "false"
+    env_file:
+      - .env
+    ports:
+      - "${WEB_PORT:-3000}:3000"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "/healthcheck.sh"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -118,7 +146,10 @@ services:
 
 volumes:
   postgres-data:
+  redis-data:
 ```
+
+**Note:** The same Docker image (`vtstv/raidbot:latest`) is used for both bot and web services. The `START_WEB` and `START_BOT` environment variables control which component runs in each container.
 
 ### 4. Start the Services
 
@@ -260,6 +291,22 @@ cat backup_file.sql | docker compose exec -T postgres psql -U raidbot raidbot
 docker compose exec postgres psql -U raidbot -d raidbot
 ```
 
+### Run Migrations
+
+Migrations are automatically applied when the web service starts. To manually run migrations:
+
+```bash
+docker compose exec web npx prisma migrate deploy
+```
+
+### Check Migration Status
+
+```bash
+docker compose exec web npx prisma migrate status
+```
+
+**Note:** This project uses Prisma 7 which requires `prisma.config.ts` for configuration. The DATABASE_URL is set via environment variables.
+
 ## Updating the Bot
 
 ### Pull Latest Image
@@ -311,7 +358,12 @@ docker compose logs -f --tail=100
    docker compose config
    ```
 
-3. Restart bot service:
+3. Check if START_BOT is set to "true":
+   ```bash
+   docker compose exec bot printenv | grep START
+   ```
+
+4. Restart bot service:
    ```bash
    docker compose restart bot
    ```
@@ -328,7 +380,12 @@ docker compose logs -f --tail=100
    docker compose logs web --tail=50
    ```
 
-3. Verify port is not in use:
+3. Verify START_WEB is set to "true":
+   ```bash
+   docker compose exec web printenv | grep START
+   ```
+
+4. Verify port is not in use:
    ```bash
    netstat -tuln | grep 3000
    ```
@@ -348,6 +405,34 @@ docker compose logs -f --tail=100
 3. Check database logs:
    ```bash
    docker compose logs postgres --tail=50
+   ```
+
+4. Verify DATABASE_URL format:
+   ```bash
+   docker compose exec bot printenv DATABASE_URL
+   ```
+   Should be: `postgresql://raidbot:password@postgres:5432/raidbot`
+
+### Prisma Issues
+
+1. Check Prisma version (should be 7.0.1+):
+   ```bash
+   docker compose exec bot npx prisma --version
+   ```
+
+2. Regenerate Prisma Client:
+   ```bash
+   docker compose exec web npx prisma generate
+   ```
+
+3. Check migration status:
+   ```bash
+   docker compose exec web npx prisma migrate status
+   ```
+
+4. If you see "Prisma schema validation error", check that prisma.config.ts exists:
+   ```bash
+   docker compose exec bot ls -la /app/prisma.config.ts
    ```
 
 ### OAuth Login Issues
@@ -415,8 +500,58 @@ services:
 3. **Rotate secrets regularly** - Update tokens and secrets periodically
 4. **Keep images updated** - Run `docker compose pull` weekly
 5. **Use HTTPS only** - Never expose web dashboard over HTTP
-6. **Restrict database access** - Don't expose postgres port externally
+6. **Restrict database access** - Don't expose postgres port externally (remove ports mapping in production)
 7. **Monitor logs** - Check for suspicious activity regularly
+8. **Use Docker secrets** - For production, use Docker secrets instead of .env for sensitive data
+9. **Enable volume encryption** - Encrypt postgres-data and redis-data volumes
+10. **Restrict container permissions** - Services run as non-root user (nodejs) inside containers
+
+## Docker Image Information
+
+### Image Details
+
+- **Repository:** `vtstv/raidbot`
+- **Tag:** `latest` (production), `dev` (development)
+- **Base Image:** `node:20-alpine`
+- **Size:** ~941MB (includes Node 20, Prisma 7, TypeScript, frontend assets)
+- **Architecture:** linux/amd64
+
+### Image Layers
+
+The image is built using multi-stage builds:
+
+1. **Build Stage:** Installs dependencies, compiles TypeScript, builds frontend with Vite
+2. **Runtime Stage:** Contains only production dependencies and compiled code
+
+### Environment Variables
+
+The following environment variables control service behavior:
+
+- `START_WEB` - Set to "true" to start web server (default: false)
+- `START_BOT` - Set to "true" to start Discord bot (default: true)
+- `NODE_ENV` - Set to "production" for production deployment
+- `DATABASE_URL` - PostgreSQL connection string (required for Prisma 7)
+- `REDIS_URL` - Redis connection string
+- `PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING` - Set to "1" to skip engine checksum validation
+
+### Volume Mounts for Development
+
+If you're running in development mode with local code changes:
+
+```yaml
+services:
+  bot:
+    volumes:
+      - ./src:/app/src:ro
+      - ./prisma:/app/prisma:ro
+      - ./prisma.config.ts:/app/prisma.config.ts:ro
+      - /app/node_modules  # Exclude node_modules to use version from image
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+```
+
+**Important:** The `/app/node_modules` volume mount prevents local node_modules from overriding the image's Prisma 7 installation.
 
 ## Support
 

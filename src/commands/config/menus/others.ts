@@ -14,7 +14,7 @@ import getPrismaClient from '../../../database/db.js';
 
 const prisma = getPrismaClient();
 
-export async function showAutomationMenu(interaction: StringSelectMenuInteraction): Promise<void> {
+export async function showAutomationMenu(interaction: StringSelectMenuInteraction | MessageComponentInteraction): Promise<void> {
   const guildId = interaction.guild!.id;
   const guild = await prisma.guild.findUnique({ where: { id: guildId } });
 
@@ -49,7 +49,7 @@ export async function showAutomationMenu(interaction: StringSelectMenuInteractio
   await interaction.update({ embeds: [embed], components: [row1, backRow] });
 }
 
-export async function showVoiceMenu(interaction: StringSelectMenuInteraction): Promise<void> {
+export async function showVoiceMenu(interaction: StringSelectMenuInteraction | MessageComponentInteraction): Promise<void> {
   const guildId = interaction.guild!.id;
   const guild = await prisma.guild.findUnique({ where: { id: guildId } });
 
@@ -85,17 +85,20 @@ export async function showVoiceMenu(interaction: StringSelectMenuInteraction): P
   await interaction.update({ embeds: [embed], components: [row1, backRow] });
 }
 
-export async function showChannelsMenu(interaction: StringSelectMenuInteraction): Promise<void> {
+export async function showChannelsMenu(interaction: StringSelectMenuInteraction | MessageComponentInteraction): Promise<void> {
   const guildId = interaction.guild!.id;
   const guild = await prisma.guild.findUnique({ where: { id: guildId } });
 
   const embed = new EmbedBuilder()
     .setColor(0x5865F2)
     .setTitle('📋 Channel Settings')
-    .setDescription('Configure log and archive channels')
+    .setDescription('Configure channels for various bot features')
     .addFields(
       { name: 'Log Channel', value: guild?.logChannelId ? `<#${guild.logChannelId}>` : 'Not set', inline: true },
       { name: 'Archive Channel', value: guild?.archiveChannelId ? `<#${guild.archiveChannelId}>` : 'Not set', inline: true },
+      { name: 'Thread Channels', value: guild?.threadChannels && guild.threadChannels.length > 0 ? guild.threadChannels.map(id => `<#${id}>`).join(', ') : 'None', inline: false },
+      { name: 'Note Channels', value: (guild as any)?.noteChannels && (guild as any).noteChannels.length > 0 ? (guild as any).noteChannels.map((id: string) => `<#${id}>`).join(', ') : 'All channels', inline: false },
+      { name: 'Approval Channels', value: guild?.approvalChannels && guild.approvalChannels.length > 0 ? guild.approvalChannels.map(id => `<#${id}>`).join(', ') : 'None', inline: false },
     );
 
   const row1 = new ActionRowBuilder<StringSelectMenuBuilder>()
@@ -106,6 +109,9 @@ export async function showChannelsMenu(interaction: StringSelectMenuInteraction)
         .addOptions([
           { label: 'Set Log Channel', description: 'Channel for audit logs', value: 'log', emoji: '📝' },
           { label: 'Set Archive Channel', description: 'Channel for archived events', value: 'archive', emoji: '📦' },
+          { label: 'Manage Thread Channels', description: 'Auto-create threads in these channels', value: 'thread', emoji: '🧵' },
+          { label: 'Manage Note Channels', description: 'Allow participant notes in these channels', value: 'note', emoji: '📝' },
+          { label: 'Manage Approval Channels', description: 'Require approval in these channels', value: 'approval', emoji: '✅' },
         ])
     );
 
@@ -183,7 +189,7 @@ export async function showPermissionsMenu(interaction: StringSelectMenuInteracti
   await interaction.update({ embeds: [embed], components: [row1, backRow] });
 }
 
-export async function showStatisticsMenu(interaction: StringSelectMenuInteraction): Promise<void> {
+export async function showStatisticsMenu(interaction: StringSelectMenuInteraction | MessageComponentInteraction): Promise<void> {
   const guildId = interaction.guild!.id;
   const guild = await prisma.guild.findUnique({ where: { id: guildId } });
 
@@ -212,6 +218,54 @@ export async function showStatisticsMenu(interaction: StringSelectMenuInteractio
           { label: 'Set Minimum Events', description: 'Events required for leaderboard', value: 'stats_min_events', emoji: '🎯' },
           { label: 'Toggle Auto-role', description: 'Auto-assign role to top 10', value: 'toggle_auto_role', emoji: '🏆' },
           { label: 'Set Top 10 Role', description: 'Role for top 10 participants', value: 'top10_role', emoji: '👑' },
+        ])
+    );
+
+  const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('config_back_main').setLabel('Back to Main Menu').setStyle(ButtonStyle.Secondary).setEmoji('◀')
+  );
+
+  await interaction.update({ embeds: [embed], components: [row1, backRow] });
+}
+
+/**
+ * Show Notes submenu
+ */
+export async function showNotesMenu(interaction: StringSelectMenuInteraction | MessageComponentInteraction): Promise<void> {
+  const guildId = interaction.guild!.id;
+  const guild = await prisma.guild.findUnique({ where: { id: guildId } });
+
+  const embed = new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setTitle('📝 Participant Notes Settings')
+    .setDescription('Configure participant notes and view online button')
+    .addFields(
+      { 
+        name: 'Allow Participant Notes', 
+        value: guild?.allowParticipantNotes ? '✅ Enabled' : '❌ Disabled', 
+        inline: true 
+      },
+      { 
+        name: 'Max Note Length', 
+        value: `${(guild as any)?.participantNoteMaxLength || 30} characters`, 
+        inline: true 
+      },
+      { 
+        name: 'Show View Online Button', 
+        value: (guild as any)?.showViewOnlineButton !== false ? '✅ Enabled' : '❌ Disabled', 
+        inline: true 
+      },
+    );
+
+  const row1 = new ActionRowBuilder<StringSelectMenuBuilder>()
+    .addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId('config_notes_action')
+        .setPlaceholder('Choose a setting to configure...')
+        .addOptions([
+          { label: 'Toggle Participant Notes', description: 'Enable/disable participant notes', value: 'toggle_notes', emoji: '📝' },
+          { label: 'Set Max Note Length', description: 'Maximum characters for notes', value: 'note_length', emoji: '📏' },
+          { label: 'Toggle View Online Button', description: 'Show/hide view online button', value: 'toggle_view_online', emoji: '🔗' },
         ])
     );
 

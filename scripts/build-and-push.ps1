@@ -12,12 +12,17 @@ param(
 $ImageName = "$DockerUsername/raidbot"
 $FullImageTag = "${ImageName}:${Tag}"
 
+# Get build metadata
+$buildTimestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+Write-Host "Build Timestamp: $buildTimestamp" -ForegroundColor Green
+
 Write-Host "Building Docker image for linux/amd64..." -ForegroundColor Cyan
 Write-Host "Image: $FullImageTag" -ForegroundColor Yellow
 
 # Build for linux/amd64 (remote server platform)
 docker buildx build --platform linux/amd64 `
     --target runtime `
+    --build-arg "BUILD_TIMESTAMP=$buildTimestamp" `
     -t $FullImageTag `
     --load `
     .

@@ -10,7 +10,6 @@ import {
   ModalSubmitInteraction
 } from 'discord.js';
 import getPrismaClient from '../../../database/db.js';
-import { showAutomationMenu } from '../menus/others.js';
 
 const prisma = getPrismaClient();
 
@@ -27,10 +26,8 @@ export async function handleAutomationAction(
       data: { dmRemindersEnabled: newValue },
     });
     
-    await interaction.reply({ 
-      content: `✅ DM Reminders ${newValue ? 'enabled' : 'disabled'}`, 
-      ephemeral: true 
-    });
+    // Return to automation menu
+    const { showAutomationMenu } = await import('../menus/others.js');
     await showAutomationMenu(interaction);
     return;
   }
@@ -122,10 +119,9 @@ export async function handleAutomationModal(
           data: { reminderIntervals: intervals },
         });
 
-        await interaction.reply({
-          content: `✅ Reminder intervals set to: ${intervals.join(', ')}`,
-          ephemeral: true
-        });
+        // Return to automation menu
+        const { showAutomationMenu } = await import('../menus/others.js');
+        await showAutomationMenu(interaction);
         break;
       }
 
@@ -146,12 +142,9 @@ export async function handleAutomationModal(
           data: { autoDeleteHours: hours || null },
         });
 
-        await interaction.reply({
-          content: hours > 0 
-            ? `✅ Auto-delete set to ${hours} hours after archiving`
-            : '✅ Auto-delete disabled',
-          ephemeral: true
-        });
+        // Return to automation menu
+        const { showAutomationMenu } = await import('../menus/others.js');
+        await showAutomationMenu(interaction);
         break;
       }
 
@@ -172,10 +165,9 @@ export async function handleAutomationModal(
           data: { logRetentionDays: days },
         });
 
-        await interaction.reply({
-          content: `✅ Log retention set to ${days} days`,
-          ephemeral: true
-        });
+        // Return to automation menu
+        const { showAutomationMenu } = await import('../menus/others.js');
+        await showAutomationMenu(interaction);
         break;
       }
     }

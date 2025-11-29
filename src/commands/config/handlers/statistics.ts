@@ -14,9 +14,10 @@ import {
   ChannelSelectMenuInteraction,
   RoleSelectMenuBuilder,
   RoleSelectMenuInteraction,
+  ButtonBuilder,
+  ButtonStyle,
 } from 'discord.js';
 import getPrismaClient from '../../../database/db.js';
-import { showStatisticsMenu } from '../menus/others.js';
 import { getModuleLogger } from '../../../utils/logger.js';
 
 const prisma = getPrismaClient();
@@ -77,17 +78,13 @@ async function toggleStatistics(interaction: StringSelectMenuInteraction): Promi
 
   logger.info({ guildId, statsEnabled: newValue }, 'Statistics toggled');
 
-  await interaction.update({
-    content: `✅ Statistics ${newValue ? 'enabled' : 'disabled'}`,
-    components: [],
-    embeds: [],
-  });
-
-  setTimeout(() => showStatisticsMenu(interaction), 2000);
+  // Return to statistics menu
+  const { showStatisticsMenu } = await import('../menus/others.js');
+  await showStatisticsMenu(interaction);
 }
 
 async function showStatsChannelSelect(interaction: StringSelectMenuInteraction): Promise<void> {
-  const row = new ActionRowBuilder<ChannelSelectMenuBuilder>()
+  const selectRow = new ActionRowBuilder<ChannelSelectMenuBuilder>()
     .addComponents(
       new ChannelSelectMenuBuilder()
         .setCustomId('config_set_stats_channel')
@@ -96,9 +93,18 @@ async function showStatsChannelSelect(interaction: StringSelectMenuInteraction):
         .setMaxValues(1)
     );
 
+  const buttonRow = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('config_back_statistics')
+        .setLabel('Back')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('◀')
+    );
+
   await interaction.update({
     content: '📺 **Select Statistics Channel**\n\nLeaderboard will be posted here.',
-    components: [row],
+    components: [selectRow, buttonRow],
     embeds: [],
   });
 }
@@ -170,17 +176,13 @@ async function toggleAutoRole(interaction: StringSelectMenuInteraction): Promise
 
   logger.info({ guildId, statsAutoRoleEnabled: newValue }, 'Auto-role toggled');
 
-  await interaction.update({
-    content: `✅ Auto-role ${newValue ? 'enabled' : 'disabled'}`,
-    components: [],
-    embeds: [],
-  });
-
-  setTimeout(() => showStatisticsMenu(interaction), 2000);
+  // Return to statistics menu
+  const { showStatisticsMenu } = await import('../menus/others.js');
+  await showStatisticsMenu(interaction);
 }
 
 async function showTop10RoleSelect(interaction: StringSelectMenuInteraction): Promise<void> {
-  const row = new ActionRowBuilder<RoleSelectMenuBuilder>()
+  const selectRow = new ActionRowBuilder<RoleSelectMenuBuilder>()
     .addComponents(
       new RoleSelectMenuBuilder()
         .setCustomId('config_set_top10_role')
@@ -188,9 +190,18 @@ async function showTop10RoleSelect(interaction: StringSelectMenuInteraction): Pr
         .setMaxValues(1)
     );
 
+  const buttonRow = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('config_back_statistics')
+        .setLabel('Back')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('◀')
+    );
+
   await interaction.update({
     content: '👑 **Select Top 10 Role**\n\nThis role will be assigned to top 10 participants.',
-    components: [row],
+    components: [selectRow, buttonRow],
     embeds: [],
   });
 }
@@ -206,17 +217,9 @@ export async function handleStatsChannelSelect(interaction: ChannelSelectMenuInt
 
   logger.info({ guildId, channelId }, 'Stats channel updated');
 
-  await interaction.update({
-    content: `✅ Statistics channel set to <#${channelId}>`,
-    components: [],
-    embeds: [],
-  });
-
-  setTimeout(async () => {
-    const newInteraction = interaction as any;
-    newInteraction.isCommand = () => false;
-    await showStatisticsMenu(newInteraction);
-  }, 2000);
+  // Return to statistics menu
+  const { showStatisticsMenu } = await import('../menus/others.js');
+  await showStatisticsMenu(interaction);
 }
 
 export async function handleStatsIntervalSelect(interaction: StringSelectMenuInteraction): Promise<void> {
@@ -230,13 +233,9 @@ export async function handleStatsIntervalSelect(interaction: StringSelectMenuInt
 
   logger.info({ guildId, interval }, 'Stats interval updated');
 
-  await interaction.update({
-    content: `✅ Update interval set to ${interval}`,
-    components: [],
-    embeds: [],
-  });
-
-  setTimeout(() => showStatisticsMenu(interaction), 2000);
+  // Return to statistics menu
+  const { showStatisticsMenu } = await import('../menus/others.js');
+  await showStatisticsMenu(interaction);
 }
 
 export async function handleTop10RoleSelect(interaction: RoleSelectMenuInteraction): Promise<void> {
@@ -250,17 +249,9 @@ export async function handleTop10RoleSelect(interaction: RoleSelectMenuInteracti
 
   logger.info({ guildId, roleId }, 'Top 10 role updated');
 
-  await interaction.update({
-    content: `✅ Top 10 role set to <@&${roleId}>`,
-    components: [],
-    embeds: [],
-  });
-
-  setTimeout(async () => {
-    const newInteraction = interaction as any;
-    newInteraction.isCommand = () => false;
-    await showStatisticsMenu(newInteraction);
-  }, 2000);
+  // Return to statistics menu
+  const { showStatisticsMenu } = await import('../menus/others.js');
+  await showStatisticsMenu(interaction);
 }
 
 export async function handleStatisticsModal(interaction: ModalSubmitInteraction): Promise<void> {
@@ -285,15 +276,10 @@ export async function handleStatisticsModal(interaction: ModalSubmitInteraction)
 
     logger.info({ guildId, minEvents }, 'Stats min events updated');
 
+    // For modal submissions, just show success
     await interaction.reply({
-      content: `✅ Minimum events set to ${minEvents}`,
+      content: `✅ Minimum events set to ${minEvents}\n\nUse /config again to continue configuring.`,
       ephemeral: true,
     });
-
-    setTimeout(async () => {
-      const newInteraction = interaction as any;
-      newInteraction.isCommand = () => false;
-      await showStatisticsMenu(newInteraction);
-    }, 2000);
   }
 }

@@ -10,9 +10,10 @@ import {
   ModalSubmitInteraction,
   RoleSelectMenuBuilder,
   RoleSelectMenuInteraction,
+  ButtonBuilder,
+  ButtonStyle,
 } from 'discord.js';
 import getPrismaClient from '../../../database/db.js';
-import { showPermissionsMenu } from '../menus/others.js';
 import { getModuleLogger } from '../../../utils/logger.js';
 
 const prisma = getPrismaClient();
@@ -46,7 +47,7 @@ export async function handlePermissionsAction(
 }
 
 async function showManagerRoleSelect(interaction: StringSelectMenuInteraction): Promise<void> {
-  const row = new ActionRowBuilder<RoleSelectMenuBuilder>()
+  const selectRow = new ActionRowBuilder<RoleSelectMenuBuilder>()
     .addComponents(
       new RoleSelectMenuBuilder()
         .setCustomId('config_set_manager_role')
@@ -54,15 +55,24 @@ async function showManagerRoleSelect(interaction: StringSelectMenuInteraction): 
         .setMaxValues(1)
     );
 
+  const buttonRow = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('config_back_permissions')
+        .setLabel('Back')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('◀')
+    );
+
   await interaction.update({
     content: '👑 **Select Manager Role**\n\nThis role can create/edit events and templates.',
-    components: [row],
+    components: [selectRow, buttonRow],
     embeds: [],
   });
 }
 
 async function showDashboardRolesSelect(interaction: StringSelectMenuInteraction): Promise<void> {
-  const row = new ActionRowBuilder<RoleSelectMenuBuilder>()
+  const selectRow = new ActionRowBuilder<RoleSelectMenuBuilder>()
     .addComponents(
       new RoleSelectMenuBuilder()
         .setCustomId('config_set_dashboard_roles')
@@ -71,9 +81,18 @@ async function showDashboardRolesSelect(interaction: StringSelectMenuInteraction
         .setMaxValues(5)
     );
 
+  const buttonRow = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('config_back_permissions')
+        .setLabel('Back')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('◀')
+    );
+
   await interaction.update({
     content: '🌐 **Select Dashboard Roles**\n\nThese roles can access the web dashboard.\nLeave empty to restrict to managers only.',
-    components: [row],
+    components: [selectRow, buttonRow],
     embeds: [],
   });
 }
@@ -115,13 +134,9 @@ export async function handleManagerRoleSelect(interaction: RoleSelectMenuInterac
 
   logger.info({ guildId, roleId }, 'Manager role updated');
 
-  await interaction.update({
-    content: `✅ Manager role set to <@&${roleId}>`,
-    components: [],
-    embeds: [],
-  });
-
-  setTimeout(() => showPermissionsMenu(interaction), 2000);
+  // Return to permissions menu
+  const { showPermissionsMenu } = await import('../menus/others.js');
+  await showPermissionsMenu(interaction);
 }
 
 export async function handleDashboardRolesSelect(interaction: RoleSelectMenuInteraction): Promise<void> {
@@ -135,14 +150,9 @@ export async function handleDashboardRolesSelect(interaction: RoleSelectMenuInte
 
   logger.info({ guildId, roleIds }, 'Dashboard roles updated');
 
-  const rolesText = roleIds.length ? roleIds.map(id => `<@&${id}>`).join(', ') : 'Managers only';
-  await interaction.update({
-    content: `✅ Dashboard roles set to: ${rolesText}`,
-    components: [],
-    embeds: [],
-  });
-
-  setTimeout(() => showPermissionsMenu(interaction), 2000);
+  // Return to permissions menu
+  const { showPermissionsMenu } = await import('../menus/others.js');
+  await showPermissionsMenu(interaction);
 }
 
 export async function handlePermissionsModal(interaction: ModalSubmitInteraction): Promise<void> {
@@ -166,15 +176,11 @@ export async function handlePermissionsModal(interaction: ModalSubmitInteraction
 
     logger.info({ guildId, prefix }, 'Command prefix updated');
 
+    // For modal submissions, we can't easily return to menu
+    // Just show success message
     await interaction.reply({
-      content: `✅ Command prefix set to \`${prefix}\``,
+      content: `✅ Command prefix set to \`${prefix}\`\n\nUse /config again to continue configuring.`,
       ephemeral: true,
     });
-
-    setTimeout(async () => {
-      const newInteraction = interaction as any;
-      newInteraction.isCommand = () => false;
-      await showPermissionsMenu(newInteraction);
-    }, 2000);
   }
 }

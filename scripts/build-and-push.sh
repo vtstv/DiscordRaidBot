@@ -13,12 +13,17 @@ fi
 IMAGE_NAME="$DOCKER_USERNAME/raidbot"
 FULL_IMAGE_TAG="${IMAGE_NAME}:${TAG}"
 
+# Get build metadata
+BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo "Build Timestamp: $BUILD_TIMESTAMP"
+
 echo "Building Docker image for linux/amd64..."
 echo "Image: $FULL_IMAGE_TAG"
 
 # Build for linux/amd64 (remote server platform)
 docker buildx build --platform linux/amd64 \
     --target runtime \
+    --build-arg "BUILD_TIMESTAMP=$BUILD_TIMESTAMP" \
     -t "$FULL_IMAGE_TAG" \
     --load \
     .

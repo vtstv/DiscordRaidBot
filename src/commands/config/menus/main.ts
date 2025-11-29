@@ -25,10 +25,11 @@ export async function showMainMenu(interaction: ChatInputCommandInteraction | St
     .addFields(
       { name: '🌐 Language & Timezone', value: `Current: ${guild?.locale || 'en'} / ${guild?.timezone || 'UTC'}`, inline: true },
       { name: '⏰ Automation', value: 'Reminders, Auto-delete, DM', inline: true },
-      { name: '📋 Channels', value: 'Log, Archive channels', inline: true },
+      { name: '📋 Channels', value: 'Log, Archive, Thread, Note, Approval', inline: true },
       { name: '🔊 Voice Channels', value: 'Auto-create voice channels', inline: true },
       { name: '👥 Permissions', value: 'Manager role, Dashboard access', inline: true },
       { name: '📊 Statistics', value: 'Leaderboards, Auto-roles', inline: true },
+      { name: '📝 Participant Notes', value: 'Configure participant notes settings', inline: true },
     )
     .setFooter({ text: 'Use /settings for traditional command-based configuration' });
 
@@ -52,7 +53,7 @@ export async function showMainMenu(interaction: ChatInputCommandInteraction | St
           },
           {
             label: 'Channel Settings',
-            description: 'Configure log and archive channels',
+            description: 'Configure log, archive, thread, note, approval channels',
             value: 'channels',
             emoji: '📋',
           },
@@ -73,6 +74,12 @@ export async function showMainMenu(interaction: ChatInputCommandInteraction | St
             description: 'Leaderboards and participant stats',
             value: 'statistics',
             emoji: '📊',
+          },
+          {
+            label: 'Participant Notes',
+            description: 'Configure participant notes and view online button',
+            value: 'notes',
+            emoji: '📝',
           },
           {
             label: '📄 View All Settings',

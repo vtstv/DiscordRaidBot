@@ -74,5 +74,8 @@ async function handleConfigModal(interaction: ModalSubmitInteraction): Promise<v
   } else if (customId === 'config_modal_stats_min_events') {
     const { handleStatisticsModal } = await import('../../commands/config/handlers/statistics.js');
     await handleStatisticsModal(interaction);
+  } else if (customId === 'config_modal_note_length') {
+    const { handleNoteLengthModal } = await import('../../commands/config/handlers/notes.js');
+    await handleNoteLengthModal(interaction);
   }
 }

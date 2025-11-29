@@ -1,10 +1,19 @@
 // Copyright (c) 2025 Murr (https://github.com/vtstv)
 // Voice channel settings handlers for /config
 
-import { StringSelectMenuInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ChannelSelectMenuBuilder, ChannelType } from 'discord.js';
+import { 
+  StringSelectMenuInteraction, 
+  ModalBuilder, 
+  TextInputBuilder, 
+  TextInputStyle, 
+  ActionRowBuilder, 
+  ChannelSelectMenuBuilder, 
+  ChannelType,
+  ButtonBuilder,
+  ButtonStyle
+} from 'discord.js';
 import getPrismaClient from '../../../database/db.js';
 import { getModuleLogger } from '../../../utils/logger.js';
-import { showVoiceMenu } from '../menus/others.js';
 
 const logger = getModuleLogger('config:voice');
 const prisma = getPrismaClient();
@@ -14,7 +23,7 @@ export async function handleVoiceAction(interaction: StringSelectMenuInteraction
 
   if (value === 'category') {
     // Show channel select menu for category selection
-    const row = new ActionRowBuilder<ChannelSelectMenuBuilder>()
+    const selectRow = new ActionRowBuilder<ChannelSelectMenuBuilder>()
       .addComponents(
         new ChannelSelectMenuBuilder()
           .setCustomId('config_select_voice_category')
@@ -22,10 +31,19 @@ export async function handleVoiceAction(interaction: StringSelectMenuInteraction
           .addChannelTypes(ChannelType.GuildCategory)
       );
 
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('config_back_voice')
+          .setLabel('Back')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('◀')
+      );
+
     await interaction.update({
       content: '📁 **Select Voice Category**\n\nChoose a Discord category where temporary voice channels will be created:',
       embeds: [],
-      components: [row],
+      components: [selectRow, buttonRow],
     });
   } else if (value === 'duration') {
     // Show modal for duration input
@@ -81,6 +99,7 @@ export async function handleVoiceCategory(interaction: any): Promise<void> {
   logger.info({ guildId, categoryId }, 'Voice channel category updated');
 
   // Return to voice menu
+  const { showVoiceMenu } = await import('../menus/others.js');
   await showVoiceMenu(interaction);
 }
 
@@ -105,10 +124,9 @@ export async function handleVoiceDuration(interaction: any): Promise<void> {
 
   logger.info({ guildId, duration }, 'Voice channel duration updated');
 
-  await interaction.reply({
-    content: `✅ Voice channel duration set to **${duration} minutes** after event ends.`,
-    ephemeral: true,
-  });
+  // Return to voice menu
+  const { showVoiceMenu } = await import('../menus/others.js');
+  await showVoiceMenu(interaction);
 }
 
 export async function handleVoiceCreateBefore(interaction: any): Promise<void> {
@@ -132,8 +150,7 @@ export async function handleVoiceCreateBefore(interaction: any): Promise<void> {
 
   logger.info({ guildId, createBefore }, 'Voice channel create before time updated');
 
-  await interaction.reply({
-    content: `✅ Voice channels will be created **${createBefore} minutes** before event starts.`,
-    ephemeral: true,
-  });
+  // Return to voice menu
+  const { showVoiceMenu } = await import('../menus/others.js');
+  await showVoiceMenu(interaction);
 }
