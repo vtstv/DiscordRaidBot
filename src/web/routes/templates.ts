@@ -119,6 +119,23 @@ export async function templatesRoutes(server: FastifyInstance): Promise<void> {
       update: { name: guildName || 'Unknown' },
     });
 
+    // Check template limit for this guild
+    const systemSettings = await prisma.systemSettings.findUnique({
+      where: { id: 'system' },
+    });
+    
+    if (systemSettings) {
+      const templateCount = await prisma.template.count({
+        where: { guildId },
+      });
+
+      if (templateCount >= systemSettings.maxTemplatesPerGuild) {
+        return reply.code(403).send({ 
+          error: `This server has reached the maximum limit of ${systemSettings.maxTemplatesPerGuild} templates. Please delete some templates before creating new ones.` 
+        });
+      }
+    }
+
     try {
       const template = await prisma.template.create({
         data: {

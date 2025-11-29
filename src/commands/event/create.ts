@@ -64,6 +64,28 @@ export async function handleCreate(interaction: ChatInputCommandInteraction): Pr
     update: { name: interaction.guild!.name },
   });
 
+  // Check event limit for this guild
+  const systemSettings = await prisma.systemSettings.findUnique({
+    where: { id: 'system' },
+  });
+  
+  if (systemSettings) {
+    const eventCount = await prisma.event.count({
+      where: {
+        guildId,
+        deletedAt: null,
+        status: { in: ['scheduled', 'active'] },
+      },
+    });
+
+    if (eventCount >= systemSettings.maxEventsPerGuild) {
+      throw new ValidationError(
+        `This server has reached the maximum limit of ${systemSettings.maxEventsPerGuild} active events. ` +
+        `Please complete or delete some events before creating new ones.`
+      );
+    }
+  }
+
   // Parse event time
   const startTime = parseTime(timeString, guild.timezone);
   if (!startTime || !startTime.isValid) {

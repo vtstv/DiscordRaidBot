@@ -232,6 +232,32 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
     update: { name: interaction.guild!.name },
   });
 
+  // Check template limit for this guild
+  const systemSettings = await prisma.systemSettings.findUnique({
+    where: { id: 'system' },
+  });
+  
+  if (systemSettings) {
+    const templateCount = await prisma.template.count({
+      where: { guildId },
+    });
+
+    logger.info({ 
+      guildId, 
+      templateCount, 
+      maxTemplatesPerGuild: systemSettings.maxTemplatesPerGuild 
+    }, 'Checking template limit');
+
+    if (templateCount >= systemSettings.maxTemplatesPerGuild) {
+      throw new ValidationError(
+        `This server has reached the maximum limit of ${systemSettings.maxTemplatesPerGuild} templates. ` +
+        `Please delete some templates before creating new ones.`
+      );
+    }
+  } else {
+    logger.warn({ guildId }, 'System settings not found, skipping template limit check');
+  }
+
   // Create template
   try {
     const template = await prisma.template.create({

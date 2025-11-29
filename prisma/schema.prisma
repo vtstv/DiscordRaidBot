@@ -282,3 +282,26 @@ model DashboardRolePermission {
   @@map("dashboard_role_permissions")
 }
 
+model SystemSettings {
+  id                    String   @id @default("system")  // Singleton - only one row
+  
+  // System-wide limits
+  maxEventsPerGuild     Int      @default(100) @map("maxeventsperguild")
+  maxTemplatesPerGuild  Int      @default(50) @map("maxtemplatesperguild")
+  
+  // System behavior
+  maintenanceMode       Boolean  @default(false) @map("maintenancemode")
+  allowNewGuilds        Boolean  @default(true) @map("allownewguilds")
+  defaultLanguage       String   @default("en") @map("defaultlanguage")
+  
+  // Logging and analytics
+  logLevel              String   @default("info") @map("loglevel")
+  enableAnalytics       Boolean  @default(true) @map("enableanalytics")
+  webhookUrl            String?  @map("webhookurl")
+  
+  createdAt             DateTime @default(now()) @map("createdat")
+  updatedAt             DateTime @updatedAt @map("updatedat")
+
+  @@map("system_settings")
+}
+

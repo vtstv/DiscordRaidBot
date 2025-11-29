@@ -30,24 +30,68 @@ export async function systemRoutes(server: FastifyInstance): Promise<void> {
 
   // Get/update system settings
   server.get('/settings', { preHandler: requireAdmin }, async (_request, reply) => {
-    return {
-      settings: {
-        maintenanceMode: false,
-        allowNewGuilds: true,
-        maxEventsPerGuild: 100,
-        maxTemplatesPerGuild: 50,
-        defaultLanguage: 'en',
-        logLevel: 'info',
-        enableAnalytics: true,
-        webhookUrl: '',
-      },
-    };
+    try {
+      // Get or create system settings (singleton pattern)
+      let systemSettings = await prisma.systemSettings.findUnique({
+        where: { id: 'system' },
+      });
+
+      // If no settings exist, create default ones
+      if (!systemSettings) {
+        systemSettings = await prisma.systemSettings.create({
+          data: { id: 'system' },
+        });
+      }
+
+      return {
+        settings: {
+          maintenanceMode: systemSettings.maintenanceMode,
+          allowNewGuilds: systemSettings.allowNewGuilds,
+          maxEventsPerGuild: systemSettings.maxEventsPerGuild,
+          maxTemplatesPerGuild: systemSettings.maxTemplatesPerGuild,
+          defaultLanguage: systemSettings.defaultLanguage,
+          logLevel: systemSettings.logLevel,
+          enableAnalytics: systemSettings.enableAnalytics,
+          webhookUrl: systemSettings.webhookUrl || '',
+        },
+      };
+    } catch (error) {
+      logger.error({ error }, 'Failed to load system settings');
+      return reply.code(500).send({ error: 'Failed to load system settings' });
+    }
   });
 
   server.put('/settings', { preHandler: requireAdmin }, async (request, reply) => {
     try {
       const { settings } = request.body as any;
-      logger.info({ settings }, 'System settings updated');
+      
+      // Update or create system settings (upsert)
+      const updated = await prisma.systemSettings.upsert({
+        where: { id: 'system' },
+        update: {
+          maintenanceMode: settings.maintenanceMode,
+          allowNewGuilds: settings.allowNewGuilds,
+          maxEventsPerGuild: settings.maxEventsPerGuild,
+          maxTemplatesPerGuild: settings.maxTemplatesPerGuild,
+          defaultLanguage: settings.defaultLanguage,
+          logLevel: settings.logLevel,
+          enableAnalytics: settings.enableAnalytics,
+          webhookUrl: settings.webhookUrl || null,
+        },
+        create: {
+          id: 'system',
+          maintenanceMode: settings.maintenanceMode,
+          allowNewGuilds: settings.allowNewGuilds,
+          maxEventsPerGuild: settings.maxEventsPerGuild,
+          maxTemplatesPerGuild: settings.maxTemplatesPerGuild,
+          defaultLanguage: settings.defaultLanguage,
+          logLevel: settings.logLevel,
+          enableAnalytics: settings.enableAnalytics,
+          webhookUrl: settings.webhookUrl || null,
+        },
+      });
+
+      logger.info({ settings: updated }, 'System settings updated');
       return { success: true };
     } catch (error) {
       logger.error({ error }, 'Failed to update settings');
