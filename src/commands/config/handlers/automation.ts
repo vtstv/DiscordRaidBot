@@ -119,9 +119,10 @@ export async function handleAutomationModal(
           data: { reminderIntervals: intervals },
         });
 
-        // Return to automation menu
-        const { showAutomationMenu } = await import('../menus/others.js');
-        await showAutomationMenu(interaction);
+        await interaction.reply({
+          content: '✅ Reminder intervals updated successfully!',
+          ephemeral: true
+        });
         break;
       }
 
@@ -142,9 +143,10 @@ export async function handleAutomationModal(
           data: { autoDeleteHours: hours || null },
         });
 
-        // Return to automation menu
-        const { showAutomationMenu } = await import('../menus/others.js');
-        await showAutomationMenu(interaction);
+        await interaction.reply({
+          content: '✅ Auto-delete setting updated successfully!',
+          ephemeral: true
+        });
         break;
       }
 
@@ -165,9 +167,10 @@ export async function handleAutomationModal(
           data: { logRetentionDays: days },
         });
 
-        // Return to automation menu
-        const { showAutomationMenu } = await import('../menus/others.js');
-        await showAutomationMenu(interaction);
+        await interaction.reply({
+          content: '✅ Log retention period updated successfully!',
+          ephemeral: true
+        });
         break;
       }
     }

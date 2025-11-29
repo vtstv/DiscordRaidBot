@@ -292,7 +292,8 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
     }
 
     const adminGuilds = (request as any).session?.adminGuilds || [];
-    const isBotAdmin = ADMIN_IDS.includes(user.id);
+    // Check if user is admin: either password auth (id='admin') or Discord OAuth with whitelisted ID
+    const isBotAdmin = user.id === 'admin' || ADMIN_IDS.includes(user.id);
 
     reply.send({ 
       user,

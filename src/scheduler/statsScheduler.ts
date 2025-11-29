@@ -200,9 +200,9 @@ async function updateGuildAutoRoles(guildId: string, roleId: string): Promise<vo
 
     // Add role to new top participants
     for (const userId of topUserIds) {
-      if (!membersWithRole.includes(userId)) {
+      if (!membersWithRole.includes(userId as string)) {
         try {
-          const member = await discordGuild.members.fetch(userId);
+          const member = await discordGuild.members.fetch(userId as string);
           await member.roles.add(role);
           logger.info({ guildId, userId, roleId }, 'Added top participant role');
         } catch (error) {

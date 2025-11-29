@@ -57,6 +57,11 @@ const command: Command = {
           value: process.env.NODE_ENV || 'development', 
           inline: true 
         },
+        {
+          name: '\u200B',
+          value: '**Made with ❤️ by Murr (murr01)**',
+          inline: false
+        }
       )
       .setFooter({ 
         text: `Bot ID: ${interaction.client.user.id}` 

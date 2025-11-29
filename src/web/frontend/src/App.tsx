@@ -2,7 +2,7 @@
 // path: src/web/frontend/src/App.tsx
 // Main application component
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { GuildProvider } from './contexts/GuildContext';
@@ -11,42 +11,51 @@ import { I18nProvider } from './contexts/I18nContext';
 import { loadConfig, getConfig } from './config';
 import { api } from './services/api';
 
-// Pages
-import Landing from './pages/Landing';
-import ServerSelect from './pages/ServerSelect';
-import PanelSelect from './pages/PanelSelect';
-import BotAdminPanel from './pages/BotAdminPanel';
-import GlobalSearch from './pages/admin/GlobalSearch';
-import Analytics from './pages/admin/Analytics';
-import AuditLogs from './pages/admin/AuditLogs';
-import ManageGuilds from './pages/admin/ManageGuilds';
-import SystemSettings from './pages/admin/SystemSettings';
-import BulkOperations from './pages/admin/BulkOperations';
-import Dashboard from './pages/Dashboard';
-import Events from './pages/Events';
-import EventDetails from './pages/EventDetails';
-import CreateEvent from './pages/CreateEvent';
-import EventCalendar from './pages/EventCalendar';
-import Templates from './pages/Templates';
-import CreateTemplate from './pages/CreateTemplate';
-import Settings from './pages/Settings';
-import PublicEvent from './pages/PublicEvent';
-import CompositionTool from './pages/CompositionTool';
-import PublicRaidPlan from './pages/PublicRaidPlan';
-import Compositions from './pages/Compositions';
+// Lazy load pages for code splitting
+const Landing = lazy(() => import('./pages/Landing'));
+const ServerSelect = lazy(() => import('./pages/ServerSelect'));
+const PanelSelect = lazy(() => import('./pages/PanelSelect'));
+const BotAdminPanel = lazy(() => import('./pages/BotAdminPanel'));
+const GlobalSearch = lazy(() => import('./pages/admin/GlobalSearch'));
+const Analytics = lazy(() => import('./pages/admin/Analytics'));
+const AuditLogs = lazy(() => import('./pages/admin/AuditLogs'));
+const ManageGuilds = lazy(() => import('./pages/admin/ManageGuilds'));
+const SystemSettings = lazy(() => import('./pages/admin/SystemSettings'));
+const BulkOperations = lazy(() => import('./pages/admin/BulkOperations'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Events = lazy(() => import('./pages/Events'));
+const EventDetails = lazy(() => import('./pages/EventDetails'));
+const CreateEvent = lazy(() => import('./pages/CreateEvent'));
+const EventCalendar = lazy(() => import('./pages/EventCalendar'));
+const Templates = lazy(() => import('./pages/Templates'));
+const CreateTemplate = lazy(() => import('./pages/CreateTemplate'));
+const Settings = lazy(() => import('./pages/Settings'));
+const PublicEvent = lazy(() => import('./pages/PublicEvent'));
+const CompositionTool = lazy(() => import('./pages/CompositionTool'));
+const PublicRaidPlan = lazy(() => import('./pages/PublicRaidPlan'));
+const Compositions = lazy(() => import('./pages/Compositions'));
 
 function AppRoutes() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+      </div>
+    );
   }
 
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/event/:eventId" element={<PublicEvent />} />
-      <Route path="/raidplan/:raidPlanId" element={<PublicRaidPlan />} />
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+      </div>
+    }>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/event/:eventId" element={<PublicEvent />} />
+        <Route path="/raidplan/:raidPlanId" element={<PublicRaidPlan />} />
 
       {!user ? (
         <>
@@ -80,7 +89,8 @@ function AppRoutes() {
           <Route path="*" element={<Navigate to="/servers" replace />} />
         </>
       )}
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 
