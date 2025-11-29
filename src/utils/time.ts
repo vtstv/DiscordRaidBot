@@ -15,11 +15,27 @@ const logger = getModuleLogger('time-utils');
  */
 export function parseTime(timeString: string, timezone = 'UTC'): DateTime | null {
   try {
+    logger.info({ timeString, timezone }, 'parseTime called with input');
     let dt: DateTime | null = null;
     let isTimeOnly = false;
 
+    // First, check if input is just a number (hour-only) - e.g., "15" means 15:00
+    // This must be checked BEFORE ISO parsing because "15" can be interpreted as ISO time
+    const hourMatch = timeString.trim().match(/^(\d{1,2})$/);
+    if (hourMatch) {
+      const hour = parseInt(hourMatch[1], 10);
+      if (hour >= 0 && hour <= 23) {
+        const now = DateTime.now().setZone(timezone);
+        dt = now.set({ hour, minute: 0, second: 0, millisecond: 0 });
+        isTimeOnly = true;
+        logger.info({ original: timeString, parsed: dt.toISO(), hour }, 'Parsed hour-only input');
+      }
+    }
+
     // Try parsing as ISO
-    dt = DateTime.fromISO(timeString, { zone: timezone });
+    if (!dt || !dt.isValid) {
+      dt = DateTime.fromISO(timeString, { zone: timezone });
+    }
     
     if (!dt.isValid) {
       // Try parsing as SQL format
