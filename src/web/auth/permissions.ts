@@ -89,7 +89,8 @@ export async function hasModulePermission(
 export function requireModulePermission(module: DashboardModule) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const user = (request as any).session?.user;
-    const guildId = (request.params as any)?.guildId;
+    const adminGuilds = (request as any).session?.adminGuilds || [];
+    const guildId = (request.params as any)?.guildId || (request.query as any)?.guildId;
 
     if (!user) {
       return reply.code(401).send({ error: 'Not authenticated' });
@@ -97,6 +98,13 @@ export function requireModulePermission(module: DashboardModule) {
 
     if (!guildId) {
       return reply.code(400).send({ error: 'Guild ID required' });
+    }
+
+    // Check if user is admin of this guild (has ADMINISTRATOR permission)
+    const isGuildAdmin = adminGuilds.some((g: any) => g.id === guildId);
+    if (isGuildAdmin) {
+      // Guild admins have access to all modules
+      return;
     }
 
     const accessToken = (request as any).session?.accessToken;
@@ -117,7 +125,8 @@ export function requireModulePermission(module: DashboardModule) {
  */
 export async function getUserPermissions(
   guildId: string,
-  userId: string
+  userId: string,
+  isAdmin: boolean = false
 ): Promise<{
   events: boolean;
   compositions: boolean;
@@ -125,6 +134,19 @@ export async function getUserPermissions(
   settings: boolean;
   isManager: boolean;
 }> {
+  logger.info({ guildId, userId, isAdmin }, 'getUserPermissions called');
+  
+  // Guild admins (users with ADMINISTRATOR permission) have full access
+  if (isAdmin) {
+    logger.info({ guildId, userId }, 'User is admin - granting full access');
+    return {
+      events: true,
+      compositions: true,
+      templates: true,
+      settings: true,
+      isManager: true,
+    };
+  }
   try {
     const guild = await prisma.guild.findUnique({
       where: { id: guildId },

@@ -9,6 +9,9 @@ services:
     volumes:
       - ./src:/app/src:ro
       - ./prisma:/app/prisma:ro
+      - ./prisma.config.ts:/app/prisma.config.ts:ro
+      # Exclude node_modules to use version from Docker image
+      - /app/node_modules
     environment:
       NODE_ENV: development
       LOG_LEVEL: debug
@@ -17,6 +20,9 @@ services:
     volumes:
       - ./src:/app/src:ro
       - ./prisma:/app/prisma:ro
+      - ./prisma.config.ts:/app/prisma.config.ts:ro
+      # Exclude node_modules to use version from Docker image
+      - /app/node_modules
     environment:
       NODE_ENV: development
       LOG_LEVEL: debug

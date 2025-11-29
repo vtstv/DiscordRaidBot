@@ -15,6 +15,7 @@ import {
 import { config } from '../../config/env.js';
 import { getModuleLogger } from '../../utils/logger.js';
 import getPrismaClient from '../../database/db.js';
+import '../types/session.js'; // Import session type declarations
 
 const logger = getModuleLogger('auth-routes');
 const prisma = getPrismaClient();
@@ -155,26 +156,27 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
         }
       }
 
-      // Store user in session using direct assignment
-      (request as any).session.user = {
-        id: user.id,
-        username: user.username,
-        avatar: getAvatarUrl(user.id, user.avatar),
-      };
-
+      // Helper function for avatar URL
       function getAvatarUrl(userId: string, avatarHash: string | null): string | null {
         if (!avatarHash) return null;
         const extension = avatarHash.startsWith('a_') ? 'gif' : 'png';
         return `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.${extension}?size=128`;
       }
 
+      // Store user in session
+      request.session.user = {
+        id: user.id,
+        username: user.username,
+        avatar: getAvatarUrl(user.id, user.avatar),
+      };
+
       // Also store tokens for API calls
-      (request as any).session.accessToken = tokenData.access_token;
-      (request as any).session.refreshToken = tokenData.refresh_token;
-      (request as any).session.expiresAt = Date.now() + tokenData.expires_in * 1000;
+      request.session.accessToken = tokenData.access_token;
+      request.session.refreshToken = tokenData.refresh_token;
+      request.session.expiresAt = Date.now() + tokenData.expires_in * 1000;
 
       // Store admin guilds
-      (request as any).session.adminGuilds = adminGuilds.map(g => ({
+      request.session.adminGuilds = adminGuilds.map(g => ({
         id: g.id,
         name: g.name,
         icon: g.icon,
@@ -184,7 +186,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       logger.info({ 
         userId: user.id, 
         username: user.username,
-        adminGuildsCount: adminGuilds.length 
+        adminGuildsCount: adminGuilds.length,
       }, 'User logged in via Discord');
 
       // Get the stored returnTo or default redirect
@@ -222,6 +224,16 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       reply.redirect(redirectUrl);
     } catch (error) {
       logger.error({ error }, 'Failed to complete OAuth flow');
+      
+      // Check if it's a rate limit error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('rate limited')) {
+        return reply.code(429).send({
+          error: 'Rate Limited',
+          message: 'Discord API rate limit exceeded. Please wait a few minutes and try again.',
+        });
+      }
+      
       reply.code(500).send({
         error: 'Internal Server Error',
         message: 'Failed to complete authentication',

@@ -8,6 +8,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   StringSelectMenuInteraction,
+  MessageComponentInteraction,
 } from 'discord.js';
 import getPrismaClient from '../../../database/db.js';
 
@@ -149,7 +150,7 @@ export async function showViewAll(interaction: StringSelectMenuInteraction): Pro
   await interaction.update({ embeds: [embed], components: [backRow] });
 }
 
-export async function showPermissionsMenu(interaction: StringSelectMenuInteraction): Promise<void> {
+export async function showPermissionsMenu(interaction: StringSelectMenuInteraction | MessageComponentInteraction): Promise<void> {
   const guildId = interaction.guild!.id;
   const guild = await prisma.guild.findUnique({ where: { id: guildId } });
 

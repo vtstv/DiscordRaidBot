@@ -46,7 +46,7 @@ export async function handleChannelSelect(
 
   await prisma.guild.upsert({
     where: { id: guildId },
-    create: { id: guildId, [field]: channelId },
+    create: { id: guildId, name: interaction.guild!.name, [field]: channelId },
     update: { [field]: channelId },
   });
 

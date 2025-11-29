@@ -5,6 +5,8 @@ A powerful Discord event management system with automatic voice channels, web da
 [![Discord](https://img.shields.io/badge/Discord-Bot-5865F2?logo=discord&logoColor=white)](https://discord.com/developers/applications)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-7.0-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -80,8 +82,8 @@ docker-compose up -d
 
 ## 🛠️ Tech Stack
 
-**Backend:** TypeScript, Node.js 18+, discord.js v14  
-**Database:** PostgreSQL + Prisma ORM  
+**Backend:** TypeScript, Node.js 20+, discord.js v14  
+**Database:** PostgreSQL + Prisma ORM 7.0  
 **Frontend:** React, Tailwind CSS, Vite  
 **Infrastructure:** Docker, Redis, nginx (optional)
 

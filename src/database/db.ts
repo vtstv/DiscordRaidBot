@@ -3,7 +3,9 @@
 // Database connection manager using Prisma
 
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { getModuleLogger } from '../utils/logger.js';
+import { config } from '../config/env.js';
 
 const logger = getModuleLogger('database');
 
@@ -20,8 +22,14 @@ export function getPrismaClient(): PrismaClient {
   if (!prisma) {
     logger.info('Initializing Prisma client');
     
+    // Prisma 7: Use PostgreSQL adapter for database connections
+    const adapter = new PrismaPg({
+      connectionString: config.DATABASE_URL,
+    });
+    
     prisma = new PrismaClient({
       log: ['query', 'info', 'warn', 'error'],
+      adapter,
     });
   }
 

@@ -51,3 +51,4 @@ coverage/
 temp/
 tmp/
 scripts/add-c.ps1
+backups

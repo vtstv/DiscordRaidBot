@@ -49,20 +49,26 @@ export async function startWebServer(): Promise<void> {
       logger: {
         level: config.LOG_LEVEL,
       },
+      trustProxy: true, // Trust X-Forwarded-* headers from reverse proxy (nginx)
     });
 
     // Register CORS
+    logger.info('Registering CORS plugin...');
     await server.register(cors, {
       origin: true,
       credentials: true, // Allow credentials (cookies)
     });
+    logger.info('CORS registered');
 
     // Register cookie support
+    logger.info('Registering cookie plugin...');
     await server.register(cookie, {
       secret: config.WEB_SESSION_SECRET,
     });
+    logger.info('Cookie registered');
 
     // Register session support
+    logger.info('Registering session plugin...');
     await server.register(session, {
       secret: config.WEB_SESSION_SECRET,
       cookie: {
@@ -77,6 +83,7 @@ export async function startWebServer(): Promise<void> {
       saveUninitialized: false,
       rolling: true, // Refresh session on each request
     });
+    logger.info('Session registered');
 
     // Register static files for React frontend
     // In production: dist/web/frontend (built by Vite)
@@ -86,10 +93,12 @@ export async function startWebServer(): Promise<void> {
       : path.join(__dirname, '..', '..', 'dist', 'web', 'frontend'); // fallback to dist even in dev
     
     // Serve React static files (no prefix, files are accessed directly like /assets/...)
+    logger.info(`Registering static files plugin from: ${frontendRoot}`);
     await server.register(fastifyStatic, {
       root: frontendRoot,
       decorateReply: true, // Enable reply.sendFile()
     });
+    logger.info('Static files registered');
 
     // Health check
     server.get('/health', async () => {
@@ -105,7 +114,9 @@ export async function startWebServer(): Promise<void> {
     });
 
     // Register API routes
+    logger.info('Registering API routes...');
     await registerRoutes(server);
+    logger.info('API routes registered');
 
     // Serve React frontend for all non-API routes
     // This catches all routes and serves index.html for client-side routing
@@ -127,7 +138,7 @@ export async function startWebServer(): Promise<void> {
 
     logger.info(`Web server listening on port ${config.WEB_PORT}`);
   } catch (error) {
-    logger.error({ error }, 'Failed to start web server');
+    logger.error({ error: error instanceof Error ? { message: error.message, stack: error.stack, name: error.name } : error }, 'Failed to start web server');
     throw error;
   }
 }

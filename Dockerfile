@@ -1,7 +1,11 @@
 # Build stage
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 
 WORKDIR /app
+
+# Build-time environment variable for Prisma generation
+ARG DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
+ENV DATABASE_URL=$DATABASE_URL
 
 # Install dependencies for Prisma and build tools
 RUN apk update && apk add --no-cache \
@@ -12,6 +16,7 @@ RUN apk update && apk add --no-cache \
 # Copy package files
 COPY package*.json ./
 COPY tsconfig.json ./
+COPY prisma.config.ts ./
 COPY prisma ./prisma/
 
 # Copy PostCSS and Tailwind config
@@ -41,7 +46,7 @@ COPY docker/healthcheck.sh /healthcheck.sh
 RUN chmod +x /start.sh /healthcheck.sh
 
 # Runtime stage
-FROM node:18-alpine AS runtime
+FROM node:20-alpine AS runtime
 
 WORKDIR /app
 
@@ -55,6 +60,7 @@ ENV NODE_ENV=production
 
 # Copy package files and install production dependencies
 COPY package*.json ./
+COPY prisma.config.ts ./
 COPY --from=build /app/package-lock.json ./
 RUN npm ci --omit=dev
 
