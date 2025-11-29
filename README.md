@@ -18,7 +18,10 @@ A powerful Discord event management system with automatic voice channels, web da
 ### Discord Event Management
 <img src="Media/discord.png" alt="Discord Event Interface" width="700"/>
 
-### Web Admin Panel  
+### Server Admin Panel  
+<img src="Media/guildadmin.png" alt="Admin Panel" width="700"/>
+
+### Bot Admin Panel  
 <img src="Media/botadmin.png" alt="Admin Panel" width="700"/>
 
 </div>
