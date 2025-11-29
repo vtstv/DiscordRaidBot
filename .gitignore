@@ -52,3 +52,4 @@ temp/
 tmp/
 scripts/add-c.ps1
 backups
+scripts/deploy-remote.ps1

@@ -1,0 +1,74 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: raidbot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-raidbot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-raidbot_password}
+      POSTGRES_DB: ${POSTGRES_DB:-raidbot}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-raidbot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: raidbot-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bot:
+    image: vtstv/raidbot:latest
+    container_name: raidbot-bot
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-raidbot}:${POSTGRES_PASSWORD:-raidbot_password}@postgres:5432/${POSTGRES_DB:-raidbot}
+      REDIS_URL: redis://redis:6379
+      WEB_PORT: ${WEB_PORT:-3000}
+      WEB_BASE_URL: ${WEB_BASE_URL}
+      WEB_SESSION_SECRET: ${WEB_SESSION_SECRET}
+      DISCORD_OAUTH_REDIRECT_URI: ${DISCORD_OAUTH_REDIRECT_URI}
+      ADMIN_USER_IDS: ${ADMIN_USER_IDS:-}
+      START_WEB: ${START_WEB:-true}
+      START_BOT: ${START_BOT:-true}
+    ports:
+      - "${WEB_PORT:-3000}:${WEB_PORT:-3000}"
+    healthcheck:
+      test: ["CMD", "sh", "/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./logs:/app/logs
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
