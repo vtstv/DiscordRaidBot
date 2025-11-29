@@ -244,7 +244,7 @@ export async function createEventMessage(event: any) {
       );
 
       // View online button (conditionally shown based on guild settings)
-      if (showViewOnline) {
+      if (showViewOnline && config.WEB_BASE_URL) {
         const viewOnlineRow = new ActionRowBuilder<ButtonBuilder>();
         viewOnlineRow.addComponents(
           new ButtonBuilder()
@@ -279,7 +279,7 @@ export async function createEventMessage(event: any) {
       );
 
       // View online button (conditionally shown based on guild settings)
-      if (showViewOnline) {
+      if (showViewOnline && config.WEB_BASE_URL) {
         const viewOnlineRow = new ActionRowBuilder<ButtonBuilder>();
         viewOnlineRow.addComponents(
           new ButtonBuilder()
