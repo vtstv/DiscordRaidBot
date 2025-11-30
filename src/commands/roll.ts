@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Murr (https://github.com/vtstv)
 // path: src/commands/roll.ts
 
-import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
 import type { Command } from '../types/command.js';
 
 const command: Command = {
@@ -96,6 +96,7 @@ const command: Command = {
           option
             .setName('limit-to-voice')
             .setDescription('Only users in this voice channel can roll')
+            .addChannelTypes(ChannelType.GuildVoice)
             .setRequired(false)
         )
     )
