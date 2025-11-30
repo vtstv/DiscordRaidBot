@@ -5,6 +5,7 @@ import { ChatInputCommandInteraction, ChannelType, TextChannel } from 'discord.j
 import db from '../../database/db.js';
 import { logger } from '../../utils/logger.js';
 import { sendEventToChannel } from '../../messages/sendEventToChannel.js';
+import { logAction } from '../../services/auditLog.js';
 
 export async function handleEventMove(interaction: ChatInputCommandInteraction): Promise<void> {
   const eventId = interaction.options.getString('event-id', true);
@@ -99,18 +100,16 @@ export async function handleEventMove(interaction: ChatInputCommandInteraction):
     }
 
     // Log action
-    await db().logEntry.create({
-      data: {
-        guildId: interaction.guildId!,
-        eventId: eventId,
-        userId: interaction.user.id,
-        username: interaction.user.tag,
-        action: 'event_moved',
-        details: {
-          eventTitle: event.title,
-          fromChannel: event.channelId,
-          toChannel: targetChannel.id,
-        },
+    await logAction({
+      guildId: interaction.guildId!,
+      eventId: eventId,
+      userId: interaction.user.id,
+      username: interaction.user.tag,
+      action: 'event_moved',
+      details: {
+        eventTitle: event.title,
+        fromChannel: event.channelId,
+        toChannel: targetChannel.id,
       },
     });
 

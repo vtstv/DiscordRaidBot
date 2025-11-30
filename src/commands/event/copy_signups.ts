@@ -7,6 +7,7 @@ import {
 import db from '../../database/db';
 import { logger } from '../../utils/logger';
 import { sendEventToChannel } from '../../messages/sendEventToChannel.js';
+import { logAction } from '../../services/auditLog.js';
 
 export async function handleEventCopySignups(
   interaction: ChatInputCommandInteraction
@@ -119,19 +120,18 @@ export async function handleEventCopySignups(
     }
 
     // Log action
-    await db().logEntry.create({
-      data: {
-        guildId,
-        eventId: targetEvent.id,
-        userId,
-        username,
-        action: 'signups_copied',
-        details: JSON.stringify({
-          sourceEventId: sourceEvent.id,
-          sourceEventTitle: sourceEvent.title,
-          copied,
-          skipped,
-        }),
+    await logAction({
+      guildId,
+      eventId: targetEvent.id,
+      userId,
+      username,
+      action: 'signups_copied',
+      details: {
+        sourceEventId: sourceEvent.id,
+        sourceEventTitle: sourceEvent.title,
+        targetEventTitle: targetEvent.title,
+        copied,
+        skipped,
       },
     });
 

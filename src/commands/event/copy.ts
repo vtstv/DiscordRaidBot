@@ -5,6 +5,7 @@ import { ChatInputCommandInteraction, ChannelType } from 'discord.js';
 import db from '../../database/db.js';
 import { logger } from '../../utils/logger.js';
 import { sendEventToChannel } from '../../messages/sendEventToChannel.js';
+import { logAction } from '../../services/auditLog.js';
 
 export async function handleEventCopy(interaction: ChatInputCommandInteraction): Promise<void> {
   const sourceEventId = interaction.options.getString('event-id', true);
@@ -98,19 +99,17 @@ export async function handleEventCopy(interaction: ChatInputCommandInteraction):
     }
 
     // Log action
-    await db().logEntry.create({
-      data: {
-        guildId: interaction.guildId!,
-        eventId: newEvent.id,
-        userId: interaction.user.id,
-        username: interaction.user.tag,
-        action: 'event_copied',
-        details: {
-          sourceEventId: sourceEvent.id,
-          sourceEventTitle: sourceEvent.title,
-          newEventTitle: newEvent.title,
-          targetChannel: targetChannel.id,
-        },
+    await logAction({
+      guildId: interaction.guildId!,
+      eventId: newEvent.id,
+      userId: interaction.user.id,
+      username: interaction.user.tag,
+      action: 'event_copied',
+      details: {
+        sourceEventId: sourceEvent.id,
+        sourceEventTitle: sourceEvent.title,
+        newEventTitle: newEvent.title,
+        targetChannel: targetChannel.id,
       },
     });
 
