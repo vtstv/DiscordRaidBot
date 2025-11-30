@@ -62,6 +62,7 @@ model Guild {
   statistics ParticipantStatistics[]
   raidPlans RaidPlan[]
   compositionPresets CompositionPreset[]
+  rollGenerators RollGenerator[]
 
   @@map("guilds")
 }
@@ -307,5 +308,57 @@ model SystemSettings {
   updatedAt             DateTime @updatedAt @map("updatedat")
 
   @@map("system_settings")
+}
+
+model RollGenerator {
+  id                String   @id @default(uuid())
+  guildId           String   @map("guildid")
+  channelId         String   @map("channelid")
+  messageId         String?  @map("messageid")
+  createdBy         String   @map("createdby")
+  
+  title             String
+  description       String?
+  maxRoll           Int      @default(100) @map("maxroll")
+  rollsPerUser      Int      @default(1) @map("rollsperuser")
+  maxUsers          Int?     @map("maxusers")
+  maxShown          Int      @default(10) @map("maxshown")
+  showUsernames     Boolean  @default(true) @map("showusernames")
+  duration          Int?     // seconds
+  startDelay        Int?     @map("startdelay") // seconds
+  bulkRoll          String?  @map("bulkroll") // role IDs, user IDs, or event ID (JSON)
+  showDuplicates    Boolean  @default(false) @map("showduplicates")
+  allowedRoles      String[] @default([]) @map("allowedroles") // array of role IDs
+  limitToVoice      String?  @map("limittovoice") // voice channel ID
+  
+  status            String   @default("pending") // pending, active, closed
+  startTime         DateTime? @map("starttime")
+  endTime           DateTime? @map("endtime")
+  
+  rolls             RollResult[]
+  
+  createdAt         DateTime @default(now()) @map("createdat")
+  updatedAt         DateTime @updatedAt @map("updatedat")
+  
+  guild             Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  
+  @@index([guildId])
+  @@index([messageId])
+  @@map("roll_generators")
+}
+
+model RollResult {
+  id              String   @id @default(uuid())
+  rollGeneratorId String   @map("rollgeneratorid")
+  userId          String   @map("userid")
+  username        String
+  rollValue       Int      @map("rollvalue")
+  rolledAt        DateTime @default(now()) @map("rolledat")
+  
+  rollGenerator   RollGenerator @relation(fields: [rollGeneratorId], references: [id], onDelete: Cascade)
+  
+  @@index([rollGeneratorId])
+  @@index([userId])
+  @@map("roll_results")
 }
 

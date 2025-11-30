@@ -11,6 +11,7 @@ import { guildsRoutes } from './guilds.js';
 import { statsRoutes } from './stats.js';
 import { raidPlansRoutes } from './raidplans.js';
 import { compositionPresetsRoutes } from './compositionPresets.js';
+import { rollRoutes } from './roll.js';
 
 export async function registerRoutes(server: FastifyInstance): Promise<void> {
   // Auth routes (no prefix)
@@ -30,5 +31,6 @@ export async function registerRoutes(server: FastifyInstance): Promise<void> {
     await api.register(adminRoutes, { prefix: '/admin' });
     await api.register(raidPlansRoutes, { prefix: '/raidplans' });
     await api.register(compositionPresetsRoutes, { prefix: '/composition-presets' });
+    await api.register(rollRoutes, { prefix: '/roll' });
   }, { prefix: '/api' });
 }

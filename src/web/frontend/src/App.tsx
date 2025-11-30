@@ -33,6 +33,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const PublicEvent = lazy(() => import('./pages/PublicEvent'));
 const CompositionTool = lazy(() => import('./pages/CompositionTool'));
 const PublicRaidPlan = lazy(() => import('./pages/PublicRaidPlan'));
+const PublicRoll = lazy(() => import('./pages/PublicRoll'));
 const Compositions = lazy(() => import('./pages/Compositions'));
 
 function AppRoutes() {
@@ -56,6 +57,7 @@ function AppRoutes() {
         {/* Public routes */}
         <Route path="/event/:eventId" element={<PublicEvent />} />
         <Route path="/raidplan/:raidPlanId" element={<PublicRaidPlan />} />
+        <Route path="/roll/:rollId" element={<PublicRoll />} />
 
       {!user ? (
         <>

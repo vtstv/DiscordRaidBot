@@ -29,6 +29,8 @@ export async function handleAutocomplete(interaction: AutocompleteInteraction): 
     await handleEventAutocomplete(interaction);
   } else if (commandName === 'template') {
     await handleTemplateAutocomplete(interaction);
+  } else if (commandName === 'roll') {
+    await handleRollAutocomplete(interaction);
   }
 }
 
@@ -111,3 +113,38 @@ async function handleTemplateAutocomplete(interaction: AutocompleteInteraction):
     );
   }
 }
+
+async function handleRollAutocomplete(interaction: AutocompleteInteraction): Promise<void> {
+  const focusedOption = interaction.options.getFocused(true);
+  
+  if (focusedOption.name === 'generator-id') {
+    const guildId = interaction.guild?.id;
+    if (!guildId) return;
+
+    const prisma = getPrismaClient();
+    const generators = await prisma.rollGenerator.findMany({
+      where: { 
+        guildId,
+        status: { in: ['pending', 'active'] }
+      },
+      select: { id: true, title: true, status: true },
+      orderBy: { createdAt: 'desc' },
+      take: 25,
+    });
+
+    const filtered = generators
+      .filter(g => 
+        g.title.toLowerCase().includes(focusedOption.value.toLowerCase()) ||
+        g.id.toLowerCase().startsWith(focusedOption.value.toLowerCase())
+      )
+      .slice(0, 25);
+
+    await interaction.respond(
+      filtered.map(g => ({ 
+        name: `${g.title} [${g.status}] (${g.id.substring(0, 8)})`, 
+        value: g.id 
+      }))
+    );
+  }
+}
+

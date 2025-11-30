@@ -11,6 +11,7 @@ import { CommandError, PermissionError, ValidationError } from '../utils/errors.
 import { handleButton } from './interactions/button-handler.js';
 import { handleAutocomplete } from './interactions/autocomplete-handler.js';
 import { handleModal } from './interactions/modal-handler.js';
+import { handleRollButtonInteraction, handleRollEditInteraction, handleRollModalSubmit } from './interactions/roll-handler.js';
 import getPrismaClient from '../database/db.js';
 import { config } from '../config/env.js';
 
@@ -27,7 +28,17 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
     } else if (interaction.isAutocomplete()) {
       await handleAutocomplete(interaction);
     } else if (interaction.isButton()) {
-      await handleButton(interaction);
+      // Check if it's a roll button
+      if (interaction.customId.startsWith('roll_')) {
+        const [action, subAction] = interaction.customId.split('_');
+        if (['do', 'edit', 'close'].includes(subAction)) {
+          await handleRollButtonInteraction(interaction);
+        } else if (['edittitle', 'editdesc', 'toggleusername', 'editmaxshown'].includes(subAction)) {
+          await handleRollEditInteraction(interaction);
+        }
+      } else {
+        await handleButton(interaction);
+      }
     } else if (interaction.isStringSelectMenu()) {
       await handleSelectMenu(interaction);
     } else if (interaction.isChannelSelectMenu()) {
@@ -35,7 +46,12 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
     } else if (interaction.isRoleSelectMenu()) {
       await handleRoleSelectMenu(interaction);
     } else if (interaction.isModalSubmit()) {
-      await handleModal(interaction);
+      // Check if it's a roll modal
+      if (interaction.customId.startsWith('roll_modal')) {
+        await handleRollModalSubmit(interaction);
+      } else {
+        await handleModal(interaction);
+      }
     }
   } catch (error) {
     logger.error({ error, interactionType: interaction.type }, 'Error handling interaction');
