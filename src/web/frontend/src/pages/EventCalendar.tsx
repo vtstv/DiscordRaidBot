@@ -143,43 +143,41 @@ export default function EventCalendar() {
                         : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
-                    <div className={`text-xs lg:text-sm font-medium mb-1 ${
-                      isSelected || isToday ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'
-                    }`}>
+                    <div className="text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                       {day}
                     </div>
                     
-                    {/* Mobile: only colored dots */}
+                    {/* Mobile version - small dots */}
                     {dayEvents.length > 0 && (
-                      <>
-                        {/* Mobile version - dots only */}
-                        <div className="lg:hidden flex justify-center gap-0.5 mt-1">
-                          {dayEvents.slice(0, 3).map((_, idx) => (
-                            <div
-                              key={idx}
-                              className="w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400"
-                            />
-                          ))}
-                        </div>
-                        
-                        {/* Desktop version - event titles */}
-                        <div className="hidden lg:flex flex-col gap-1">
-                          {dayEvents.slice(0, 2).map(event => (
-                            <div
-                              key={event.id}
-                              className="text-xs bg-purple-600 text-white rounded px-1 py-0.5 truncate"
-                              title={event.title}
-                            >
-                              {event.title}
-                            </div>
-                          ))}
-                          {dayEvents.length > 2 && (
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              +{dayEvents.length - 2} more
-                            </div>
-                          )}
-                        </div>
-                      </>
+                      <div className="flex gap-0.5 mt-0.5 lg:hidden justify-center">
+                        {dayEvents.slice(0, 3).map((event, idx) => (
+                          <div
+                            key={idx}
+                            className="w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400"
+                            title={event.title}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Desktop version - event titles */}
+                    {dayEvents.length > 0 && (
+                      <div className="hidden lg:flex flex-col gap-1 mt-1">
+                        {dayEvents.slice(0, 2).map(event => (
+                          <div
+                            key={event.id}
+                            className="text-xs bg-purple-600 text-white rounded px-1 py-0.5 truncate"
+                            title={event.title}
+                          >
+                            {event.title}
+                          </div>
+                        ))}
+                        {dayEvents.length > 2 && (
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            +{dayEvents.length - 2} more
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 );
