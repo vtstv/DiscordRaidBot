@@ -19,6 +19,8 @@ import Layout from '../components/Layout';
 import PresetModal from '../components/PresetModal';
 import { Group } from '../types/composition';
 import { Event, RaidPlanData } from './composition-tool/types';
+import { ClickModeProvider } from '../contexts/ClickModeContext';
+import { Participant } from '../types/composition';
 import {
   loadEvent,
   loadRaidPlan,
@@ -27,7 +29,7 @@ import {
   savePreset,
 } from './composition-tool/api';
 import { createDefaultGroups, getUnassignedParticipants, regeneratePresetGroups } from './composition-tool/utils';
-import { handleDragEnd } from './composition-tool/dragHandlers';
+import { handleDragEnd, handleClickAssignment } from './composition-tool/dragHandlers';
 import {
   renameGroup,
   deleteGroup,
@@ -199,6 +201,27 @@ export default function CompositionTool() {
     saveGroups(updated);
   };
 
+  const handleAssignParticipant = (
+    targetGroupId: string,
+    targetPositionId: string,
+    participant: Participant,
+    sourceGroupId?: string,
+    sourcePositionId?: string
+  ) => {
+    handleClickAssignment(
+      targetGroupId,
+      targetPositionId,
+      participant,
+      sourceGroupId,
+      sourcePositionId,
+      groups,
+      (newGroups) => {
+        setGroups(newGroups);
+        saveGroups(newGroups);
+      }
+    );
+  };
+
   const handleLoadPreset = (presetGroups: any, presetStrategy?: string) => {
     const newGroups = regeneratePresetGroups(presetGroups);
     setGroups(newGroups);
@@ -239,16 +262,17 @@ export default function CompositionTool() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-6">
-        <div className="max-w-7xl mx-auto px-4">
-          <Header
-            guildId={guildId!}
-            eventId={eventId!}
-            saving={saving}
-            onBack={() => navigate(`/guild/${guildId}/events/${eventId}`)}
-            onOpenPresets={() => setShowPresetModal(true)}
-            raidPlanId={raidPlan?.id}
-          />
+      <ClickModeProvider>
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-6">
+          <div className="max-w-7xl mx-auto px-4">
+            <Header
+              guildId={guildId!}
+              eventId={eventId!}
+              saving={saving}
+              onBack={() => navigate(`/guild/${guildId}/events/${eventId}`)}
+              onOpenPresets={() => setShowPresetModal(true)}
+              raidPlanId={raidPlan?.id}
+            />
 
           <div className="mb-4">
             <TitleEditor
@@ -287,34 +311,35 @@ export default function CompositionTool() {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEndWrapper}
           >
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-              <div className="lg:col-span-1">
-                <UnassignedPanel participants={unassignedParticipants} />
-              </div>
-
-              <div className="lg:col-span-3">
-                <GroupsPanel
-                  groups={groups}
-                  participants={event?.participants || []}
-                  onRenameGroup={handleRenameGroup}
-                  onDeleteGroup={handleDeleteGroup}
-                  onAddPosition={handleAddPosition}
-                  onRemovePosition={handleRemovePosition}
-                  onEditPositionLabel={handleEditPositionLabel}
-                  onRemoveParticipant={handleRemoveParticipant}
-                  onAddGroup={handleAddGroup}
-                />
-              </div>
-            </div>
-
-            <DragOverlay>
-              {activeId && activeId.startsWith('participant-') ? (
-                <div className="px-3 py-2 bg-white dark:bg-gray-700 border-2 border-purple-500 rounded-lg shadow-lg text-xs">
-                  Dragging...
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                <div className="lg:col-span-1">
+                  <UnassignedPanel participants={unassignedParticipants} />
                 </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
+
+                <div className="lg:col-span-3">
+                  <GroupsPanel
+                    groups={groups}
+                    participants={event?.participants || []}
+                    onRenameGroup={handleRenameGroup}
+                    onDeleteGroup={handleDeleteGroup}
+                    onAddPosition={handleAddPosition}
+                    onRemovePosition={handleRemovePosition}
+                    onEditPositionLabel={handleEditPositionLabel}
+                    onRemoveParticipant={handleRemoveParticipant}
+                    onAddGroup={handleAddGroup}
+                    onAssignParticipant={handleAssignParticipant}
+                  />
+                </div>
+              </div>
+
+              <DragOverlay>
+                {activeId && activeId.startsWith('participant-') ? (
+                  <div className="px-3 py-2 bg-white dark:bg-gray-700 border-2 border-purple-500 rounded-lg shadow-lg text-xs">
+                    Dragging...
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
 
           {/* Strategy Editor - shown below groups */}
           {strategyPosition === 'bottom' && (
@@ -335,6 +360,7 @@ export default function CompositionTool() {
           />
         </div>
       </div>
+      </ClickModeProvider>
     </Layout>
   );
 }

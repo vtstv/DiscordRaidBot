@@ -4,6 +4,7 @@
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { useState } from 'react';
 import { Position, Participant } from '../types/composition';
+import { useClickMode } from '../contexts/ClickModeContext';
 
 interface DroppablePositionProps {
   position: Position;
@@ -12,6 +13,7 @@ interface DroppablePositionProps {
   positionIndex: number;
   onEditLabel: (positionId: string, label: string) => void;
   onRemoveParticipant: (positionId: string) => void;
+  onAssignParticipant?: (participant: Participant, sourceGroupId?: string, sourcePositionId?: string) => void;
 }
 
 export default function DroppablePosition({
@@ -21,7 +23,9 @@ export default function DroppablePosition({
   positionIndex,
   onEditLabel,
   onRemoveParticipant,
+  onAssignParticipant,
 }: DroppablePositionProps) {
+  const { isClickMode, selectedParticipant, selectParticipant, clearSelection, assignToPosition } = useClickMode();
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [labelValue, setLabelValue] = useState(position.label || '');
 
@@ -49,8 +53,32 @@ export default function DroppablePosition({
       sourceGroupId: groupId,
       sourcePositionId: position.id,
     } : undefined,
-    disabled: !participant,
+    disabled: !participant || isClickMode,
   });
+
+  const isSelectedTarget = isClickMode && selectedParticipant !== null;
+  const isOccupiedBySelected = participant && selectedParticipant?.participant.id === participant.id;
+
+  const handlePositionClick = () => {
+    if (!isClickMode) return;
+    
+    if (selectedParticipant && !isOccupiedBySelected && onAssignParticipant) {
+      // Assign selected participant to this position
+      assignToPosition(groupId, position.id, onAssignParticipant);
+    }
+  };
+
+  const handleParticipantClick = (e: React.MouseEvent) => {
+    if (!isClickMode || !participant) return;
+    
+    e.stopPropagation();
+    
+    if (isOccupiedBySelected) {
+      clearSelection();
+    } else {
+      selectParticipant(participant, groupId, position.id);
+    }
+  };
 
   const dragStyle = dragTransform
     ? {
@@ -67,11 +95,12 @@ export default function DroppablePosition({
   return (
     <div
       ref={setNodeRef}
+      onClick={handlePositionClick}
       className={`px-2 py-1.5 rounded-lg border transition-all ${
-        isOver
+        isOver || (isSelectedTarget && !participant)
           ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
           : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50'
-      }`}
+      } ${isClickMode && !participant && isSelectedTarget ? 'ring-2 ring-purple-500 cursor-pointer' : ''}`}
     >
       <div className="flex items-center gap-1.5">
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 min-w-[16px]">
@@ -82,14 +111,29 @@ export default function DroppablePosition({
           <div 
             ref={setDragRef}
             style={dragStyle}
-            {...dragListeners}
-            {...dragAttributes}
-            className="flex-1 flex items-center justify-between min-w-0 cursor-grab active:cursor-grabbing"
+            {...(isClickMode ? {} : dragListeners)}
+            {...(isClickMode ? {} : dragAttributes)}
+            onClick={handleParticipantClick}
+            className={`flex-1 flex items-center justify-between min-w-0 ${
+              isClickMode ? 'cursor-pointer active:scale-95' : 'cursor-grab active:cursor-grabbing'
+            } ${isOccupiedBySelected ? 'ring-2 ring-purple-500 bg-purple-50 dark:bg-purple-900/30 rounded' : ''}`}
           >
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-              </svg>
+              {isClickMode ? (
+                <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${
+                  isOccupiedBySelected ? 'border-purple-500 bg-purple-500' : 'border-gray-300 dark:border-gray-500'
+                }`}>
+                  {isOccupiedBySelected && (
+                    <svg className="w-full h-full text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+              ) : (
+                <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                </svg>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-gray-900 dark:text-white text-xs truncate">
                   {participant.username}

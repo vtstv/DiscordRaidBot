@@ -6,6 +6,49 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { Group, Participant } from '../../types/composition';
 
 /**
+ * Handle click-based participant assignment (for mobile)
+ */
+export function handleClickAssignment(
+  targetGroupId: string,
+  targetPositionId: string,
+  participant: Participant,
+  sourceGroupId: string | undefined,
+  sourcePositionId: string | undefined,
+  groups: Group[],
+  onUpdate: (newGroups: Group[]) => void
+): void {
+  const updatedGroups = groups.map(group => {
+    // Clear source position if moving from another position
+    if (sourceGroupId && sourcePositionId && group.id === sourceGroupId) {
+      return {
+        ...group,
+        positions: group.positions.map(pos =>
+          pos.id === sourcePositionId
+            ? { ...pos, participantId: undefined }
+            : pos
+        ),
+      };
+    }
+    return group;
+  }).map(group => {
+    // Set target position
+    if (group.id === targetGroupId) {
+      return {
+        ...group,
+        positions: group.positions.map(pos =>
+          pos.id === targetPositionId
+            ? { ...pos, participantId: participant.id }
+            : pos
+        ),
+      };
+    }
+    return group;
+  });
+
+  onUpdate(updatedGroups);
+}
+
+/**
  * Handle drag end event for participants and groups
  */
 export function handleDragEnd(

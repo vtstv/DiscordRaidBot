@@ -16,6 +16,7 @@ interface SortableGroupProps {
   onRemovePosition: (groupId: string, positionId: string) => void;
   onEditPositionLabel: (groupId: string, positionId: string, label: string) => void;
   onRemoveParticipant: (groupId: string, positionId: string) => void;
+  onAssignParticipant?: (groupId: string, positionId: string, participant: Participant, sourceGroupId?: string, sourcePositionId?: string) => void;
 }
 
 export default function SortableGroup({
@@ -27,6 +28,7 @@ export default function SortableGroup({
   onRemovePosition,
   onEditPositionLabel,
   onRemoveParticipant,
+  onAssignParticipant,
 }: SortableGroupProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(group.name);
@@ -125,6 +127,7 @@ export default function SortableGroup({
                   positionIndex={index}
                   onEditLabel={(posId, label) => onEditPositionLabel(group.id, posId, label)}
                   onRemoveParticipant={(posId) => onRemoveParticipant(group.id, posId)}
+                  onAssignParticipant={onAssignParticipant ? (p, srcGrp, srcPos) => onAssignParticipant(group.id, position.id, p, srcGrp, srcPos) : undefined}
                 />
               </div>
               {group.positions.length > 1 && (

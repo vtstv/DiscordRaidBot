@@ -16,6 +16,7 @@ interface GroupsPanelProps {
   onEditPositionLabel: (groupId: string, positionId: string, label: string) => void;
   onRemoveParticipant: (groupId: string, positionId: string) => void;
   onAddGroup: () => void;
+  onAssignParticipant?: (groupId: string, positionId: string, participant: Participant, sourceGroupId?: string, sourcePositionId?: string) => void;
 }
 
 export default function GroupsPanel({
@@ -28,6 +29,7 @@ export default function GroupsPanel({
   onEditPositionLabel,
   onRemoveParticipant,
   onAddGroup,
+  onAssignParticipant,
 }: GroupsPanelProps) {
   const { t } = useI18n();
 
@@ -49,6 +51,7 @@ export default function GroupsPanel({
               onRemovePosition={onRemovePosition}
               onEditPositionLabel={onEditPositionLabel}
               onRemoveParticipant={onRemoveParticipant}
+              onAssignParticipant={onAssignParticipant}
             />
           ))}
         </div>
