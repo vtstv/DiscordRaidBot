@@ -11,8 +11,11 @@ import { CommandError, PermissionError, ValidationError } from '../utils/errors.
 import { handleButton } from './interactions/button-handler.js';
 import { handleAutocomplete } from './interactions/autocomplete-handler.js';
 import { handleModal } from './interactions/modal-handler.js';
+import getPrismaClient from '../database/db.js';
+import { config } from '../config/env.js';
 
 const logger = getModuleLogger('interactionHandler');
+const prisma = getPrismaClient();
 
 /**
  * Main interaction handler - routes to appropriate sub-handlers
@@ -55,6 +58,41 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     return;
   }
 
+  // Check maintenance mode (except for ping command and bot admins)
+  if (interaction.commandName !== 'ping') {
+    try {
+      const systemSettings = await prisma.systemSettings.findUnique({
+        where: { id: 'system' },
+      });
+
+      if (systemSettings?.maintenanceMode) {
+        // Allow bot admins to bypass maintenance mode
+        const adminIds = config.ADMIN_USER_IDS.split(',').map(id => id.trim()).filter(Boolean);
+        const isBotAdmin = adminIds.includes(interaction.user.id);
+        
+        if (!isBotAdmin) {
+          logger.info(
+            {
+              command: interaction.commandName,
+              user: interaction.user.tag,
+              guild: interaction.guild?.name,
+            },
+            'Command blocked: Maintenance mode active'
+          );
+          
+          await interaction.reply({
+            content: '🔧 **Maintenance Mode**\n\nThe bot is currently under maintenance. Please try again later.',
+            ephemeral: true,
+          });
+          return;
+        }
+      }
+    } catch (error) {
+      logger.error({ error }, 'Failed to check maintenance mode');
+      // Continue execution if check fails (fail-open)
+    }
+  }
+
   logger.info(
     {
       command: interaction.commandName,
@@ -66,6 +104,36 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
 
   try {
     await command.execute(interaction);
+    
+    // Log analytics if enabled
+    try {
+      const systemSettings = await prisma.systemSettings.findUnique({
+        where: { id: 'system' },
+      });
+
+      if (systemSettings?.enableAnalytics) {
+        // Log command usage to database for analytics
+        await prisma.logEntry.create({
+          data: {
+            guildId: interaction.guildId || 'DM',
+            action: 'COMMAND_EXECUTED',
+            userId: interaction.user.id,
+            username: interaction.user.tag,
+            details: JSON.stringify({
+              command: interaction.commandName,
+              options: interaction.options.data.map(opt => ({
+                name: opt.name,
+                type: opt.type,
+                value: typeof opt.value === 'string' ? opt.value : String(opt.value),
+              })),
+            }),
+          },
+        });
+      }
+    } catch (analyticsError) {
+      // Don't fail command execution if analytics logging fails
+      logger.debug({ error: analyticsError }, 'Failed to log analytics');
+    }
   } catch (error) {
     logger.error({ error, command: interaction.commandName }, 'Command execution failed');
     throw error;

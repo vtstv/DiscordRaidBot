@@ -31,21 +31,15 @@ export async function statsRoutes(server: FastifyInstance): Promise<void> {
         prisma.event.count({ where: { status: 'completed' } })
       ]);
 
-      // Note: Bot stats not available in multi-container setup
-      // Web container cannot access bot container's Discord client
-      const botStats = null;
-
+      // Return flat structure for BotAdminPanel
       return {
-        database: {
-          totalGuilds,
-          totalEvents,
-          totalTemplates,
-          totalParticipants,
-          activeEvents,
-          scheduledEvents,
-          completedEvents
-        },
-        bot: botStats
+        totalGuilds,
+        totalEvents,
+        totalTemplates,
+        totalParticipants,
+        activeEvents,
+        scheduledEvents,
+        completedEvents
       };
     } catch (error) {
       logger.error({ error }, 'Failed to get admin stats');
@@ -123,6 +117,53 @@ export async function statsRoutes(server: FastifyInstance): Promise<void> {
     } catch (error) {
       logger.error({ error }, 'Failed to get analytics');
       return reply.code(500).send({ error: 'Failed to get analytics' });
+    }
+  });
+
+  // Get command usage analytics
+  server.get('/analytics/commands', { preHandler: requireAdmin }, async (_request, reply) => {
+    try {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      // Get command usage stats from log entries
+      const commandLogs = await prisma.logEntry.findMany({
+        where: {
+          action: 'COMMAND_EXECUTED',
+          createdAt: { gte: thirtyDaysAgo }
+        },
+        select: {
+          details: true,
+          createdAt: true,
+          guildId: true,
+        }
+      });
+
+      // Parse and aggregate command usage
+      const commandStats: Record<string, number> = {};
+      const dailyUsage: Record<string, number> = {};
+
+      for (const log of commandLogs) {
+        const details = log.details as any;
+        if (details?.command) {
+          commandStats[details.command] = (commandStats[details.command] || 0) + 1;
+          
+          const date = log.createdAt.toISOString().split('T')[0];
+          dailyUsage[date] = (dailyUsage[date] || 0) + 1;
+        }
+      }
+
+      return {
+        totalCommands: commandLogs.length,
+        commandsByName: Object.entries(commandStats)
+          .sort(([, a], [, b]) => b - a)
+          .map(([command, count]) => ({ command, count })),
+        dailyUsage: Object.entries(dailyUsage)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([date, count]) => ({ date, count }))
+      };
+    } catch (error) {
+      logger.error({ error }, 'Failed to get command analytics');
+      return reply.code(500).send({ error: 'Failed to get command analytics' });
     }
   });
 }

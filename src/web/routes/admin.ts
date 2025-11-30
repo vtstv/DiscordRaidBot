@@ -9,6 +9,7 @@ import { eventRoutes } from './admin/events.js';
 import { templateRoutes } from './admin/templates.js';
 import { logRoutes } from './admin/logs.js';
 import { systemRoutes } from './admin/system.js';
+import { databaseRoutes } from './admin/database.js';
 
 export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // Register all route modules
@@ -19,4 +20,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   await templateRoutes(server);
   await logRoutes(server);
   await systemRoutes(server);
+  
+  // Database backup/restore routes
+  await server.register(databaseRoutes, { prefix: '/database' });
 }

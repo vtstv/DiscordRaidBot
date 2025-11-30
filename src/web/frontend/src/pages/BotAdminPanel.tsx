@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Footer from '../components/Footer';
+import DatabaseManagement from './admin/DatabaseManagement';
 
 interface Stats {
   totalGuilds: number;
@@ -15,6 +16,7 @@ export default function BotAdminPanel() {
   const { user, isBotAdmin } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showDatabaseModal, setShowDatabaseModal] = useState(false);
 
   useEffect(() => {
     // Redirect if not bot admin
@@ -231,6 +233,21 @@ export default function BotAdminPanel() {
             </div>
             <p className="text-gray-400 text-sm">Perform actions across multiple guilds</p>
           </button>
+
+          <button 
+            onClick={() => setShowDatabaseModal(true)}
+            className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:bg-white/20 transition-all text-left group"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-white">Database Management</h3>
+            </div>
+            <p className="text-gray-400 text-sm">Import, export, and manage database backups</p>
+          </button>
         </div>
 
         {/* Info Box */}
@@ -251,6 +268,30 @@ export default function BotAdminPanel() {
           </div>
         </div>
       </div>
+
+      {/* Database Management Modal */}
+      {showDatabaseModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/20 shadow-2xl">
+            <div className="sticky top-0 bg-black/30 backdrop-blur-lg border-b border-white/10 p-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white">💾 Database Management</h2>
+              <button
+                onClick={() => setShowDatabaseModal(false)}
+                className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg inline-flex items-center justify-center transition-colors shrink-0"
+                aria-label="Close"
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <DatabaseManagement />
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

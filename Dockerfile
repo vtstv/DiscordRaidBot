@@ -50,10 +50,11 @@ FROM node:20-alpine AS runtime
 
 WORKDIR /app
 
-# Install runtime dependencies
+# Install runtime dependencies including PostgreSQL client for pg_dump/psql
 RUN apk update && apk add --no-cache \
     dumb-init \
-    openssl
+    openssl \
+    postgresql-client
 
 # Set production environment
 ENV NODE_ENV=production

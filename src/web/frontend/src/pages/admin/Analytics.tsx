@@ -15,13 +15,21 @@ interface Analytics {
   participationRate: number;
 }
 
+interface CommandAnalytics {
+  totalCommands: number;
+  commandsByName: Array<{ command: string; count: number }>;
+  dailyUsage: Array<{ date: string; count: number }>;
+}
+
 export default function Analytics() {
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [commandAnalytics, setCommandAnalytics] = useState<CommandAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadAnalytics();
+    loadCommandAnalytics();
   }, []);
 
   const loadAnalytics = async () => {
@@ -38,6 +46,21 @@ export default function Analytics() {
       console.error('Analytics error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCommandAnalytics = async () => {
+    try {
+      const response = await fetch('/api/admin/analytics/commands', {
+        credentials: 'include',
+      });
+
+      if (!response.ok) throw new Error('Failed to load command analytics');
+      
+      const data = await response.json();
+      setCommandAnalytics(data);
+    } catch (error) {
+      console.error('Command analytics error:', error);
     }
   };
 
@@ -199,7 +222,7 @@ export default function Analytics() {
             </div>
 
             {/* Participation Rate */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 mb-8">
               <h2 className="text-xl font-bold text-white mb-4">Overall Participation Rate</h2>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
@@ -218,6 +241,102 @@ export default function Analytics() {
                 </div>
               </div>
             </div>
+
+            {/* Command Analytics */}
+            {commandAnalytics && (
+              <>
+                <h2 className="text-2xl font-bold text-white mb-6 mt-8">Command Usage Analytics</h2>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                  {/* Top Commands */}
+                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold text-white">Top Commands</h3>
+                      <div className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-sm font-medium">
+                        Last 30 days
+                      </div>
+                    </div>
+                    {commandAnalytics.commandsByName.length > 0 ? (
+                      <div className="space-y-3">
+                        {commandAnalytics.commandsByName.slice(0, 10).map((cmd, index) => (
+                          <div key={cmd.command} className="flex items-center gap-4">
+                            <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-white font-mono text-sm truncate">/{cmd.command}</span>
+                                <span className="text-purple-300 text-sm font-medium ml-2">{cmd.count}×</span>
+                              </div>
+                              <div className="w-full bg-white/10 rounded-full h-2">
+                                <div 
+                                  className="bg-gradient-to-r from-purple-500 to-pink-600 h-2 rounded-full transition-all"
+                                  style={{ width: `${(cmd.count / commandAnalytics.commandsByName[0].count) * 100}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 text-center py-8">
+                        No command data available
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Daily Usage Chart */}
+                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+                    <h3 className="text-xl font-bold text-white mb-6">Daily Command Usage</h3>
+                    {commandAnalytics.dailyUsage.length > 0 ? (
+                      <div className="space-y-2">
+                        {commandAnalytics.dailyUsage.slice(-7).map((day) => {
+                          const maxCount = Math.max(...commandAnalytics.dailyUsage.map(d => d.count));
+                          const date = new Date(day.date);
+                          const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                          
+                          return (
+                            <div key={day.date} className="flex items-center gap-3">
+                              <div className="w-16 text-sm text-gray-400 text-right">{formattedDate}</div>
+                              <div className="flex-1">
+                                <div className="w-full bg-white/10 rounded-full h-8 relative overflow-hidden">
+                                  <div 
+                                    className="bg-gradient-to-r from-blue-500 to-cyan-500 h-8 rounded-full flex items-center px-3 transition-all"
+                                    style={{ width: `${(day.count / maxCount) * 100}%`, minWidth: day.count > 0 ? '3rem' : '0' }}
+                                  >
+                                    <span className="text-white text-sm font-medium">{day.count}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 text-center py-8">
+                        No daily usage data available
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Total Commands Summary */}
+                <div className="bg-gradient-to-r from-purple-500/20 to-pink-600/20 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-white text-lg mb-1">Total Commands Executed</h3>
+                      <p className="text-purple-200 text-sm">Last 30 days</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-5xl font-bold text-white">{commandAnalytics.totalCommands.toLocaleString()}</p>
+                      <p className="text-purple-200 text-sm mt-2">
+                        ~{Math.round(commandAnalytics.totalCommands / 30)} per day
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
         <Footer />

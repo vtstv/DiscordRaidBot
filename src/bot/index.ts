@@ -81,6 +81,35 @@ async function handleGuildCreate(guild: any): Promise<void> {
   
   try {
     const prisma = (await import('../database/db.js')).default();
+    
+    // Check if new guilds are allowed
+    const systemSettings = await prisma.systemSettings.findUnique({
+      where: { id: 'system' },
+    });
+
+    if (systemSettings && !systemSettings.allowNewGuilds) {
+      // Check if guild already exists in database
+      const existingGuild = await prisma.guild.findUnique({
+        where: { id: guild.id },
+      });
+
+      if (!existingGuild) {
+        logger.warn(
+          { guildId: guild.id, guildName: guild.name },
+          'New guilds are not allowed - leaving guild'
+        );
+        
+        try {
+          await guild.leave();
+          logger.info({ guildId: guild.id }, 'Left guild (new guilds disabled)');
+        } catch (leaveError) {
+          logger.error({ error: leaveError, guildId: guild.id }, 'Failed to leave guild');
+        }
+        return;
+      }
+    }
+
+    // Guild is allowed - create or update
     await prisma.guild.upsert({
       where: { id: guild.id },
       create: {

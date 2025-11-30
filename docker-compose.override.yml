@@ -18,7 +18,8 @@ services:
 
   web:
     volumes:
-      - ./src:/app/src:ro
+      - ./src:/app/src
+      - ./dist:/app/dist:ro
       - ./prisma:/app/prisma:ro
       - ./prisma.config.ts:/app/prisma.config.ts:ro
       # Exclude node_modules to use version from Docker image
