@@ -5,6 +5,7 @@ import { ChatInputCommandInteraction } from 'discord.js';
 import db from '../../database/db.js';
 import { logger } from '../../utils/logger.js';
 import { RollGeneratorService } from '../../services/rollGenerator/index.js';
+import { logAction } from '../../services/auditLog.js';
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply({ ephemeral: true });
@@ -60,6 +61,18 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await rollService.closeRollGenerator(generatorId);
 
     logger.info({ rollGeneratorId: generatorId, closedBy: interaction.user.id }, 'Roll generator closed');
+
+    // Log to audit channel
+    await logAction({
+      guildId: interaction.guildId,
+      userId: interaction.user.id,
+      username: interaction.user.username,
+      action: 'roll_closed',
+      details: {
+        rollId: generatorId,
+        title: rollGenerator.title,
+      },
+    });
 
     await interaction.editReply({
       content: '✅ Roll generator closed successfully!',

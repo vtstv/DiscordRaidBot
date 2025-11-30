@@ -54,7 +54,9 @@ export function createRollEmbed(rollGenerator: RollGeneratorWithRolls, rolls: Ro
 
     displayRolls.forEach((roll, index) => {
       const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-      const userDisplay = rollGenerator.showUsernames ? `<@${roll.userId}>` : `User ${index + 1}`;
+      const userDisplay = rollGenerator.showUsernames 
+        ? `<@${roll.userId}>` 
+        : `User #${roll.userId.slice(-4)}`;
       resultsText += `${medal} **${roll.rollValue}** - ${userDisplay}\n`;
     });
 

@@ -6,6 +6,7 @@ import db from '../../database/db.js';
 import { logger } from '../../utils/logger.js';
 import { RollGeneratorService } from '../../services/rollGenerator/index.js';
 import { parseDuration } from '../../utils/time.js';
+import { logAction } from '../../services/auditLog.js';
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply({ ephemeral: true });
@@ -121,6 +122,21 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     });
 
     logger.info({ rollGeneratorId: rollGenerator.id, guildId: interaction.guildId }, 'Roll generator created');
+
+    // Log to audit channel
+    await logAction({
+      guildId: interaction.guildId,
+      userId: interaction.user.id,
+      username: interaction.user.username,
+      action: 'roll_created',
+      details: {
+        rollId: rollGenerator.id,
+        title,
+        maxRoll,
+        showUsernames,
+        duration: durationStr || 'unlimited',
+      },
+    });
 
     // Create and send roll generator message
     const rollService = new RollGeneratorService(interaction.client);

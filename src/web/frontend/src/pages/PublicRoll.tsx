@@ -190,14 +190,18 @@ export default function PublicRoll() {
                     <span className="text-2xl w-8">{getMedalEmoji(index)}</span>
                     <div>
                       <div className="font-medium text-gray-900 dark:text-white">
-                        <a
-                          href={`https://discord.com/users/${roll.userId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        >
-                          @{roll.username}
-                        </a>
+                        {rollGenerator.showUsernames ? (
+                          <a
+                            href={`https://discord.com/users/${roll.userId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          >
+                            @{roll.username}
+                          </a>
+                        ) : (
+                          <span>User #{roll.userId.slice(-4)}</span>
+                        )}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
                         {new Date(roll.rolledAt).toLocaleString()}
@@ -215,7 +219,7 @@ export default function PublicRoll() {
 
         {/* Footer */}
         <div className="text-center mt-8 text-gray-600 dark:text-gray-400 text-sm">
-          <p>Updates automatically every 3 seconds</p>
+          <p>Updates automatically every 20 seconds</p>
         </div>
       </div>
     </div>
