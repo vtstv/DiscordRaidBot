@@ -5,9 +5,35 @@ import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../../database/db.js';
 import { getModuleLogger } from '../../../utils/logger.js';
 import { requireAdmin } from './middleware.js';
+import { config } from '../../../config/env.js';
 
 const logger = getModuleLogger('admin-guilds');
 const prisma = getPrismaClient();
+
+// Helper to fetch guild info from Discord API
+async function getDiscordGuildInfo(guildId: string): Promise<{ memberCount: number; name: string } | null> {
+  try {
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}?with_counts=true`, {
+      headers: {
+        'Authorization': `Bot ${config.DISCORD_TOKEN}`,
+      },
+    });
+
+    if (!response.ok) {
+      logger.warn({ guildId, status: response.status }, 'Failed to fetch guild from Discord API');
+      return null;
+    }
+
+    const data = await response.json();
+    return {
+      memberCount: data.approximate_member_count || 0,
+      name: data.name,
+    };
+  } catch (error) {
+    logger.error({ error, guildId }, 'Error fetching guild from Discord API');
+    return null;
+  }
+}
 
 export async function guildRoutes(server: FastifyInstance): Promise<void> {
   // Get all guilds
@@ -25,15 +51,21 @@ export async function guildRoutes(server: FastifyInstance): Promise<void> {
         }
       });
 
-      // Note: In multi-container setup, web cannot access bot's Discord client
-      // We rely on database information only
-      const enrichedGuilds = guilds.map(guild => ({
-        id: guild.id,
-        name: guild.name || 'Unknown',
-        memberCount: 0, // Not available in multi-container setup
-        online: true, // Assume online if in database
-        _count: guild._count
-      }));
+      // Fetch guild info from Discord API in parallel
+      const enrichedGuildsPromises = guilds.map(async (guild) => {
+        const discordInfo = await getDiscordGuildInfo(guild.id);
+        
+        return {
+          id: guild.id,
+          name: discordInfo?.name || guild.name || 'Unknown',
+          memberCount: discordInfo?.memberCount || 0,
+          isActive: discordInfo !== null, // Active if we can fetch from Discord
+          joinedAt: guild.createdAt.toISOString(),
+          _count: guild._count
+        };
+      });
+
+      const enrichedGuilds = await Promise.all(enrichedGuildsPromises);
 
       return enrichedGuilds;
     } catch (error) {
