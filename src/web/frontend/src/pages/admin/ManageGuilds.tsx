@@ -183,7 +183,7 @@ export default function ManageGuilds() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => navigate(`/guild/${guild.id}`)}
+                      onClick={() => navigate(`/guild/${guild.id}/dashboard`)}
                       className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
                     >
                       View Details

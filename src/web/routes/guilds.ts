@@ -362,6 +362,7 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
   }>('/:guildId/my-permissions', async (request, reply) => {
     const user = (request as any).session?.user;
     const adminGuilds = (request as any).session?.adminGuilds || [];
+    const isBotAdmin = (request as any).session?.isBotAdmin || false;
     
     if (!user) {
       return reply.code(401).send({ error: 'Not authenticated' });
@@ -375,13 +376,14 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       logger.info({ 
         userId: user.id, 
         guildId, 
-        isAdmin, 
+        isAdmin,
+        isBotAdmin,
         adminGuildsCount: adminGuilds.length,
         adminGuildIds: adminGuilds.map((g: any) => g.id)
       }, 'Checking my-permissions');
       
       const { getUserPermissions } = await import('../auth/permissions.js');
-      const permissions = await getUserPermissions(guildId, user.id, isAdmin);
+      const permissions = await getUserPermissions(guildId, user.id, isAdmin, isBotAdmin);
       return permissions;
     } catch (error) {
       logger.error({ error, guildId, userId: user.id }, 'Failed to get user permissions');

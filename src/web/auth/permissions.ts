@@ -90,6 +90,7 @@ export function requireModulePermission(module: DashboardModule) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const user = (request as any).session?.user;
     const adminGuilds = (request as any).session?.adminGuilds || [];
+    const isBotAdmin = (request as any).session?.isBotAdmin || false;
     const guildId = (request.params as any)?.guildId || (request.query as any)?.guildId;
 
     if (!user) {
@@ -98,6 +99,11 @@ export function requireModulePermission(module: DashboardModule) {
 
     if (!guildId) {
       return reply.code(400).send({ error: 'Guild ID required' });
+    }
+
+    // Bot admins have access to all modules in all guilds
+    if (isBotAdmin) {
+      return;
     }
 
     // Check if user is admin of this guild (has ADMINISTRATOR permission)
@@ -126,7 +132,8 @@ export function requireModulePermission(module: DashboardModule) {
 export async function getUserPermissions(
   guildId: string,
   userId: string,
-  isAdmin: boolean = false
+  isAdmin: boolean = false,
+  isBotAdmin: boolean = false
 ): Promise<{
   events: boolean;
   compositions: boolean;
@@ -134,11 +141,23 @@ export async function getUserPermissions(
   settings: boolean;
   isManager: boolean;
 }> {
-  logger.info({ guildId, userId, isAdmin }, 'getUserPermissions called');
+  logger.info({ guildId, userId, isAdmin, isBotAdmin }, 'getUserPermissions called');
+  
+  // Bot admins (global admins from ADMIN_USER_IDS) have full access to all guilds
+  if (isBotAdmin) {
+    logger.info({ guildId, userId }, 'User is bot admin - granting full access');
+    return {
+      events: true,
+      compositions: true,
+      templates: true,
+      settings: true,
+      isManager: true,
+    };
+  }
   
   // Guild admins (users with ADMINISTRATOR permission) have full access
   if (isAdmin) {
-    logger.info({ guildId, userId }, 'User is admin - granting full access');
+    logger.info({ guildId, userId }, 'User is guild admin - granting full access');
     return {
       events: true,
       compositions: true,
