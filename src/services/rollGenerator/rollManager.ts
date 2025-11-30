@@ -73,7 +73,16 @@ export class RollManager {
         const guild = await this.client.guilds.fetch(rollGenerator.guildId);
         const member = await guild.members.fetch(userId);
         
-        if (!member.voice.channelId || member.voice.channelId !== rollGenerator.limitToVoice) {
+        // Force fetch fresh voice state to avoid cache issues
+        const voiceState = member.voice;
+        logger.debug({
+          userId,
+          voiceChannelId: voiceState.channelId,
+          requiredChannelId: rollGenerator.limitToVoice,
+          channelMatch: voiceState.channelId === rollGenerator.limitToVoice
+        }, 'Voice channel validation');
+        
+        if (!voiceState.channelId || voiceState.channelId !== rollGenerator.limitToVoice) {
           const voiceChannel = await guild.channels.fetch(rollGenerator.limitToVoice);
           return {
             success: false,
