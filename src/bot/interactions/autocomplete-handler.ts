@@ -55,7 +55,7 @@ async function handleEventAutocomplete(interaction: AutocompleteInteraction): Pr
     await interaction.respond(
       filtered.map(t => ({ name: t.name, value: t.name }))
     );
-  } else if (focusedOption.name === 'event-id') {
+  } else if (focusedOption.name === 'event-id' || focusedOption.name === 'source-event-id' || focusedOption.name === 'target-event-id') {
     const guildId = interaction.guild?.id;
     if (!guildId) return;
 

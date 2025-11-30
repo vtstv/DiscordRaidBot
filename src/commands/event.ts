@@ -17,6 +17,9 @@ import { handleCancel } from './event/cancel.js';
 import { handleAddUser } from './event/add-user.js';
 import { handleRemoveUser } from './event/remove-user.js';
 import { handleExtendVoice } from './event/extend-voice.js';
+import { handleEventMove } from './event/move.js';
+import { handleEventCopy } from './event/copy.js';
+import { handleEventCopySignups } from './event/copy_signups.js';
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -240,6 +243,69 @@ const command: Command = {
             .setMaxValue(1440)
             .setRequired(true)
         )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('move')
+        .setDescription('Move an event to a different channel')
+        .addStringOption(option =>
+          option
+            .setName('event-id')
+            .setDescription('Event ID to move')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addChannelOption(option =>
+          option
+            .setName('channel')
+            .setDescription('Target channel')
+            .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('copy')
+        .setDescription('Copy an event to a different channel')
+        .addStringOption(option =>
+          option
+            .setName('event-id')
+            .setDescription('Event ID to copy')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addChannelOption(option =>
+          option
+            .setName('channel')
+            .setDescription('Target channel')
+            .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+            .setRequired(true)
+        )
+        .addStringOption(option =>
+          option
+            .setName('title')
+            .setDescription('New title for copied event (optional)')
+            .setRequired(false)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('copy-signups')
+        .setDescription('Copy participants from one event to another')
+        .addStringOption(option =>
+          option
+            .setName('source-event-id')
+            .setDescription('Source event ID')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addStringOption(option =>
+          option
+            .setName('target-event-id')
+            .setDescription('Target event ID')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
     ),
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -267,6 +333,15 @@ const command: Command = {
         break;
       case 'extend-voice':
         await handleExtendVoice(interaction);
+        break;
+      case 'move':
+        await handleEventMove(interaction);
+        break;
+      case 'copy':
+        await handleEventCopy(interaction);
+        break;
+      case 'copy-signups':
+        await handleEventCopySignups(interaction);
         break;
     }
   },
