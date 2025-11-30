@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { HeroSection } from '../components/landing/HeroSection';
 import { FeaturesSection } from '../components/landing/FeaturesSection';
 import { LandingFooter } from '../components/landing/LandingFooter';
+import { HamburgerMenu } from '../components/landing/HamburgerMenu';
 
 const API_BASE_URL = window.location.origin;
 
@@ -87,8 +88,21 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950 transition-colors duration-300 scroll-smooth">
-      {/* Top right buttons - fixed */}
-      <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
+      {/* Hamburger menu for mobile */}
+      <HamburgerMenu
+        user={user}
+        login={login}
+        logout={logout}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        passwordAuthEnabled={passwordAuthEnabled}
+        showPasswordForm={showPasswordAuth}
+        setShowPasswordForm={setShowPasswordAuth}
+        isBotAdmin={isBotAdmin}
+      />
+
+      {/* Top right buttons - fixed (hidden on mobile) */}
+      <div className="fixed top-6 right-6 z-50 hidden lg:flex items-center gap-3">
         {/* Add to Discord button */}
         {!user && (
           <a
@@ -172,12 +186,9 @@ export default function Landing() {
         {/* Features Section */}
         <div id="features" ref={featuresRef} className="snap-start">
           <FeaturesSection />
+          {/* Footer at the bottom of last section */}
+          <LandingFooter />
         </div>
-      </div>
-
-      {/* Fixed Footer - appears on all slides */}
-      <div className="fixed bottom-0 left-0 right-0 z-30">
-        <LandingFooter />
       </div>
     </div>
   );

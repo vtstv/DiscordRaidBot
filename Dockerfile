@@ -34,7 +34,7 @@ COPY src ./src
 COPY src/web/frontend ./src/web/frontend
 COPY vite.frontend.config.ts ./
 
-# Build React frontend (doesn't depend on Prisma)
+# Build React frontend - will use latest code
 RUN npm run build:frontend
 
 # Note: TypeScript backend will be run via tsx, not pre-compiled

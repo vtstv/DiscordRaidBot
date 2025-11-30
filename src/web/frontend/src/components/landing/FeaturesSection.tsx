@@ -1,6 +1,6 @@
 export const FeaturesSection: React.FC = () => {
   return (
-    <section className="min-h-screen flex items-center justify-center py-12 pb-16 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30 dark:from-gray-900 dark:via-indigo-950/30 dark:to-purple-950/30 transition-colors duration-300">
+    <section className="min-h-screen flex items-center justify-center py-12 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30 dark:from-gray-900 dark:via-indigo-950/30 dark:to-purple-950/30 transition-colors duration-300">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-8">
           <h2 className="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white mb-3">

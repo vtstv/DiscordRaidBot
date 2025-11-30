@@ -141,7 +141,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               )}
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-6">
+            <div className="hidden lg:flex flex-col items-center gap-6">
               <div className="flex items-center gap-4 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
                 {user.avatar && (
                   <img

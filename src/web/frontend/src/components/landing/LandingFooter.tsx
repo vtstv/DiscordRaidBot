@@ -2,7 +2,7 @@ import { WEB_VERSION } from '../../../../../config/version';
 
 export const LandingFooter: React.FC = () => {
   return (
-    <footer className="relative bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-t border-gray-200/50 dark:border-gray-700/50 py-3 transition-colors duration-300">
+    <footer className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-t border-gray-200/50 dark:border-gray-700/50 py-3 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
