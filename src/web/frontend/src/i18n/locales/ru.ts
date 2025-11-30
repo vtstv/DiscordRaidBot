@@ -424,6 +424,16 @@ export const ru = {
     viewRaidPlan: 'Посмотреть план рейда',
     raidPlanAvailable: 'Для этого события доступен план состава рейда',
   },
+  nativeEvents: {
+    title: 'Нативные Discord события',
+    createEvents: 'Создавать Discord события',
+    createEventsDescription: 'Автоматически создавать нативные Discord события для ваших ивентов с динамическим обновлением участников',
+    benefitsTitle: 'Преимущества нативных Discord событий:',
+    benefit1: 'События видны в календаре Discord сервера',
+    benefit2: 'Участники могут отмечаться как "Interested"',
+    benefit3: 'Автоматическое обновление количества участников',
+    benefit4: 'События автоматически завершаются или удаляются',
+  },
   errors: {
     accessDenied: 'Доступ запрещён',
     accessDeniedEvents: 'Доступ запрещён: у вас нет прав на просмотр событий.',

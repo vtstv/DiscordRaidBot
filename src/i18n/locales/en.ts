@@ -97,6 +97,28 @@ export const en = {
     minutes: 'min',
   },
 
+  // Native Discord Events
+  nativeEvents: {
+    createdBy: 'Created by',
+    startsInDays: 'Starts in {days} day',
+    startsInDaysPlural: 'Starts in {days} days',
+    startsInHours: 'Starts in {hours}h {minutes}m',
+    startsInMinutes: 'Starts in {minutes} minute',
+    startsInMinutesPlural: 'Starts in {minutes} minutes',
+    eventStarted: 'Event started',
+    viewEventInDiscord: 'View Event in Discord',
+    signUps: 'Sign-ups',
+    // Web UI
+    title: 'Native Discord Events',
+    createEvents: 'Create Discord Events',
+    createEventsDescription: 'Automatically create native Discord scheduled events for your bot events with dynamic participant updates',
+    benefitsTitle: 'Benefits of native Discord events:',
+    benefit1: 'Events appear in Discord server calendar',
+    benefit2: 'Members can mark as "Interested"',
+    benefit3: 'Automatic participant count updates',
+    benefit4: 'Events auto-complete or delete when finished',
+  },
+
   // Statistics
   stats: {
     leaderboardTitle: '🏆 Event Participation Leaderboard',

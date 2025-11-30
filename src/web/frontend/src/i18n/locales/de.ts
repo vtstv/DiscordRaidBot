@@ -426,6 +426,16 @@ export const de: Translation = {
     viewRaidPlan: 'Raid-Plan ansehen',
     raidPlanAvailable: 'Für dieses Event ist ein Raid-Zusammensetzungsplan verfügbar',
   },
+  nativeEvents: {
+    title: 'Native Discord Events',
+    createEvents: 'Discord Events erstellen',
+    createEventsDescription: 'Automatisch native Discord-geplante Events für Ihre Bot-Events mit dynamischen Teilnehmer-Updates erstellen',
+    benefitsTitle: 'Vorteile nativer Discord-Events:',
+    benefit1: 'Events erscheinen im Discord-Server-Kalender',
+    benefit2: 'Mitglieder können als "Interessiert" markieren',
+    benefit3: 'Automatische Teilnehmerzahl-Updates',
+    benefit4: 'Events werden automatisch abgeschlossen oder gelöscht',
+  },
   errors: {
     accessDenied: 'Zugriff verweigert',
     accessDeniedEvents: 'Zugriff verweigert: Sie haben keine Berechtigung, Events anzuzeigen.',

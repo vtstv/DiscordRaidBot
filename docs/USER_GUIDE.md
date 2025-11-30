@@ -21,6 +21,9 @@ Create a new event with interactive options.
 - `channel` - Where to post event message (required)
 - `template` - Pre-configured template (optional)
 
+**Discord Event Options:**
+- `create-discord-event` - Create native Discord scheduled event (overrides server settings)
+
 **Voice Channel Options:**
 - `create-voice-channel` - Auto-create temporary voice channel
 - `voice-channel-name` - Custom name (default: event title)
@@ -37,7 +40,14 @@ Create a new event with interactive options.
   template: Mythic Plus Template
   create-voice-channel: true
   voice-restricted: true
+  create-discord-event: true
 ```
+
+**Note about Discord Events:**
+- If enabled (in server settings or via command), a native Discord scheduled event will be created
+- Participants count updates automatically in the Discord event description
+- Discord event completes/cancels when bot event does
+- Override server settings per-event using `create-discord-event: true/false`
 
 #### `/event list`
 View all upcoming events for your server.

@@ -11,6 +11,7 @@ import { createEventMessage } from '../../messages/eventMessage.js';
 import { logAction } from '../../services/auditLog.js';
 import { hasManagementPermissions } from '../../utils/permissions.js';
 import { getUserDisplayName } from '../../utils/discord.js';
+import { DiscordEventService } from '../../services/discordEvent.js';
 
 const logger = getModuleLogger('event:create');
 const prisma = getPrismaClient();
@@ -42,6 +43,7 @@ export async function handleCreate(interaction: ChatInputCommandInteraction): Pr
   const voiceChannelName = interaction.options.getString('voice-channel-name');
   const voiceChannelRestricted = interaction.options.getBoolean('voice-restricted') ?? false;
   const voiceChannelCreateBefore = interaction.options.getInteger('voice-create-before');
+  const createDiscordEventOverride = interaction.options.getBoolean('create-discord-event');
 
   // Input validation
   if (title.length < 1 || title.length > 256) {
@@ -220,6 +222,20 @@ export async function handleCreate(interaction: ChatInputCommandInteraction): Pr
         threadId,
       },
     });
+
+    // Create native Discord event if enabled
+    const shouldCreateDiscordEvent = createDiscordEventOverride !== null 
+      ? createDiscordEventOverride 
+      : guild.createNativeEvent;
+
+    if (shouldCreateDiscordEvent) {
+      try {
+        const discordEventService = new DiscordEventService(interaction.client);
+        await discordEventService.createDiscordEvent(event.id);
+      } catch (discordEventError) {
+        logger.warn({ error: discordEventError, eventId: event.id }, 'Failed to create Discord event');
+      }
+    }
 
     // Log action
     await logAction({

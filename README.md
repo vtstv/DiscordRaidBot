@@ -31,6 +31,7 @@ A powerful Discord event management system with automatic voice channels, web da
 ## ✨ Key Features
 
 🎯 **Interactive Events** - Slash commands with buttons/menus for signup  
+📅 **Native Discord Events** - Auto-create scheduled events in Discord calendar  
 🎤 **Auto Voice Channels** - Temporary channels created/deleted automatically  
 📝 **Templates** - Reusable configurations with role limits  
 ⏰ **Smart Scheduler** - Reminders, archiving, voice cleanup  
@@ -100,6 +101,14 @@ docker-compose up -d
 - Role-based participant limits with waitlist
 - Automatic reminders and archiving
 - Participant notes for managers
+- **Native Discord scheduled events** with auto-updates
+
+### Native Discord Events
+- Auto-create Discord calendar events
+- Real-time participant count updates
+- Automatic completion/cancellation sync
+- Per-event or server-wide settings
+- Override control via command options
 
 ### Voice Channels
 - Auto-create temporary channels before events

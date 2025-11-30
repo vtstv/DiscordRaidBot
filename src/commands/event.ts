@@ -137,6 +137,12 @@ const command: Command = {
             .setMaxValue(1440)
             .setRequired(false)
         )
+        .addBooleanOption(option =>
+          option
+            .setName('create-discord-event')
+            .setDescription('Create native Discord scheduled event (overrides server settings)')
+            .setRequired(false)
+        )
     )
     .addSubcommand(subcommand =>
       subcommand

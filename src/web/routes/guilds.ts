@@ -99,6 +99,7 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       participantNoteMaxLength?: number;
       showViewOnlineButton?: boolean;
       dmRemindersEnabled?: boolean;
+      createNativeEvent?: boolean;
       statsEnabled?: boolean;
       statsChannelId?: string;
       statsUpdateInterval?: string;
@@ -135,6 +136,7 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
     if (request.body.participantNoteMaxLength !== undefined) updateData.participantNoteMaxLength = request.body.participantNoteMaxLength;
     if (request.body.showViewOnlineButton !== undefined) updateData.showViewOnlineButton = request.body.showViewOnlineButton;
     if (request.body.dmRemindersEnabled !== undefined) updateData.dmRemindersEnabled = request.body.dmRemindersEnabled;
+    if (request.body.createNativeEvent !== undefined) updateData.createNativeEvent = request.body.createNativeEvent;
     if (request.body.statsEnabled !== undefined) updateData.statsEnabled = request.body.statsEnabled;
     if (request.body.statsChannelId !== undefined) updateData.statsChannelId = request.body.statsChannelId;
     if (request.body.statsUpdateInterval !== undefined) updateData.statsUpdateInterval = request.body.statsUpdateInterval;

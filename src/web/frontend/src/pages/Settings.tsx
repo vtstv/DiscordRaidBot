@@ -17,6 +17,7 @@ import ChannelsCard from './settings/ChannelsCard';
 import VoiceChannelsCard from './settings/VoiceChannelsCard';
 import StatisticsCard from './settings/StatisticsCard';
 import ParticipantNotesCard from './settings/ParticipantNotesCard';
+import DiscordEventsCard from './settings/DiscordEventsCard';
 import { ChevronLeftIcon } from './settings/icons';
 import { RolePermissionsMap } from './settings/types';
 
@@ -294,6 +295,7 @@ export default function Settings() {
                 <div className="space-y-6 animate-fadeIn">
                   <StatisticsCard settings={settings} setSettings={setSettings} channels={channels} roles={roles} />
                   <ParticipantNotesCard settings={settings} setSettings={setSettings} channels={channels} />
+                  <DiscordEventsCard settings={settings} setSettings={setSettings} />
                 </div>
               )}
             </div>

@@ -425,6 +425,16 @@ export const en = {
     viewRaidPlan: 'View Raid Plan',
     raidPlanAvailable: 'Raid composition plan is available for this event',
   },
+  nativeEvents: {
+    title: 'Native Discord Events',
+    createEvents: 'Create Discord Events',
+    createEventsDescription: 'Automatically create native Discord scheduled events for your bot events with dynamic participant updates',
+    benefitsTitle: 'Benefits of native Discord events:',
+    benefit1: 'Events appear in Discord server calendar',
+    benefit2: 'Members can mark as "Interested"',
+    benefit3: 'Automatic participant count updates',
+    benefit4: 'Events auto-complete or delete when finished',
+  },
   errors: {
     accessDenied: 'Access Denied',
     accessDeniedEvents: 'Access Denied: You do not have permission to view Events.',

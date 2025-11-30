@@ -44,6 +44,9 @@ model Guild {
   // DM reminder settings
   dmRemindersEnabled Boolean @default(false) @map("dmremindersenabled")  // Send DM reminders to confirmed participants
   
+  // Native Discord event settings
+  createNativeEvent Boolean @default(true) @map("createnativeevent")  // Create native Discord events for bot events
+  
   // Voice channel settings
   voiceChannelCategoryId String? @map("voicechannelcategoryid")  // Category for temporary voice channels
   voiceChannelDuration Int @default(120) @map("voicechannelduration")  // Minutes to keep channel AFTER event ends
@@ -90,6 +93,7 @@ model Event {
   channelId       String
   messageId       String?
   threadId        String?   // Thread for event comments
+  discordEventId  String?   @map("discordeventid")  // Native Discord scheduled event ID
   
   title           String
   description     String?

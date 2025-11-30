@@ -9,6 +9,7 @@ import { NotFoundError } from '../../utils/errors.js';
 import { updateEventMessage } from '../../messages/eventMessage.js';
 import { logAction } from '../../services/auditLog.js';
 import { getUserDisplayName } from '../../utils/discord.js';
+import { DiscordEventService } from '../../services/discordEvent.js';
 
 const logger = getModuleLogger('event:cancel');
 const prisma = getPrismaClient();
@@ -35,6 +36,14 @@ export async function handleCancel(interaction: ChatInputCommandInteraction): Pr
 
   // Update event message
   await updateEventMessage(event.id);
+
+  // Cancel native Discord event if exists
+  try {
+    const discordEventService = new DiscordEventService(interaction.client);
+    await discordEventService.completeDiscordEvent(event.id, true);
+  } catch (discordEventError) {
+    logger.warn({ error: discordEventError, eventId }, 'Failed to cancel Discord event');
+  }
 
   // Log action
   await logAction({

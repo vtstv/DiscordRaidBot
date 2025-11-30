@@ -9,6 +9,7 @@ import { getClient } from '../../bot/index.js';
 import { updateEventMessage } from '../../messages/eventMessage.js';
 import { processEventCompletion } from '../../services/statistics.js';
 import { deleteReminderMessages } from './reminders.js';
+import { DiscordEventService } from '../../services/discordEvent.js';
 
 const logger = getModuleLogger('scheduler:lifecycle');
 const prisma = getPrismaClient();
@@ -96,6 +97,16 @@ async function archiveEvent(event: any): Promise<void> {
       archivedAt: DateTime.now().toJSDate(),
     },
   });
+
+  // Complete native Discord event if exists
+  if (client) {
+    try {
+      const discordEventService = new DiscordEventService(client);
+      await discordEventService.completeDiscordEvent(event.id, false);
+    } catch (discordEventError) {
+      logger.warn({ error: discordEventError, eventId: event.id }, 'Failed to complete Discord event');
+    }
+  }
 
   // Process statistics for all confirmed participants
   try {

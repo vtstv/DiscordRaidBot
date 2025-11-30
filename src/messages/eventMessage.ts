@@ -14,6 +14,7 @@ import { DateTime } from 'luxon';
 import { getClient } from '../bot/index.js';
 import { getTranslator } from '../i18n/index.js';
 import { config } from '../config/env.js';
+import { DiscordEventService } from '../services/discordEvent.js';
 
 const logger = getModuleLogger('event-message');
 const prisma = getPrismaClient();
@@ -328,6 +329,14 @@ export async function updateEventMessage(eventId: string): Promise<void> {
 
     await message.edit(messageData);
     logger.debug({ eventId, messageId: event.messageId }, 'Event message updated');
+
+    // Update Discord scheduled event if exists
+    try {
+      const discordEventService = new DiscordEventService(client);
+      await discordEventService.updateDiscordEvent(eventId);
+    } catch (discordEventError) {
+      logger.warn({ error: discordEventError, eventId }, 'Failed to update Discord event');
+    }
   } catch (error) {
     logger.error({ error, eventId }, 'Failed to update event message');
   }

@@ -9,6 +9,7 @@ import { updateEventMessage } from '../../messages/eventMessage.js';
 import { logAction } from '../auditLog.js';
 import { updateParticipantStats } from '../statistics.js';
 import type { JoinEventParams, ParticipationResult } from './types.js';
+import type { Client } from 'discord.js';
 
 const logger = getModuleLogger('participation:join');
 const prisma = getPrismaClient();
