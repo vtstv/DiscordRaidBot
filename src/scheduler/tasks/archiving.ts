@@ -19,10 +19,25 @@ const prisma = getPrismaClient();
  */
 export async function checkEventStart(): Promise<void> {
   const now = DateTime.now();
+  const client = getClient();
+
+  if (!client) {
+    logger.warn('Discord client not available, skipping event start check');
+    return;
+  }
+
+  // Get guilds where bot is present
+  const botGuildIds = Array.from(client.guilds.cache.keys());
+
+  if (botGuildIds.length === 0) {
+    logger.debug('Bot not in any guilds, skipping event start check');
+    return;
+  }
 
   const events = await prisma.event.findMany({
     where: {
       status: 'scheduled',
+      guildId: { in: botGuildIds }, // Filter at SQL level
       startTime: {
         lte: now.toJSDate(),
       },
@@ -30,6 +45,7 @@ export async function checkEventStart(): Promise<void> {
   });
 
   for (const event of events) {
+
     try {
       await prisma.event.update({
         where: { id: event.id },
@@ -52,11 +68,26 @@ export async function checkEventStart(): Promise<void> {
  */
 export async function checkArchiving(): Promise<void> {
   const now = DateTime.now();
+  const client = getClient();
 
-  // Get active events that have passed
+  if (!client) {
+    logger.warn('Discord client not available, skipping archiving check');
+    return;
+  }
+
+  // Get guilds where bot is present
+  const botGuildIds = Array.from(client.guilds.cache.keys());
+
+  if (botGuildIds.length === 0) {
+    logger.debug('Bot not in any guilds, skipping archiving check');
+    return;
+  }
+
+  // Get active events that have passed, ONLY from guilds where bot is present
   const events = await prisma.event.findMany({
     where: {
       status: 'active',
+      guildId: { in: botGuildIds }, // Filter at SQL level
       startTime: {
         lte: now.minus({ hours: 1 }).toJSDate(), // Archive 1 hour after start
       },
@@ -67,6 +98,7 @@ export async function checkArchiving(): Promise<void> {
   });
 
   for (const event of events) {
+
     try {
       // If event has duration, check if it's actually completed
       if (event.duration) {

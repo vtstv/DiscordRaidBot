@@ -166,13 +166,15 @@ export async function getGuildMember(
 
 /**
  * Check if user has admin permissions in guild
+ * Only ADMINISTRATOR permission grants full access, bypassing role-based permissions
  */
 export function hasAdminPermissions(permissions: string): boolean {
   const permBigInt = BigInt(permissions);
   const ADMINISTRATOR = BigInt(0x8); // 8
-  const MANAGE_GUILD = BigInt(0x20); // 32
+  // Note: MANAGE_GUILD (0x20) is NOT enough for full admin access
+  // Users with MANAGE_GUILD but not ADMINISTRATOR will use role-based permissions
 
-  return (permBigInt & ADMINISTRATOR) === ADMINISTRATOR || (permBigInt & MANAGE_GUILD) === MANAGE_GUILD;
+  return (permBigInt & ADMINISTRATOR) === ADMINISTRATOR;
 }
 
 /**
@@ -186,7 +188,7 @@ export function getAvatarUrl(userId: string, avatarHash: string | null): string 
 }
 
 /**
- * Get guild roles
+ * Get guild roles via Discord Bot API
  */
 export async function getGuildRoles(guildId: string): Promise<any[]> {
   try {
@@ -197,10 +199,13 @@ export async function getGuildRoles(guildId: string): Promise<any[]> {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      const errorText = await response.text();
+      logger.error({ guildId, status: response.status, errorText }, 'Failed to get guild roles from Discord API');
+      return [];
     }
 
-    return (await response.json()) as any[];
+    const roles = await response.json();
+    return roles;
   } catch (error) {
     logger.error({ error, guildId }, 'Failed to get guild roles');
     return [];
@@ -208,7 +213,7 @@ export async function getGuildRoles(guildId: string): Promise<any[]> {
 }
 
 /**
- * Get guild channels
+ * Get guild channels via Discord Bot API
  */
 export async function getGuildChannels(guildId: string): Promise<any[]> {
   try {
@@ -219,10 +224,13 @@ export async function getGuildChannels(guildId: string): Promise<any[]> {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      const errorText = await response.text();
+      logger.error({ guildId, status: response.status, errorText }, 'Failed to get guild channels from Discord API');
+      return [];
     }
 
-    return (await response.json()) as any[];
+    const channels = await response.json();
+    return channels;
   } catch (error) {
     logger.error({ error, guildId }, 'Failed to get guild channels');
     return [];

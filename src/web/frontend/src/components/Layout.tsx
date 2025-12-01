@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGuild } from '../contexts/GuildContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useI18n } from '../contexts/I18nContext';
+import { LanguageSwitcher } from './landing/LanguageSwitcher';
 import './Layout.css';
 
 interface LayoutProps {
@@ -148,16 +149,7 @@ export default function Layout({ children }: LayoutProps) {
                   </svg>
                 )}
               </button>
-              <select
-                value={locale}
-                onChange={(e) => setLocale(e.target.value as 'en' | 'ru' | 'de')}
-                className="px-2 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-0 focus:ring-2 focus:ring-purple-500 transition-colors flex-shrink-0"
-                title="Select Language"
-              >
-                <option value="en">EN</option>
-                <option value="ru">RU</option>
-                <option value="de">DE</option>
-              </select>
+              <LanguageSwitcher compact />
             </div>
           </div>
           

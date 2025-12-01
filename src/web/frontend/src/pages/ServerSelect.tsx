@@ -7,12 +7,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGuild } from '../contexts/GuildContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useI18n } from '../contexts/I18nContext';
+import { LanguageSwitcher } from '../components/landing/LanguageSwitcher';
 import api, { Guild } from '../services/api';
 
 export default function ServerSelect() {
   const { user, logout } = useAuth();
   const { setSelectedGuild } = useGuild();
   const { theme, toggleTheme } = useTheme();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +43,7 @@ export default function ServerSelect() {
     try {
       setLoading(true);
       const data = await api.getAdminGuilds();
+      console.log('[ServerSelect] Guilds received:', data.guilds.map(g => ({ name: g.name, hasBot: g.hasBot })));
       setGuilds(data.guilds);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load servers');
@@ -58,7 +62,7 @@ export default function ServerSelect() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors duration-200">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading servers...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t.serverSelect.loadingServers}</p>
         </div>
       </div>
     );
@@ -73,7 +77,7 @@ export default function ServerSelect() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Error</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t.serverSelect.error}</h3>
           <p className="text-gray-600 dark:text-gray-400">{error}</p>
         </div>
       </div>
@@ -93,15 +97,18 @@ export default function ServerSelect() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Select a Server</h1>
-                <p className="text-gray-600 dark:text-gray-400">Choose which server to manage</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t.serverSelect.title}</h1>
+                <p className="text-gray-600 dark:text-gray-400">{t.serverSelect.subtitle}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Language Switcher */}
+              <LanguageSwitcher compact />
+              
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className="p-2.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
                 {theme === 'dark' ? (
@@ -124,11 +131,11 @@ export default function ServerSelect() {
                       alt={user.username}
                       className="w-10 h-10 rounded-full border-2 border-purple-300 dark:border-purple-600 cursor-pointer hover:scale-110 transition-transform"
                       onClick={() => {
-                        if (window.confirm('Are you sure you want to logout?')) {
+                        if (window.confirm(t.serverSelect.logout)) {
                           logout();
                         }
                       }}
-                      title={`${user.username} (click to logout)`}
+                      title={t.serverSelect.logoutTitle.replace('{username}', user.username)}
                     />
                   )}
                 </div>
@@ -147,29 +154,33 @@ export default function ServerSelect() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">No Servers Available</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">No servers found where you can manage the bot.</p>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t.serverSelect.noServersTitle}</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{t.serverSelect.noServersDescription}</p>
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 text-left max-w-md mx-auto">
-              <p className="text-blue-900 dark:text-blue-300 font-semibold mb-3">Make sure:</p>
+              <p className="text-blue-900 dark:text-blue-300 font-semibold mb-3">{t.serverSelect.makeSure}</p>
               <ul className="space-y-2 text-blue-800 dark:text-blue-400">
                 <li className="flex items-start gap-2">
                   <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>You have MANAGE_GUILD or ADMINISTRATOR permissions</span>
+                  <span>{t.serverSelect.requirement1}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>The bot is invited to the server</span>
+                  <span>{t.serverSelect.requirement2}</span>
                 </li>
               </ul>
             </div>
           </div>
         ) : (
           <>
-            <p className="text-gray-600 dark:text-gray-400 mb-8 text-center">{guilds.length} server{guilds.length !== 1 ? 's' : ''} available</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-8 text-center">
+              {t.serverSelect.serversAvailable
+                .replace('{count}', guilds.length.toString())
+                .replace('{plural}', guilds.length !== 1 ? 's' : '')}
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {guilds.map(guild => (
                 <div
@@ -191,9 +202,19 @@ export default function ServerSelect() {
                     )}
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{guild.name}</h3>
                     {guild.owner && (
-                      <span className="inline-block px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-semibold rounded-full">
-                        👑 Owner
+                      <span className="inline-block px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-semibold rounded-full mb-2">
+                        {t.serverSelect.owner}
                       </span>
+                    )}
+                    {guild.hasBot === false && (
+                      <div className="mt-2 px-3 py-2 bg-orange-100 dark:bg-orange-900/30 border border-orange-300 dark:border-orange-700 rounded-lg">
+                        <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300 text-xs">
+                          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <span className="font-medium">{t.serverSelect.botNotPresent}</span>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

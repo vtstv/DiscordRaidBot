@@ -1,15 +1,18 @@
 import { LandingFooter } from './LandingFooter';
+import { useI18n } from '../../contexts/I18nContext';
 
 export const FeaturesSection: React.FC = () => {
+  const { t } = useI18n();
+  
   return (
     <section className="min-h-screen flex flex-col justify-center pt-6 pb-0 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30 dark:from-gray-900 dark:via-indigo-950/30 dark:to-purple-950/30 transition-colors duration-300">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 flex-grow flex flex-col justify-center">
         <div className="text-center mb-5">
           <h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white mb-2">
-            Powerful Features
+            {t.landing.features.title}
           </h2>
           <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-            Everything you need to organize and manage Discord events at scale
+            {t.landing.features.subtitle}
           </p>
         </div>
         
@@ -19,8 +22,8 @@ export const FeaturesSection: React.FC = () => {
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform">
               <span className="text-xl sm:text-2xl">📅</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">Event Scheduling</h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Create events with custom dates, times, timezone support, and participant limits. Calendar view included!</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">{t.landing.features.eventScheduling.title}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t.landing.features.eventScheduling.description}</p>
           </div>
 
           {/* Participant Management */}
@@ -28,8 +31,8 @@ export const FeaturesSection: React.FC = () => {
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform">
               <span className="text-xl sm:text-2xl">👥</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">Smart Participants</h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Role-based signup, waitlists, bench overflow, and participant notes for better organization</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">{t.landing.features.smartParticipants.title}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t.landing.features.smartParticipants.description}</p>
           </div>
 
           {/* Event Templates */}
@@ -37,8 +40,8 @@ export const FeaturesSection: React.FC = () => {
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform">
               <span className="text-xl sm:text-2xl">📋</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">Event Templates</h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Save time with reusable templates including roles, limits, and custom configurations</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">{t.landing.features.eventTemplates.title}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t.landing.features.eventTemplates.description}</p>
           </div>
 
           {/* Reminders & Notifications */}
@@ -46,8 +49,8 @@ export const FeaturesSection: React.FC = () => {
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform">
               <span className="text-xl sm:text-2xl">🔔</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">Reminders & DMs</h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Automatic reminders before events, DM notifications, and configurable reminder intervals</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">{t.landing.features.reminders.title}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t.landing.features.reminders.description}</p>
           </div>
 
           {/* Statistics & Analytics */}
@@ -55,8 +58,8 @@ export const FeaturesSection: React.FC = () => {
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-xl flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform">
               <span className="text-xl sm:text-2xl">📊</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">Statistics & Leaderboards</h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Track participation, no-shows, auto-roles for top participants, and detailed analytics</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">{t.landing.features.statistics.title}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t.landing.features.statistics.description}</p>
           </div>
 
           {/* Voice Channels */}
@@ -64,8 +67,8 @@ export const FeaturesSection: React.FC = () => {
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-rose-500 to-red-500 rounded-xl flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform">
               <span className="text-xl sm:text-2xl">🎙️</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">Auto Voice Channels</h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Automatic voice channel creation and cleanup with participant restrictions</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">{t.landing.features.voiceChannels.title}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t.landing.features.voiceChannels.description}</p>
           </div>
 
           {/* Threads & Organization */}
@@ -73,8 +76,8 @@ export const FeaturesSection: React.FC = () => {
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform">
               <span className="text-xl sm:text-2xl">💬</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">Thread Management</h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Auto-create event threads for discussions, with cleanup and archiving options</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">{t.landing.features.threads.title}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t.landing.features.threads.description}</p>
           </div>
 
           {/* Multi-language Support */}
@@ -82,8 +85,8 @@ export const FeaturesSection: React.FC = () => {
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-fuchsia-500 to-pink-500 rounded-xl flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform">
               <span className="text-xl sm:text-2xl">🌍</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">Multi-language</h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Support for English and Russian with easy extensibility for more languages</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">{t.landing.features.multiLanguage.title}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t.landing.features.multiLanguage.description}</p>
           </div>
 
           {/* Web Dashboard */}
@@ -91,8 +94,8 @@ export const FeaturesSection: React.FC = () => {
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform">
               <span className="text-xl sm:text-2xl">🌐</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">Web Dashboard</h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Full-featured web interface with dark mode, calendar view, and mobile support</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5">{t.landing.features.webDashboard.title}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t.landing.features.webDashboard.description}</p>
           </div>
         </div>
       </div>

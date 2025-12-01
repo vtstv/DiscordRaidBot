@@ -120,6 +120,18 @@ export interface DiscordChannel {
   parent_id?: string;
 }
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public code?: string,
+    public guildName?: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 class ApiService {
   private baseUrl = '';
 
@@ -139,7 +151,15 @@ class ApiService {
 
     if (!response.ok) {
       const error: any = await response.json().catch(() => ({ error: 'Request failed' }));
-      throw new Error(error.error || error.message || 'Request failed');
+      const errorMessage = error.error || error.message || 'Request failed';
+      
+      // Create enhanced error with additional context
+      throw new ApiError(
+        errorMessage,
+        response.status,
+        error.code,
+        error.guildName
+      );
     }
 
     // Handle 204 No Content responses

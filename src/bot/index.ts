@@ -12,6 +12,7 @@ import { handlePrefixCommand } from './prefixCommandHandler.js';
 import { startScheduler, stopScheduler } from '../scheduler/eventScheduler.js';
 import { startStatsScheduler, stopStatsScheduler } from '../scheduler/statsScheduler.js';
 import { initializeSubscriber, closeSubscriber } from '../services/eventSubscriber.js';
+import { initGuildSync, closeGuildSync } from '../services/botGuildSync.js';
 
 const logger = getModuleLogger('bot');
 
@@ -121,6 +122,12 @@ async function handleGuildCreate(guild: any): Promise<void> {
       },
     });
     logger.info({ guildId: guild.id }, 'Guild info updated in database');
+
+    // Trigger immediate guild sync to Redis
+    if (client) {
+      const { initGuildSync } = await import('../services/botGuildSync.js');
+      await initGuildSync(client);
+    }
   } catch (error) {
     logger.error({ error, guildId: guild.id }, 'Failed to update guild info');
   }
@@ -204,6 +211,10 @@ async function handleReady(client: Client): Promise<void> {
   // Initialize Redis event subscriber
   await initializeSubscriber();
   logger.info('Event subscriber started');
+
+  // Initialize guild sync to Redis (for web container)
+  await initGuildSync(readyClient);
+  logger.info('Guild sync to Redis started');
 }
 
 /**
@@ -245,6 +256,7 @@ export async function shutdown(): Promise<void> {
   stopScheduler();
   stopStatsScheduler();
   await closeSubscriber();
+  await closeGuildSync();
 
   if (client) {
     client.destroy();

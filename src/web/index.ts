@@ -127,7 +127,16 @@ export async function startWebServer(): Promise<void> {
       }
       // Otherwise serve React app index.html (including /a route)
       reply.type('text/html');
-      return reply.sendFile('index.html', frontendRoot);
+      
+      // Read index.html and inject environment variables
+      const fs = await import('fs/promises');
+      const indexPath = path.join(frontendRoot, 'index.html');
+      let html = await fs.readFile(indexPath, 'utf-8');
+      
+      // Replace placeholders with actual values
+      html = html.replace('%DISCORD_CLIENT_ID%', config.DISCORD_CLIENT_ID);
+      
+      return reply.send(html);
     });
 
     // Start server

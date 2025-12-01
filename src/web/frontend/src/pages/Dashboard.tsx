@@ -3,9 +3,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
+import { api, ApiError } from '../services/api';
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
+import GuildErrorBoundary from '../components/GuildErrorBoundary';
 import { useI18n } from '../contexts/I18nContext';
 
 export default function Dashboard() {
@@ -14,10 +15,14 @@ export default function Dashboard() {
   const { t } = useI18n();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (guildId) {
-      api.getGuildStats(guildId).then(setStats).finally(() => setLoading(false));
+      api.getGuildStats(guildId)
+        .then(setStats)
+        .catch(err => setError(err))
+        .finally(() => setLoading(false));
     }
   }, [guildId]);
 
@@ -34,6 +39,14 @@ export default function Dashboard() {
     );
   }
 
+  return (
+    <GuildErrorBoundary error={error} loading={loading}>
+      <DashboardContent stats={stats} guildId={guildId} navigate={navigate} t={t} />
+    </GuildErrorBoundary>
+  );
+}
+
+function DashboardContent({ stats, guildId, navigate, t }: any) {
   return (
     <Layout>
       <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-4 lg:py-8 transition-colors duration-200">

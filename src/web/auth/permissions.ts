@@ -106,10 +106,13 @@ export function requireModulePermission(module: DashboardModule) {
       return;
     }
 
-    // Check if user is admin of this guild (has ADMINISTRATOR permission)
-    const isGuildAdmin = adminGuilds.some((g: any) => g.id === guildId);
-    if (isGuildAdmin) {
-      // Guild admins have access to all modules
+    // Check if user is admin of this guild
+    const userGuild = adminGuilds.find((g: any) => g.id === guildId);
+    const isGuildAdmin = !!userGuild;
+    const isRoleBased = userGuild?.isRoleBased || false;
+    
+    // Guild admins have access to all modules ONLY if not role-based
+    if (isGuildAdmin && !isRoleBased) {
       return;
     }
 
@@ -133,7 +136,8 @@ export async function getUserPermissions(
   guildId: string,
   userId: string,
   isAdmin: boolean = false,
-  isBotAdmin: boolean = false
+  isBotAdmin: boolean = false,
+  isRoleBased: boolean = false
 ): Promise<{
   events: boolean;
   compositions: boolean;
@@ -141,7 +145,7 @@ export async function getUserPermissions(
   settings: boolean;
   isManager: boolean;
 }> {
-  logger.info({ guildId, userId, isAdmin, isBotAdmin }, 'getUserPermissions called');
+  logger.info({ guildId, userId, isAdmin, isBotAdmin, isRoleBased }, 'getUserPermissions called');
   
   // Bot admins (global admins from ADMIN_USER_IDS) have full access to all guilds
   if (isBotAdmin) {
@@ -156,8 +160,9 @@ export async function getUserPermissions(
   }
   
   // Guild admins (users with ADMINISTRATOR permission) have full access
-  if (isAdmin) {
-    logger.info({ guildId, userId }, 'User is guild admin - granting full access');
+  // BUT NOT if they only have access via role-based permissions
+  if (isAdmin && !isRoleBased) {
+    logger.info({ guildId, userId }, 'User is guild admin (ADMINISTRATOR permission) - granting full access, bypassing role permissions');
     return {
       events: true,
       compositions: true,
@@ -165,6 +170,11 @@ export async function getUserPermissions(
       settings: true,
       isManager: true,
     };
+  }
+  
+  // If isRoleBased is true, user only has access via dashboard roles, not ADMINISTRATOR
+  if (isRoleBased) {
+    logger.info({ guildId, userId }, 'User has role-based access - checking DashboardRolePermission');
   }
   try {
     const guild = await prisma.guild.findUnique({
@@ -263,4 +273,82 @@ export async function getUserPermissions(
       isManager: false,
     };
   }
+}
+
+/**
+ * Middleware to require any access to a guild (for stats, public data, etc.)
+ * This is a basic check that user has some relationship with the guild
+ */
+export function requireGuildAccess() {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = (request as any).session?.user;
+    const adminGuilds = (request as any).session?.adminGuilds || [];
+    const isBotAdmin = (request as any).session?.isBotAdmin || false;
+    const guildId = (request.params as any)?.guildId || (request.query as any)?.guildId;
+
+    if (!user) {
+      return reply.code(401).send({ error: 'Not authenticated' });
+    }
+
+    if (!guildId) {
+      return reply.code(400).send({ error: 'Guild ID required' });
+    }
+
+    // Bot admins have access to all guilds
+    if (isBotAdmin) {
+      return;
+    }
+
+    // Check if user is admin or member of this guild
+    const userGuild = adminGuilds.find((g: any) => g.id === guildId);
+    
+    if (userGuild) {
+      // User is admin or has dashboard role access
+      return;
+    }
+
+    // Check if user has ANY dashboard role in this guild
+    try {
+      const guild = await prisma.guild.findUnique({
+        where: { id: guildId },
+        select: {
+          dashboardRoles: true,
+          managerRoleId: true,
+        },
+      });
+
+      if (!guild) {
+        return reply.code(404).send({ error: 'Guild not found' });
+      }
+
+      const memberInfo = await getGuildMember(guildId, user.id);
+      
+      if (!memberInfo) {
+        logger.warn({ userId: user.id, guildId }, 'User is not a member of this guild');
+        return reply.code(403).send({ 
+          error: 'Forbidden',
+          message: 'You are not a member of this guild' 
+        });
+      }
+
+      const userRoles = memberInfo.roles;
+
+      // Check if user has manager role or any dashboard role
+      const hasManagerRole = guild.managerRoleId && userRoles.includes(guild.managerRoleId);
+      const hasDashboardRole = userRoles.some(roleId => guild.dashboardRoles.includes(roleId));
+
+      if (hasManagerRole || hasDashboardRole) {
+        return;
+      }
+
+      logger.warn({ userId: user.id, guildId }, 'User has no roles granting access to guild');
+      return reply.code(403).send({ 
+        error: 'Forbidden',
+        message: 'You do not have permission to access this guild' 
+      });
+    } catch (error) {
+      logger.error({ error, guildId, userId: user.id }, 'Error checking guild access');
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  };
 }

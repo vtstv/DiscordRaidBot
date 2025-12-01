@@ -4,7 +4,8 @@
 
 import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
-import { requireGuildAdmin } from '../auth/middleware.js';
+import { requireGuildAdmin, clearGuildMemberCache } from '../auth/middleware.js';
+import { requireModulePermission, requireGuildAccess } from '../auth/permissions.js';
 import { getUserGuilds, getGuildRoles, getGuildChannels, getGuildCategories } from '../auth/discord-oauth.js';
 import { getModuleLogger } from '../../utils/logger.js';
 
@@ -54,11 +55,9 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
   // Get guild settings
   server.get<{
     Params: { guildId: string };
-  }>('/:guildId/settings', async (request, reply) => {
-    // Add guildId to request for middleware
-    (request as any).params = { guildId: request.params.guildId };
-    await requireGuildAdmin(request as any, reply);
-    if (reply.sent) return;
+  }>('/:guildId/settings', {
+    preHandler: requireModulePermission('settings')
+  }, async (request, reply) => {
 
     const { guildId } = request.params;
 
@@ -110,12 +109,9 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       voiceChannelDuration?: number;
       voiceChannelCreateBefore?: number;
     };
-  }>('/:guildId/settings', async (request, reply) => {
-    // Add guildId to request for middleware
-    (request as any).params = { guildId: request.params.guildId };
-    await requireGuildAdmin(request as any, reply);
-    if (reply.sent) return;
-
+  }>('/:guildId/settings', {
+    preHandler: requireModulePermission('settings')
+  }, async (request, reply) => {
     const { guildId } = request.params;
     const updateData: any = {};
 
@@ -167,7 +163,9 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
   // Get guild statistics
   server.get<{
     Params: { guildId: string };
-  }>('/:guildId/stats', async (request, reply) => {
+  }>('/:guildId/stats', {
+    preHandler: requireGuildAccess()
+  }, async (request, reply) => {
     const { guildId } = request.params;
 
     try {
@@ -201,12 +199,9 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
   // Get guild roles
   server.get<{
     Params: { guildId: string };
-  }>('/:guildId/roles', async (request, reply) => {
-    // Add guildId to request for middleware
-    (request as any).params = { guildId: request.params.guildId };
-    await requireGuildAdmin(request as any, reply);
-    if (reply.sent) return;
-
+  }>('/:guildId/roles', {
+    preHandler: requireModulePermission('settings')
+  }, async (request, reply) => {
     const { guildId } = request.params;
 
     try {
@@ -221,12 +216,9 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
   // Get guild channels
   server.get<{
     Params: { guildId: string };
-  }>('/:guildId/channels', async (request, reply) => {
-    // Add guildId to request for middleware
-    (request as any).params = { guildId: request.params.guildId };
-    await requireGuildAdmin(request as any, reply);
-    if (reply.sent) return;
-
+  }>('/:guildId/channels', {
+    preHandler: requireModulePermission('settings')
+  }, async (request, reply) => {
     const { guildId } = request.params;
 
     try {
@@ -241,12 +233,9 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
   // Get guild categories (for voice channel settings)
   server.get<{
     Params: { guildId: string };
-  }>('/:guildId/categories', async (request, reply) => {
-    // Add guildId to request for middleware
-    (request as any).params = { guildId: request.params.guildId };
-    await requireGuildAdmin(request as any, reply);
-    if (reply.sent) return;
-
+  }>('/:guildId/categories', {
+    preHandler: requireModulePermission('settings')
+  }, async (request, reply) => {
     const { guildId } = request.params;
 
     try {
@@ -261,10 +250,9 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
   // Get dashboard role permissions
   server.get<{
     Params: { guildId: string };
-  }>('/:guildId/role-permissions', async (request, reply) => {
-    await requireGuildAdmin(request as any, reply);
-    if (reply.sent) return;
-
+  }>('/:guildId/role-permissions', {
+    preHandler: requireModulePermission('settings')
+  }, async (request, reply) => {
     const { guildId } = request.params;
 
     try {
@@ -289,10 +277,9 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       canAccessTemplates?: boolean;
       canAccessSettings?: boolean;
     };
-  }>('/:guildId/role-permissions', async (request, reply) => {
-    await requireGuildAdmin(request as any, reply);
-    if (reply.sent) return;
-
+  }>('/:guildId/role-permissions', {
+    preHandler: requireModulePermission('settings')
+  }, async (request, reply) => {
     const { guildId } = request.params;
     const { roleId, canAccessEvents, canAccessCompositions, canAccessTemplates, canAccessSettings } = request.body;
 
@@ -321,6 +308,10 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       });
 
       logger.info({ guildId, roleId, permission }, 'Role permissions updated');
+      
+      // Clear cache to force fresh permission checks
+      clearGuildMemberCache(guildId);
+      
       return permission;
     } catch (error) {
       logger.error({ error, guildId, roleId }, 'Failed to update role permissions');
@@ -331,10 +322,9 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
   // Delete dashboard role permissions
   server.delete<{
     Params: { guildId: string; roleId: string };
-  }>('/:guildId/role-permissions/:roleId', async (request, reply) => {
-    await requireGuildAdmin(request as any, reply);
-    if (reply.sent) return;
-
+  }>('/:guildId/role-permissions/:roleId', {
+    preHandler: requireModulePermission('settings')
+  }, async (request, reply) => {
     const { guildId, roleId } = request.params;
 
     try {
@@ -348,6 +338,10 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
       });
 
       logger.info({ guildId, roleId }, 'Role permissions deleted');
+      
+      // Clear cache to force fresh permission checks
+      clearGuildMemberCache(guildId);
+      
       return { success: true };
     } catch (error: any) {
       if (error.code === 'P2025') {
@@ -374,18 +368,23 @@ export async function guildsRoutes(server: FastifyInstance): Promise<void> {
 
     try {
       // Check if user is admin of this guild
-      const isAdmin = adminGuilds.some((g: any) => g.id === guildId);
+      // But exclude guilds that are only accessible via dashboardRoles (isRoleBased flag)
+      const guildAccess = adminGuilds.find((g: any) => g.id === guildId);
+      const isAdmin = guildAccess && !guildAccess.isRoleBased;
+      const isRoleBased = guildAccess?.isRoleBased || false;
+      
       logger.info({ 
         userId: user.id, 
         guildId, 
         isAdmin,
+        isRoleBased,
         isBotAdmin,
         adminGuildsCount: adminGuilds.length,
-        adminGuildIds: adminGuilds.map((g: any) => g.id)
+        adminGuildIds: adminGuilds.map((g: any) => ({ id: g.id, isRoleBased: g.isRoleBased || false }))
       }, 'Checking my-permissions');
       
       const { getUserPermissions } = await import('../auth/permissions.js');
-      const permissions = await getUserPermissions(guildId, user.id, isAdmin, isBotAdmin);
+      const permissions = await getUserPermissions(guildId, user.id, isAdmin, isBotAdmin, isRoleBased);
       return permissions;
     } catch (error) {
       logger.error({ error, guildId, userId: user.id }, 'Failed to get user permissions');

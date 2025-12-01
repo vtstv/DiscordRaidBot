@@ -15,6 +15,7 @@ import {
 import { config } from '../../config/env.js';
 import { getModuleLogger } from '../../utils/logger.js';
 import getPrismaClient from '../../database/db.js';
+import { getBotGuildIds } from '../../services/botGuildSync.js';
 import '../types/session.js'; // Import session type declarations
 
 const logger = getModuleLogger('auth-routes');
@@ -140,7 +141,11 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
             // Find the guild in user's guilds list
             const guildInfo = guilds.find(g => g.id === dbGuild.id);
             if (guildInfo) {
-              adminGuilds.push(guildInfo);
+              // Mark this guild as role-based access (not admin)
+              adminGuilds.push({
+                ...guildInfo,
+                isRoleBased: true // Flag to indicate this is role-based, not admin
+              } as any);
             } else {
               // User is in the guild but it didn't come from Discord API
               // This shouldn't happen, but add it anyway with minimal info
@@ -148,9 +153,10 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
                 id: dbGuild.id,
                 name: dbGuild.name,
                 icon: null,
+                isRoleBased: true, // Flag to indicate this is role-based, not admin
                 owner: false,
                 permissions: '0'
-              });
+              } as any);
             }
           }
         }
@@ -175,13 +181,22 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       request.session.refreshToken = tokenData.refresh_token;
       request.session.expiresAt = Date.now() + tokenData.expires_in * 1000;
 
-      // Store admin guilds
+      // Store admin guilds with isRoleBased flag
       request.session.adminGuilds = adminGuilds.map(g => ({
         id: g.id,
         name: g.name,
         icon: g.icon,
         owner: g.owner,
+        isRoleBased: (g as any).isRoleBased || false,
       }));
+
+      // Check if user is bot admin and store in session
+      const isBotAdmin = ADMIN_IDS.includes(user.id);
+      request.session.isBotAdmin = isBotAdmin;
+
+      // Clear user cache to ensure fresh data on first request
+      const { clearUserCache } = await import('../auth/middleware.js');
+      clearUserCache(user.id);
 
       logger.info({ 
         userId: user.id, 
@@ -192,14 +207,11 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       // Get the stored returnTo or default redirect
       const returnTo = stateData.returnTo || '/';
       
-      // Check if user is bot admin
-      const isBotAdmin = ADMIN_IDS.includes(user.id);
-      
       logger.info({ 
         userId: user.id,
         username: user.username,
         adminIds: ADMIN_IDS,
-        isBotAdmin,
+        isBotAdmin: request.session.isBotAdmin,
         adminGuildsCount: adminGuilds.length
       }, 'OAuth: Checking user permissions');
       
@@ -208,7 +220,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       // 2. Guild admins go to /servers (server selection)
       // 3. Regular users go to returnTo
       let redirectUrl = returnTo;
-      if (isBotAdmin) {
+      if (request.session.isBotAdmin) {
         redirectUrl = '/select-panel';
       } else if (adminGuilds.length > 0) {
         redirectUrl = '/servers';
@@ -216,7 +228,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
       
       logger.info({ 
         userId: user.id, 
-        isBotAdmin, 
+        isBotAdmin: request.session.isBotAdmin, 
         hasGuildAdmin: adminGuilds.length > 0,
         redirectUrl 
       }, 'Redirecting after OAuth');
@@ -304,7 +316,9 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
 
   /**
    * GET /auth/guilds
-   * Get user's admin guilds (filtered to only guilds where bot is present)
+   * Get user's admin guilds - show guilds where:
+   * 1. (Bot present AND user is member) OR (Data in DB AND user is member)
+   * 2. Mark each guild with hasBot: true/false
    */
   fastify.get('/auth/guilds', async (request, reply) => {
     const user = (request as any).session?.user;
@@ -318,20 +332,63 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
 
     const adminGuilds = (request as any).session?.adminGuilds || [];
     
-    // Filter to only guilds where bot is present (in database)
+    // Get guilds where bot is actually present (from Redis synced by bot container)
+    const botGuildIdsArray = await getBotGuildIds();
+    const botGuildIds = new Set(botGuildIdsArray);
+    
+    // Get guilds that have data in database
     const guildIds = adminGuilds.map((g: any) => g.id);
     const dbGuilds = await prisma.guild.findMany({
-      where: {
-        id: { in: guildIds }
-      },
-      select: {
-        id: true,
-      },
+      where: { id: { in: guildIds } },
+      select: { id: true },
     });
-    
     const dbGuildIds = new Set(dbGuilds.map(g => g.id));
-    const guildsWithBot = adminGuilds.filter((g: any) => dbGuildIds.has(g.id));
     
-    reply.send({ guilds: guildsWithBot });
+    logger.debug({ 
+      botGuildCount: botGuildIds.size,
+      dbGuildCount: dbGuildIds.size,
+      adminGuildCount: adminGuilds.length 
+    }, 'Checking guild presence');
+    
+    // Show guilds where: (bot present OR data in DB) AND user is member
+    const filteredGuilds: any[] = [];
+    
+    for (const g of adminGuilds) {
+      const hasBot = botGuildIds.has(g.id);
+      const inDB = dbGuildIds.has(g.id);
+      
+      // Skip if neither bot present nor data in DB
+      if (!hasBot && !inDB) {
+        logger.debug({ guildId: g.id, guildName: g.name }, 'Skipping guild - no bot and no data');
+        continue;
+      }
+      
+      // If bot is present, verify user is actually a member via Discord API
+      // If bot is NOT present, we can't verify membership (bot can't access guild info)
+      // so trust the OAuth data (guild is in adminGuilds = user has access)
+      if (hasBot) {
+        const memberInfo = await getGuildMember(g.id, user.id);
+        if (!memberInfo) {
+          logger.debug({ guildId: g.id, guildName: g.name, userId: user.id }, 'Skipping guild - user not a member');
+          continue;
+        }
+      }
+      
+      filteredGuilds.push({
+        ...g,
+        hasBot, // true if bot present, false if only data in DB
+      });
+      
+      logger.debug({
+        guildId: g.id,
+        guildName: g.name,
+        hasBot,
+        inDB
+      }, 'Guild included in list');
+    }
+    
+    logger.debug({ resultCount: filteredGuilds.length }, 'Filtered guilds result');
+    
+    reply.send({ guilds: filteredGuilds });
   });
 }

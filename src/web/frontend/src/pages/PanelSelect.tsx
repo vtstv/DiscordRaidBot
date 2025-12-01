@@ -1,24 +1,47 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useI18n } from '../contexts/I18nContext';
 
 export default function PanelSelect() {
   const navigate = useNavigate();
-  const { user, isBotAdmin, adminGuilds } = useAuth();
+  const { user, isBotAdmin, adminGuilds, loading } = useAuth();
+  const { t } = useI18n();
 
   useEffect(() => {
-    // Redirect if not bot admin
-    if (!isBotAdmin) {
+    // Redirect if not bot admin (only after loading completes)
+    if (!loading && !isBotAdmin) {
       if (adminGuilds && adminGuilds.length > 0) {
         navigate('/servers');
       } else {
         navigate('/');
       }
     }
-  }, [isBotAdmin, adminGuilds, navigate]);
+  }, [loading, isBotAdmin, adminGuilds, navigate]);
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">{t.common?.loading || 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated or not bot admin, redirect will happen via useEffect
+  // Show a temporary loading state while redirect happens
   if (!isBotAdmin || !user) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -26,10 +49,10 @@ export default function PanelSelect() {
       <div className="max-w-6xl w-full">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
-            Welcome, {user.username}!
+            {t.panelSelect.welcome.replace('{username}', user.username)}
           </h1>
           <p className="text-xl text-gray-700 dark:text-gray-300">
-            As a bot administrator, you have access to both panels. Choose where you want to go:
+            {t.panelSelect.subtitle}
           </p>
         </div>
 
@@ -61,30 +84,30 @@ export default function PanelSelect() {
                   />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Bot Admin Panel</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{t.panelSelect.botAdminPanel}</h2>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Global bot administration: manage all servers, system settings, and statistics
+                {t.panelSelect.botAdminDescription}
               </p>
               <ul className="text-left text-gray-700 dark:text-gray-300 space-y-3 mb-6">
                 <li className="flex items-start">
                   <span className="text-green-600 dark:text-green-400 mr-2 font-bold">✓</span>
-                  <span>All servers access</span>
+                  <span>{t.panelSelect.botAdminFeature1}</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-600 dark:text-green-400 mr-2 font-bold">✓</span>
-                  <span>Global search and analytics</span>
+                  <span>{t.panelSelect.botAdminFeature2}</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-600 dark:text-green-400 mr-2 font-bold">✓</span>
-                  <span>System configuration</span>
+                  <span>{t.panelSelect.botAdminFeature3}</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-600 dark:text-green-400 mr-2 font-bold">✓</span>
-                  <span>Bulk operations</span>
+                  <span>{t.panelSelect.botAdminFeature4}</span>
                 </li>
               </ul>
               <div className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl font-semibold group-hover:shadow-lg transition-shadow">
-                Open Bot Admin →
+                {t.panelSelect.openBotAdmin}
               </div>
             </div>
           </div>
@@ -110,30 +133,30 @@ export default function PanelSelect() {
                   />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Guild Admin Panel</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{t.panelSelect.guildAdminPanel}</h2>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Manage your Discord servers: events, templates, and server-specific settings
+                {t.panelSelect.guildAdminDescription}
               </p>
               <ul className="text-left text-gray-700 dark:text-gray-300 space-y-3 mb-6">
                 <li className="flex items-start">
                   <span className="text-green-600 dark:text-green-400 mr-2 font-bold">✓</span>
-                  <span>Your servers only</span>
+                  <span>{t.panelSelect.guildAdminFeature1}</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-600 dark:text-green-400 mr-2 font-bold">✓</span>
-                  <span>Event management</span>
+                  <span>{t.panelSelect.guildAdminFeature2}</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-600 dark:text-green-400 mr-2 font-bold">✓</span>
-                  <span>Template creation</span>
+                  <span>{t.panelSelect.guildAdminFeature3}</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-600 dark:text-green-400 mr-2 font-bold">✓</span>
-                  <span>Server settings</span>
+                  <span>{t.panelSelect.guildAdminFeature4}</span>
                 </li>
               </ul>
               <div className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold group-hover:shadow-lg transition-shadow">
-                Choose Server →
+                {t.panelSelect.chooseServer}
               </div>
             </div>
           </div>
@@ -144,7 +167,7 @@ export default function PanelSelect() {
             onClick={() => navigate('/')}
             className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors font-medium"
           >
-            ← Back to Home
+            {t.panelSelect.backToHome}
           </button>
         </div>
       </div>

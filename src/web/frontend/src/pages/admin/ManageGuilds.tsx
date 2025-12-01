@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useGuild } from '../../contexts/GuildContext';
 import Footer from '../../components/Footer';
 
 interface Guild {
@@ -18,6 +19,7 @@ interface Guild {
 
 export default function ManageGuilds() {
   const navigate = useNavigate();
+  const { setSelectedGuild } = useGuild();
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -183,7 +185,19 @@ export default function ManageGuilds() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => navigate(`/guild/${guild.id}/dashboard`)}
+                      onClick={() => {
+                        // Set guild context before navigating
+                        setSelectedGuild({
+                          id: guild.id,
+                          name: guild.name,
+                          icon: null,
+                          owner: false,
+                          permissions: '0',
+                          hasBot: guild.isActive,
+                          memberCount: guild.memberCount
+                        });
+                        navigate(`/guild/${guild.id}/dashboard`);
+                      }}
                       className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
                     >
                       View Details

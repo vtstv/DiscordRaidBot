@@ -15,13 +15,28 @@ const prisma = getPrismaClient();
  */
 export async function checkMessageDeletion(): Promise<void> {
   const now = DateTime.now();
+  const client = getClient();
 
-  // Get all completed events that should be deleted
+  if (!client) {
+    logger.warn('Discord client not available, skipping message deletion');
+    return;
+  }
+
+  // Get guilds where bot is present (from bot cache)
+  const botGuildIds = Array.from(client.guilds.cache.keys());
+
+  if (botGuildIds.length === 0) {
+    logger.debug('Bot not in any guilds, skipping message deletion');
+    return;
+  }
+
+  // Get completed events that should be deleted, ONLY from guilds where bot is present
   const events = await prisma.event.findMany({
     where: {
       status: 'completed',
       archivedAt: { not: null },
       deletedAt: null,
+      guildId: { in: botGuildIds }, // Filter at SQL level
       guild: {
         autoDeleteHours: { not: null },
       },
@@ -29,6 +44,7 @@ export async function checkMessageDeletion(): Promise<void> {
     include: {
       guild: {
         select: {
+          id: true,
           autoDeleteHours: true,
         },
       },

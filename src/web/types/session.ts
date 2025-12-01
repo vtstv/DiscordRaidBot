@@ -18,6 +18,7 @@ declare module 'fastify' {
       icon: string | null;
       owner: boolean;
     }>;
+    isBotAdmin?: boolean;
   }
 }
 

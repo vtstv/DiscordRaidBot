@@ -161,6 +161,6 @@ export const ru: TranslationKeys = {
     noShowMarked: '✅ Отмечен {username} как не явившийся на событие **{eventTitle}**.',
     userNotFound: '❌ Пользователь {username} не найден в этом событии.',
     eventNotFound: '❌ Событие не найдено.',
-    insufficientPermissions: '❌ Вы должны быть администратором или иметь роль менеджера для использования этой команды.',
+    insufficientPermissions: '❌ Вам нужны права администратора или роль менеджера для использования этой команды.',
   },
 };

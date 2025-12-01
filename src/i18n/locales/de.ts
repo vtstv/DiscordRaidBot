@@ -158,8 +158,8 @@ export const de = {
     statsSetupComplete: '✅ Statistik-Einrichtung abgeschlossen!',
     noShowMarked: '✅ {username} wurde als nicht erschienen für Event **{eventTitle}** markiert.',
     userNotFound: '❌ Benutzer {username} wurde in diesem Event nicht gefunden.',
-    eventNotFound: '❌ Event nicht gefunden.',
-    insufficientPermissions: '❌ Sie müssen Administrator sein oder die Manager-Rolle haben, um diesen Befehl zu verwenden.',
+    eventNotFound: '❌ Ereignis nicht gefunden.',
+    insufficientPermissions: '❌ Sie benötigen Administrator- oder Manager-Rechte, um diesen Befehl zu verwenden.',
   },
 };
 

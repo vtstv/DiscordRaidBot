@@ -37,7 +37,7 @@ const PublicRoll = lazy(() => import('./pages/PublicRoll'));
 const Compositions = lazy(() => import('./pages/Compositions'));
 
 function AppRoutes() {
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
     return (
@@ -54,43 +54,39 @@ function AppRoutes() {
       </div>
     }>
       <Routes>
-        {/* Public routes */}
+        {/* Public routes - accessible without authentication */}
         <Route path="/event/:eventId" element={<PublicEvent />} />
         <Route path="/raidplan/:raidPlanId" element={<PublicRaidPlan />} />
         <Route path="/roll/:rollId" element={<PublicRoll />} />
 
-      {!user ? (
-        <>
-          <Route path="/" element={<Landing />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </>
-      ) : (
-        <>
-          <Route path="/" element={<Landing />} />
-          <Route path="/select-panel" element={<PanelSelect />} />
-          <Route path="/a" element={<BotAdminPanel />} />
-          <Route path="/a/search" element={<GlobalSearch />} />
-          <Route path="/a/analytics" element={<Analytics />} />
-          <Route path="/a/audit-logs" element={<AuditLogs />} />
-          <Route path="/a/guilds" element={<ManageGuilds />} />
-          <Route path="/a/settings" element={<SystemSettings />} />
-          <Route path="/a/bulk-operations" element={<BulkOperations />} />
-          <Route path="/servers" element={<ServerSelect />} />
-          <Route path="/guild/:guildId/dashboard" element={<Dashboard />} />
-          <Route path="/guild/:guildId/events" element={<Events />} />
-          <Route path="/guild/:guildId/events/:eventId" element={<EventDetails />} />
-          <Route path="/guild/:guildId/events/:eventId/composition" element={<CompositionTool />} />
-          <Route path="/guild/:guildId/events/create" element={<CreateEvent />} />
-          <Route path="/guild/:guildId/events/:eventId/edit" element={<CreateEvent />} />
-          <Route path="/guild/:guildId/compositions" element={<Compositions />} />
-          <Route path="/guild/:guildId/calendar" element={<EventCalendar />} />
-          <Route path="/guild/:guildId/templates" element={<Templates />} />
-          <Route path="/guild/:guildId/templates/create" element={<CreateTemplate />} />
-          <Route path="/guild/:guildId/templates/:templateId/edit" element={<CreateTemplate />} />
-          <Route path="/guild/:guildId/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/servers" replace />} />
-        </>
-      )}
+        {/* Landing page - accessible to everyone */}
+        <Route path="/" element={<Landing />} />
+        
+        {/* Protected routes - components handle their own auth checks */}
+        <Route path="/select-panel" element={<PanelSelect />} />
+        <Route path="/a" element={<BotAdminPanel />} />
+        <Route path="/a/search" element={<GlobalSearch />} />
+        <Route path="/a/analytics" element={<Analytics />} />
+        <Route path="/a/audit-logs" element={<AuditLogs />} />
+        <Route path="/a/guilds" element={<ManageGuilds />} />
+        <Route path="/a/settings" element={<SystemSettings />} />
+        <Route path="/a/bulk-operations" element={<BulkOperations />} />
+        <Route path="/servers" element={<ServerSelect />} />
+        <Route path="/guild/:guildId/dashboard" element={<Dashboard />} />
+        <Route path="/guild/:guildId/events" element={<Events />} />
+        <Route path="/guild/:guildId/events/:eventId" element={<EventDetails />} />
+        <Route path="/guild/:guildId/events/:eventId/composition" element={<CompositionTool />} />
+        <Route path="/guild/:guildId/events/create" element={<CreateEvent />} />
+        <Route path="/guild/:guildId/events/:eventId/edit" element={<CreateEvent />} />
+        <Route path="/guild/:guildId/compositions" element={<Compositions />} />
+        <Route path="/guild/:guildId/calendar" element={<EventCalendar />} />
+        <Route path="/guild/:guildId/templates" element={<Templates />} />
+        <Route path="/guild/:guildId/templates/create" element={<CreateTemplate />} />
+        <Route path="/guild/:guildId/templates/:templateId/edit" element={<CreateTemplate />} />
+        <Route path="/guild/:guildId/settings" element={<Settings />} />
+        
+        {/* Fallback - redirect to landing */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );

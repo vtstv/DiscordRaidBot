@@ -26,6 +26,36 @@ setInterval(() => {
 }, 60 * 1000);
 
 /**
+ * Clear guild member cache for specific guild
+ * Call this when permissions or roles change to force fresh data
+ */
+export function clearGuildMemberCache(guildId: string): void {
+  let cleared = 0;
+  for (const key of guildMemberCache.keys()) {
+    if (key.endsWith(`:${guildId}`)) {
+      guildMemberCache.delete(key);
+      cleared++;
+    }
+  }
+  logger.info({ guildId, cleared }, 'Cleared guild member cache');
+}
+
+/**
+ * Clear all cache for specific user
+ * Call this after login to ensure fresh data
+ */
+export function clearUserCache(userId: string): void {
+  let cleared = 0;
+  for (const key of guildMemberCache.keys()) {
+    if (key.startsWith(`${userId}:`)) {
+      guildMemberCache.delete(key);
+      cleared++;
+    }
+  }
+  logger.info({ userId, cleared }, 'Cleared user cache');
+}
+
+/**
  * Get auth session from request.session (Fastify session)
  */
 function getAuthSession(request: FastifyRequest): AuthSession | null {
@@ -135,64 +165,120 @@ export async function requireGuildAdmin(
   }
 
   try {
-    // Check if bot is in the guild
+    // Check if guild exists in database (guilds table is synced by bot on startup)
+    // If guild is in DB, bot is present in it
     const guildInDb = await prisma.guild.findUnique({
       where: { id: guildId },
-      select: { id: true, managerRoleId: true },
+      select: { id: true, name: true, managerRoleId: true },
     });
 
+    // If guild not in database, bot is not present
     if (!guildInDb) {
-      reply.code(404).send({
-        error: 'Not Found',
-        message: 'Guild not found or bot not in guild',
+      // Get guild name from OAuth for better error message
+      try {
+        const userGuilds = await getUserGuilds(session.accessToken);
+        const userGuild = userGuilds.find(g => g.id === guildId);
+        
+        logger.warn({ userId: session.user.id, guildId }, 'Bot not present - guild not in database');
+        reply.code(404).send({
+          error: 'Bot Not In Guild',
+          message: 'The bot is not present in this guild. Please invite the bot to use the dashboard.',
+          guildName: userGuild?.name || 'Unknown Guild',
+        });
+        return;
+      } catch (error) {
+        // If OAuth fails, still return error but without guild name
+        logger.warn({ userId: session.user.id, guildId, error }, 'Bot not present, OAuth failed');
+        reply.code(404).send({
+          error: 'Bot Not In Guild',
+          message: 'The bot is not present in this guild. Please invite the bot to use the dashboard.',
+          guildName: 'Unknown Guild',
+        });
+        return;
+      }
+    }
+
+    // Bot is present - check user permissions via cache or OAuth
+    const guildsCacheKey = `${session.user.id}:guilds`;
+    const cachedGuilds = guildMemberCache.get(guildsCacheKey);
+    
+    let userGuilds: any[];
+    let userGuild: any;
+    
+    if (cachedGuilds && cachedGuilds.expiresAt > Date.now()) {
+      userGuilds = cachedGuilds.member;
+      userGuild = userGuilds.find(g => g.id === guildId);
+      logger.debug({ userId: session.user.id, guildId }, 'Using cached user guilds');
+    } else {
+      try {
+        userGuilds = await getUserGuilds(session.accessToken);
+        userGuild = userGuilds.find(g => g.id === guildId);
+        
+        // Cache the guilds list (shorter TTL to avoid stale data)
+        guildMemberCache.set(guildsCacheKey, {
+          member: userGuilds,
+          expiresAt: Date.now() + (60 * 1000), // 1 minute only for guilds list
+        });
+        logger.debug({ userId: session.user.id, guildId }, 'Cached user guilds');
+      } catch (error) {
+        // If OAuth fails but bot is in guild, continue with DB check only
+        logger.warn({ userId: session.user.id, guildId, error }, 'Failed to get user guilds via OAuth, falling back to DB check');
+        userGuild = null;
+      }
+    }
+
+    if (!userGuild) {
+      logger.warn({ userId: session.user.id, guildId }, 'User not found in guild via OAuth');
+      reply.code(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this guild',
       });
       return;
     }
 
+    // Check if user has admin permissions via OAuth
+    const isOwner = userGuild.owner;
+    const hasAdminPerms = hasAdminPermissions(userGuild.permissions);
+
+    if (isOwner || hasAdminPerms) {
+      logger.debug({ userId: session.user.id, guildId, isOwner, hasAdminPerms }, 'User has admin permissions via OAuth');
+      (request as any).guildMember = { roles: [] }; // Placeholder
+      return;
+    }
+
+    // If not owner/admin, check manager role via bot API
     // Check cache first to avoid rate limiting
     const cacheKey = `${session.user.id}:${guildId}`;
     const cached = guildMemberCache.get(cacheKey);
     
     let member: any;
     if (cached && cached.expiresAt > Date.now()) {
-      // Use cached member data
       member = cached.member;
       logger.debug({ userId: session.user.id, guildId }, 'Using cached guild member data');
     } else {
-      // Fetch from Discord API
+      logger.info({ userId: session.user.id, guildId }, 'Fetching guild member from Discord API');
       member = await getGuildMember(guildId, session.user.id);
-      if (!member) {
-        reply.code(403).send({
-          error: 'Forbidden',
-          message: 'You are not a member of this guild',
+      if (member) {
+        guildMemberCache.set(cacheKey, {
+          member,
+          expiresAt: Date.now() + CACHE_DURATION_MS,
         });
-        return;
+        logger.debug({ userId: session.user.id, guildId }, 'Cached guild member data');
       }
-      
-      // Cache the result
-      guildMemberCache.set(cacheKey, {
-        member,
-        expiresAt: Date.now() + CACHE_DURATION_MS,
-      });
-      logger.debug({ userId: session.user.id, guildId }, 'Cached guild member data');
     }
 
-    // getGuildMember already returns member with roles
-    // Check if member has admin permissions by checking their roles in the guild
-    // We'll use the guild's @everyone role permissions as base, then check role hierarchy
-    // For simplicity, we'll accept if user has manager role or trust Discord's member fetch
-    
-    // Check manager role first
-    if (guildInDb.managerRoleId && member.roles.includes(guildInDb.managerRoleId)) {
+    // Check manager role if set
+    if (guildInDb.managerRoleId && member?.roles.includes(guildInDb.managerRoleId)) {
       (request as any).guildMember = member;
       return;
     }
 
-    // If no manager role set or user doesn't have it, they need admin perms
-    // We assume admin users are allowed (getGuildMember would have role info)
-    // For now, we'll allow access if member exists and check proper perms later
-    // TODO: Implement proper permission checking via guild roles
-    (request as any).guildMember = member;
+    // No admin permissions and no manager role
+    logger.warn({ userId: session.user.id, guildId, hasManagerRole: !!guildInDb.managerRoleId }, 'User lacks required permissions');
+    reply.code(403).send({
+      error: 'Forbidden',
+      message: 'Administrator or manager role required',
+    });
     return;
 
   } catch (error) {

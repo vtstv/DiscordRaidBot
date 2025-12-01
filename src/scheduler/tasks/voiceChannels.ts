@@ -33,15 +33,27 @@ export async function manageVoiceChannels(): Promise<void> {
 async function createVoiceChannels(now: Date): Promise<void> {
   try {
     const client = getClient();
-    if (!client) return;
+    if (!client) {
+      logger.warn('Discord client not available, skipping voice channel creation');
+      return;
+    }
 
-    // Find events that need voice channels created
+    // Get guilds where bot is present
+    const botGuildIds = Array.from(client.guilds.cache.keys());
+
+    if (botGuildIds.length === 0) {
+      logger.debug('Bot not in any guilds, skipping voice channel creation');
+      return;
+    }
+
+    // Find events that need voice channels created, ONLY from guilds where bot is present
     const events = await prisma.event.findMany({
       where: {
         createVoiceChannel: true,
         voiceChannelId: null,
         status: 'scheduled',
         voiceChannelCreatedAt: null,
+        guildId: { in: botGuildIds }, // Filter at SQL level
       },
       include: {
         guild: true,
@@ -53,6 +65,7 @@ async function createVoiceChannels(now: Date): Promise<void> {
     });
 
     for (const event of events) {
+
       try {
         // Calculate when to create channel
         const createBefore = event.voiceChannelCreateBefore ?? event.guild.voiceChannelCreateBefore;
@@ -152,17 +165,30 @@ async function createVoiceChannels(now: Date): Promise<void> {
 async function deleteExpiredVoiceChannels(now: Date): Promise<void> {
   try {
     const client = getClient();
-    if (!client) return;
+    if (!client) {
+      logger.warn('Discord client not available, skipping voice channel deletion');
+      return;
+    }
 
-    // Find events with voice channels that should be deleted
+    // Get guilds where bot is present
+    const botGuildIds = Array.from(client.guilds.cache.keys());
+
+    if (botGuildIds.length === 0) {
+      logger.debug('Bot not in any guilds, skipping voice channel deletion');
+      return;
+    }
+
+    // Find events with voice channels that should be deleted, ONLY from guilds where bot is present
     const events = await prisma.event.findMany({
       where: {
         voiceChannelId: { not: null },
         voiceChannelDeleteAt: { lte: now },
+        guildId: { in: botGuildIds }, // Filter at SQL level
       },
     });
 
     for (const event of events) {
+
       try {
         if (!event.voiceChannelId) continue;
 

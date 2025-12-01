@@ -6,6 +6,7 @@ import { FastifyInstance } from 'fastify';
 import getPrismaClient from '../../database/db.js';
 import { getLeaderboard, getUserStats } from '../../services/statistics.js';
 import { bulkGetDiscordUserInfo } from '../../utils/discord-enrichment.js';
+import { requireGuildAccess } from '../auth/permissions.js';
 
 const prisma = getPrismaClient();
 
@@ -13,7 +14,9 @@ export async function statsRoutes(server: FastifyInstance): Promise<void> {
   // Get leaderboard for a guild
   server.get<{
     Querystring: { guildId: string; limit?: string };
-  }>('/leaderboard', async (request, reply) => {
+  }>('/leaderboard', {
+    preHandler: requireGuildAccess()
+  }, async (request, reply) => {
     const { guildId, limit } = request.query;
 
     if (!guildId) {
@@ -38,7 +41,9 @@ export async function statsRoutes(server: FastifyInstance): Promise<void> {
   // Get personal stats for a user
   server.get<{
     Querystring: { guildId: string; userId: string };
-  }>('/user', async (request, reply) => {
+  }>('/user', {
+    preHandler: requireGuildAccess()
+  }, async (request, reply) => {
     const { guildId, userId } = request.query;
 
     if (!guildId || !userId) {
@@ -57,7 +62,9 @@ export async function statsRoutes(server: FastifyInstance): Promise<void> {
   // Get guild stats settings
   server.get<{
     Querystring: { guildId: string };
-  }>('/settings', async (request, reply) => {
+  }>('/settings', {
+    preHandler: requireGuildAccess()
+  }, async (request, reply) => {
     const { guildId } = request.query;
 
     if (!guildId) {
@@ -86,7 +93,9 @@ export async function statsRoutes(server: FastifyInstance): Promise<void> {
   // Get overall statistics for a guild
   server.get<{
     Querystring: { guildId: string };
-  }>('/overview', async (request, reply) => {
+  }>('/overview', {
+    preHandler: requireGuildAccess()
+  }, async (request, reply) => {
     const { guildId } = request.query;
 
     if (!guildId) {

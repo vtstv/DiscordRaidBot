@@ -16,11 +16,26 @@ const prisma = getPrismaClient();
  */
 export async function checkReminders(): Promise<void> {
   const now = DateTime.now();
+  const client = getClient();
 
-  // Get all scheduled events
+  if (!client) {
+    logger.warn('Discord client not available, skipping reminders');
+    return;
+  }
+
+  // Get guilds where bot is present (from bot cache)
+  const botGuildIds = Array.from(client.guilds.cache.keys());
+
+  if (botGuildIds.length === 0) {
+    logger.debug('Bot not in any guilds, skipping reminders');
+    return;
+  }
+
+  // Get scheduled events ONLY from guilds where bot is present
   const events = await prisma.event.findMany({
     where: {
       status: 'scheduled',
+      guildId: { in: botGuildIds }, // Filter at SQL level
       startTime: {
         gte: now.toJSDate(),
         lte: now.plus({ hours: 24 }).toJSDate(), // Only check events in next 24 hours
@@ -35,6 +50,7 @@ export async function checkReminders(): Promise<void> {
   });
 
   for (const event of events) {
+
     const eventStart = DateTime.fromJSDate(event.startTime, { zone: event.timezone });
     const timeUntilStart = eventStart.diff(now, 'milliseconds').milliseconds;
 
