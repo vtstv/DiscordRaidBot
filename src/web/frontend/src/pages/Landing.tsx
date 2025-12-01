@@ -6,7 +6,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useState, useEffect, useRef } from 'react';
 import { HeroSection } from '../components/landing/HeroSection';
 import { FeaturesSection } from '../components/landing/FeaturesSection';
-import { LandingFooter } from '../components/landing/LandingFooter';
 import { HamburgerMenu } from '../components/landing/HamburgerMenu';
 
 const API_BASE_URL = window.location.origin;
@@ -186,8 +185,6 @@ export default function Landing() {
         {/* Features Section */}
         <div id="features" ref={featuresRef} className="snap-start">
           <FeaturesSection />
-          {/* Footer at the bottom of last section */}
-          <LandingFooter />
         </div>
       </div>
     </div>

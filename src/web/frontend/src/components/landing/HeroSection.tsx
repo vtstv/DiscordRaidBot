@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { LandingFooter } from './LandingFooter';
 
 interface HeroSectionProps {
   user: any;
@@ -36,14 +37,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const navigate = useNavigate();
 
   return (
-    <section className="min-h-screen flex items-center justify-center relative pb-16">
+    <section className="min-h-screen flex flex-col justify-center relative pb-16 lg:pb-0">
       {/* Animated background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-300/20 dark:bg-purple-600/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-300/20 dark:bg-pink-600/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 relative z-10 flex-grow flex flex-col justify-center">
         <div className="text-center">
           {/* Logo */}
           <div className="inline-flex items-center justify-center mb-8 relative group">
@@ -186,10 +187,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       </div>
 
       {/* Scroll indicator - moved to bottom of section */}
-      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 animate-bounce">
+      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 animate-bounce lg:hidden">
         <svg className="w-8 h-8 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
         </svg>
+      </div>
+
+      {/* Footer visible only on desktop */}
+      <div className="hidden lg:block relative z-10">
+        <LandingFooter />
       </div>
     </section>
   );

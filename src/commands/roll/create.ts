@@ -56,21 +56,23 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     let startDelay: number | null = null;
 
     if (durationStr) {
-      duration = parseDuration(durationStr);
-      if (duration === null) {
+      const durationMs = parseDuration(durationStr);
+      if (durationMs === null) {
         return interaction.editReply({
           content: '❌ Invalid duration format. Use format like "30m", "1h", "2h 30m"',
         });
       }
+      duration = Math.floor(durationMs / 1000); // Convert to seconds
     }
 
     if (startDelayStr) {
-      startDelay = parseDuration(startDelayStr);
-      if (startDelay === null) {
+      const startDelayMs = parseDuration(startDelayStr);
+      if (startDelayMs === null) {
         return interaction.editReply({
           content: '❌ Invalid start delay format. Use format like "5m", "10m", "1h"',
         });
       }
+      startDelay = Math.floor(startDelayMs / 1000); // Convert to seconds
     }
 
     // Parse allowed roles
