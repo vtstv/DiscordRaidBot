@@ -123,11 +123,6 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
 
       // For each guild with dashboardRoles, check if user has any of those roles
       for (const dbGuild of dbGuildsWithDashboardRoles) {
-        // Skip if already in adminGuilds
-        if (adminGuilds.some(g => g.id === dbGuild.id)) {
-          continue;
-        }
-
         // Get user's member info in this guild
         const memberInfo = await getGuildMember(dbGuild.id, user.id);
         
@@ -138,25 +133,38 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
           );
 
           if (hasRequiredRole) {
-            // Find the guild in user's guilds list
-            const guildInfo = guilds.find(g => g.id === dbGuild.id);
-            if (guildInfo) {
-              // Mark this guild as role-based access (not admin)
-              adminGuilds.push({
-                ...guildInfo,
-                isRoleBased: true // Flag to indicate this is role-based, not admin
-              } as any);
+            // Check if user already in adminGuilds (has ADMINISTRATOR permission)
+            const existingIndex = adminGuilds.findIndex(g => g.id === dbGuild.id);
+            
+            if (existingIndex !== -1) {
+              // User has ADMINISTRATOR but also has dashboard role
+              // Mark as role-based to enforce permission restrictions
+              adminGuilds[existingIndex] = {
+                ...adminGuilds[existingIndex],
+                isRoleBased: true
+              } as any;
             } else {
-              // User is in the guild but it didn't come from Discord API
-              // This shouldn't happen, but add it anyway with minimal info
-              adminGuilds.push({
-                id: dbGuild.id,
-                name: dbGuild.name,
-                icon: null,
-                isRoleBased: true, // Flag to indicate this is role-based, not admin
-                owner: false,
-                permissions: '0'
-              } as any);
+              // User doesn't have ADMINISTRATOR, only dashboard role
+              // Find the guild in user's guilds list
+              const guildInfo = guilds.find(g => g.id === dbGuild.id);
+              if (guildInfo) {
+                // Mark this guild as role-based access (not admin)
+                adminGuilds.push({
+                  ...guildInfo,
+                  isRoleBased: true // Flag to indicate this is role-based, not admin
+                } as any);
+              } else {
+                // User is in the guild but it didn't come from Discord API
+                // This shouldn't happen, but add it anyway with minimal info
+                adminGuilds.push({
+                  id: dbGuild.id,
+                  name: dbGuild.name,
+                  icon: null,
+                  isRoleBased: true, // Flag to indicate this is role-based, not admin
+                  owner: false,
+                  permissions: '0'
+                } as any);
+              }
             }
           }
         }
