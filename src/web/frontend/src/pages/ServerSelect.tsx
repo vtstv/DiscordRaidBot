@@ -17,10 +17,31 @@ export default function ServerSelect() {
   const { theme, toggleTheme } = useTheme();
   const { t } = useI18n();
   const navigate = useNavigate();
-  const [guilds, setGuilds] = useState<Guild[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Try to load cached guilds from sessionStorage
+  const getCachedGuilds = (): Guild[] => {
+    try {
+      const cached = sessionStorage.getItem('guilds_cache');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  };
+  
+  const getCachedTimestamp = (): number => {
+    try {
+      const timestamp = sessionStorage.getItem('guilds_cache_timestamp');
+      return timestamp ? parseInt(timestamp) : 0;
+    } catch {
+      return 0;
+    }
+  };
+  
+  const [guilds, setGuilds] = useState<Guild[]>(getCachedGuilds());
+  const [loading, setLoading] = useState(getCachedGuilds().length === 0);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(getCachedTimestamp());
 
   const getAvatarUrl = () => {
     if (!user) return null;
@@ -37,17 +58,90 @@ export default function ServerSelect() {
   };
 
   useEffect(() => {
-    loadGuilds();
+    // Load guilds from cache or server - only refresh if cache is empty or very old
+    if (guilds.length === 0) {
+      loadGuildsWithRefresh();
+    } else {
+      setLoading(false);
+    }
   }, []);
+
+  // Load guilds with automatic permission refresh
+  const loadGuildsWithRefresh = async () => {
+    // Prevent refresh more than once per minute
+    const now = Date.now();
+    if (now - lastRefreshTime < 60000) {
+      console.log('[ServerSelect] Skipping refresh - too soon (< 1 min)');
+      // Just load guilds without refresh
+      return loadGuilds();
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // First, silently refresh permissions to get latest roles from Discord
+      try {
+        await api.refreshPermissions();
+        setLastRefreshTime(Date.now());
+        console.log('[ServerSelect] Permissions refreshed automatically');
+      } catch (refreshErr) {
+        // Don't fail if refresh fails - continue with cached data
+        console.warn('[ServerSelect] Failed to auto-refresh permissions:', refreshErr);
+      }
+      
+      // Then load guilds (will use fresh data after refresh)
+      const data = await api.getAdminGuilds();
+      console.log('[ServerSelect] Guilds received:', data.guilds.map(g => ({ name: g.name, hasBot: g.hasBot })));
+      setGuilds(data.guilds);
+      
+      // Cache guilds in sessionStorage
+      try {
+        sessionStorage.setItem('guilds_cache', JSON.stringify(data.guilds));
+        sessionStorage.setItem('guilds_cache_timestamp', Date.now().toString());
+      } catch (e) {
+        console.warn('[ServerSelect] Failed to cache guilds:', e);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load servers';
+      setError(errorMessage);
+      
+      // Redirect to landing page after 2 seconds if Unauthorized
+      if (errorMessage === 'Unauthorized') {
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadGuilds = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await api.getAdminGuilds();
       console.log('[ServerSelect] Guilds received:', data.guilds.map(g => ({ name: g.name, hasBot: g.hasBot })));
       setGuilds(data.guilds);
+      
+      // Cache guilds in sessionStorage
+      try {
+        sessionStorage.setItem('guilds_cache', JSON.stringify(data.guilds));
+        sessionStorage.setItem('guilds_cache_timestamp', Date.now().toString());
+      } catch (e) {
+        console.warn('[ServerSelect] Failed to cache guilds:', e);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load servers');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load servers';
+      setError(errorMessage);
+      
+      // Redirect to landing page after 2 seconds if Unauthorized
+      if (errorMessage === 'Unauthorized') {
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
+      }
     } finally {
       setLoading(false);
     }
