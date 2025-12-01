@@ -4,6 +4,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../contexts/I18nContext';
+import { getConfig } from '../config';
 
 interface BotNotInGuildErrorProps {
   guildName?: string;
@@ -15,10 +16,12 @@ export default function BotNotInGuildError({ guildName, message }: BotNotInGuild
   const { t } = useI18n();
 
   const inviteBot = () => {
-    // Get client ID from window.ENV (injected by backend)
-    const clientId = (window as any).ENV?.DISCORD_CLIENT_ID;
+    // Get client ID from config
+    const config = getConfig();
+    const clientId = config.discordClientId;
+    
     if (!clientId) {
-      console.error('Discord client ID not available');
+      console.error('Discord client ID not available in config');
       return;
     }
     

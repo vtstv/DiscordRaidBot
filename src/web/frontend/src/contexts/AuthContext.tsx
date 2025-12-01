@@ -45,12 +45,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(data.user);
       setAdminGuilds(data.adminGuilds || []);
       setIsBotAdmin(data.isBotAdmin || false);
-    } catch (err) {
+    } catch (err: any) {
       setUser(null);
       setAdminGuilds([]);
       setIsBotAdmin(false);
-      // Don't set error for 401 (not authenticated)
-      if (err instanceof Error && !err.message.includes('401')) {
+      // Don't set error or log for 401 (not authenticated) - this is expected on first load
+      if (err?.status !== 401) {
+        console.error('Failed to refresh user:', err);
         setError(err.message);
       }
     } finally {

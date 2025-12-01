@@ -172,7 +172,15 @@ class ApiService {
 
   // Auth
   async getMe(): Promise<{ user: DiscordUser; adminGuilds: Guild[]; isBotAdmin: boolean }> {
-    return this.request('/auth/me');
+    try {
+      return await this.request('/auth/me');
+    } catch (error) {
+      // Silent fail for 401 (not authenticated) - this is expected on first load
+      if (error instanceof ApiError && error.status === 401) {
+        throw error; // Still throw but won't log to console
+      }
+      throw error;
+    }
   }
 
   async getAdminGuilds(): Promise<{ guilds: Guild[] }> {

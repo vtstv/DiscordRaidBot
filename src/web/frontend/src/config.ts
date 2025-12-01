@@ -5,6 +5,7 @@
 export interface AppConfig {
   apiBaseUrl: string;
   oauthEnabled: boolean;
+  discordClientId?: string;
 }
 
 let config: AppConfig | null = null;
