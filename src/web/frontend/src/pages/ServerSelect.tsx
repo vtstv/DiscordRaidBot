@@ -19,6 +19,7 @@ export default function ServerSelect() {
   const navigate = useNavigate();
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const getAvatarUrl = () => {
@@ -49,6 +50,20 @@ export default function ServerSelect() {
       setError(err instanceof Error ? err.message : 'Failed to load servers');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshPermissions = async () => {
+    try {
+      setRefreshing(true);
+      setError(null);
+      await api.refreshPermissions();
+      // Reload guilds after refresh
+      await loadGuilds();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to refresh permissions');
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -102,6 +117,24 @@ export default function ServerSelect() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Refresh Permissions Button */}
+              <button
+                onClick={refreshPermissions}
+                disabled={refreshing}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-800/40 text-purple-700 dark:text-purple-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh permissions if you just received a new role"
+              >
+                <svg 
+                  className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span className="hidden md:inline">{refreshing ? 'Refreshing...' : 'Refresh Access'}</span>
+              </button>
+
               {/* Language Switcher */}
               <LanguageSwitcher compact />
               

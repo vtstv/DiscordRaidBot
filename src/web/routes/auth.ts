@@ -399,4 +399,124 @@ export async function registerAuthRoutes(fastify: FastifyInstance): Promise<void
     
     reply.send({ guilds: filteredGuilds });
   });
+
+  /**
+   * POST /auth/refresh-permissions
+   * Clear cache and re-fetch user's guild permissions
+   * Use this when user's roles change and they need immediate access
+   */
+  fastify.post('/auth/refresh-permissions', async (request, reply) => {
+    const user = (request as any).session?.user;
+    
+    if (!user) {
+      return reply.code(401).send({
+        error: 'Unauthorized',
+        message: 'Not authenticated',
+      });
+    }
+
+    logger.info({ userId: user.id }, 'Refreshing user permissions');
+
+    // Clear user's cache
+    const { clearUserCache } = await import('../auth/middleware.js');
+    clearUserCache(user.id);
+
+    // Re-fetch user's guilds and permissions
+    const accessToken = (request as any).session?.accessToken;
+    if (!accessToken) {
+      return reply.code(400).send({
+        error: 'Bad Request',
+        message: 'No access token in session. Please log out and log in again.',
+      });
+    }
+
+    try {
+      // Get fresh guilds from Discord
+      const guilds = await getUserGuilds(accessToken);
+      
+      // Find guilds where user has admin permissions
+      let adminGuilds = guilds.filter(guild => 
+        guild.owner || hasAdminPermissions(guild.permissions)
+      );
+
+      // Check guilds with dashboardRoles
+      const dbGuildsWithDashboardRoles = await prisma.guild.findMany({
+        where: {
+          dashboardRoles: {
+            isEmpty: false
+          }
+        },
+        select: {
+          id: true,
+          name: true,
+          dashboardRoles: true
+        }
+      });
+
+      // Check if user has required roles
+      for (const dbGuild of dbGuildsWithDashboardRoles) {
+        const memberInfo = await getGuildMember(dbGuild.id, user.id);
+        
+        if (memberInfo) {
+          const hasRequiredRole = memberInfo.roles.some(roleId => 
+            dbGuild.dashboardRoles.includes(roleId)
+          );
+
+          if (hasRequiredRole) {
+            const existingIndex = adminGuilds.findIndex(g => g.id === dbGuild.id);
+            
+            if (existingIndex !== -1) {
+              adminGuilds[existingIndex] = {
+                ...adminGuilds[existingIndex],
+                isRoleBased: true
+              } as any;
+            } else {
+              const guildInfo = guilds.find(g => g.id === dbGuild.id);
+              if (guildInfo) {
+                adminGuilds.push({
+                  ...guildInfo,
+                  isRoleBased: true
+                } as any);
+              } else {
+                adminGuilds.push({
+                  id: dbGuild.id,
+                  name: dbGuild.name,
+                  icon: null,
+                  isRoleBased: true,
+                  owner: false,
+                  permissions: '0'
+                } as any);
+              }
+            }
+          }
+        }
+      }
+
+      // Update session with fresh data
+      request.session.adminGuilds = adminGuilds.map(g => ({
+        id: g.id,
+        name: g.name,
+        icon: g.icon,
+        owner: g.owner,
+        isRoleBased: (g as any).isRoleBased || false,
+      }));
+
+      logger.info({ 
+        userId: user.id, 
+        adminGuildsCount: adminGuilds.length 
+      }, 'Permissions refreshed successfully');
+
+      reply.send({ 
+        success: true,
+        message: 'Permissions refreshed',
+        adminGuilds: request.session.adminGuilds,
+      });
+    } catch (error) {
+      logger.error({ error, userId: user.id }, 'Failed to refresh permissions');
+      return reply.code(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to refresh permissions',
+      });
+    }
+  });
 }

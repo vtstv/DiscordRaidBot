@@ -194,6 +194,13 @@ class ApiService {
     });
   }
 
+  async refreshPermissions(): Promise<{ success: boolean; message: string; adminGuilds: Guild[] }> {
+    return this.request('/auth/refresh-permissions', {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+  }
+
   // Guilds
   async getUserGuilds(): Promise<Guild[]> {
     return this.request('/api/guilds');
