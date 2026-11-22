@@ -53,3 +53,4 @@ tmp/
 scripts/add-c.ps1
 backups
 scripts/deploy-remote.ps1
+scripts/check-server-health.ps1
