@@ -2,7 +2,7 @@
 // Unit tests for time utilities
 
 import { describe, it, expect } from 'vitest';
-import { parseTime, parseDuration, formatDiscordTimestamp, isValidTimezone } from '../src/utils/time.js';
+import { parseTime, parseDuration, formatDiscordTimestamp, isValidTimezone } from '../../src/utils/time.js';
 import { DateTime } from 'luxon';
 
 describe('Time Utils', () => {

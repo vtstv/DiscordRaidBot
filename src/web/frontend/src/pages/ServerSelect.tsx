@@ -58,64 +58,13 @@ export default function ServerSelect() {
   };
 
   useEffect(() => {
-    // Load guilds from cache or server - only refresh if cache is empty or very old
+    // Load guilds from cache or server
     if (guilds.length === 0) {
-      loadGuildsWithRefresh();
+      loadGuilds();
     } else {
       setLoading(false);
     }
   }, []);
-
-  // Load guilds with automatic permission refresh
-  const loadGuildsWithRefresh = async () => {
-    // Prevent refresh more than once per minute
-    const now = Date.now();
-    if (now - lastRefreshTime < 60000) {
-      console.log('[ServerSelect] Skipping refresh - too soon (< 1 min)');
-      // Just load guilds without refresh
-      return loadGuilds();
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // First, silently refresh permissions to get latest roles from Discord
-      try {
-        await api.refreshPermissions();
-        setLastRefreshTime(Date.now());
-        console.log('[ServerSelect] Permissions refreshed automatically');
-      } catch (refreshErr) {
-        // Don't fail if refresh fails - continue with cached data
-        console.warn('[ServerSelect] Failed to auto-refresh permissions:', refreshErr);
-      }
-      
-      // Then load guilds (will use fresh data after refresh)
-      const data = await api.getAdminGuilds();
-      console.log('[ServerSelect] Guilds received:', data.guilds.map(g => ({ name: g.name, hasBot: g.hasBot })));
-      setGuilds(data.guilds);
-      
-      // Cache guilds in sessionStorage
-      try {
-        sessionStorage.setItem('guilds_cache', JSON.stringify(data.guilds));
-        sessionStorage.setItem('guilds_cache_timestamp', Date.now().toString());
-      } catch (e) {
-        console.warn('[ServerSelect] Failed to cache guilds:', e);
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load servers';
-      setError(errorMessage);
-      
-      // Redirect to landing page after 2 seconds if Unauthorized
-      if (errorMessage === 'Unauthorized') {
-        setTimeout(() => {
-          navigate('/');
-        }, 2000);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadGuilds = async () => {
     try {
@@ -187,7 +136,21 @@ export default function ServerSelect() {
             </svg>
           </div>
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t.serverSelect.error}</h3>
-          <p className="text-gray-600 dark:text-gray-400">{error}</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => loadGuilds()}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium rounded-lg transition-colors cursor-pointer"
+            >
+              Back to Home
+            </button>
+          </div>
         </div>
       </div>
     );

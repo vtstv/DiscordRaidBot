@@ -81,6 +81,20 @@ export function getAccessTokenFromSession(request: FastifyRequest): string | nul
 }
 
 /**
+ * Get refresh token from session
+ */
+export function getRefreshTokenFromSession(request: FastifyRequest): string | null {
+  return (request as any).session?.refreshToken || null;
+}
+
+/**
+ * Get session expiry timestamp
+ */
+export function getSessionExpiresAt(request: FastifyRequest): number {
+  return (request as any).session?.expiresAt || 0;
+}
+
+/**
  * Determine redirect URL after login
  */
 export function getRedirectUrl(

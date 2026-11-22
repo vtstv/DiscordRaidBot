@@ -150,15 +150,38 @@ class ApiService {
     });
 
     if (!response.ok) {
-      const error: any = await response.json().catch(() => ({ error: 'Request failed' }));
-      const errorMessage = error.error || error.message || 'Request failed';
+      let errorMessage = 'Request failed';
+      let errorCode: string | undefined;
+      let guildName: string | undefined;
+
+      try {
+        const error: any = await response.json();
+        errorMessage = error.error || error.message || 'Request failed';
+        errorCode = error.code;
+        guildName = error.guildName;
+      } catch {
+        // Non-JSON response (e.g., HTML from Nginx 504/502/503)
+        if (response.status === 504) {
+          errorMessage = 'Server response timed out (504 Gateway Timeout). Please try again.';
+        } else if (response.status === 502) {
+          errorMessage = 'Server is currently unavailable (502 Bad Gateway). Please try again shortly.';
+        } else if (response.status === 503) {
+          errorMessage = 'Service temporarily unavailable (503). Please try again shortly.';
+        } else if (response.status === 429) {
+          errorMessage = 'Too many requests. Please wait a moment and try again.';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized';
+        } else {
+          errorMessage = `Request failed (${response.status} ${response.statusText || 'Error'})`;
+        }
+      }
       
       // Create enhanced error with additional context
       throw new ApiError(
         errorMessage,
         response.status,
-        error.code,
-        error.guildName
+        errorCode,
+        guildName
       );
     }
 

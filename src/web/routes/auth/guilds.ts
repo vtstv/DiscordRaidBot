@@ -3,7 +3,6 @@
 // User's admin guilds route handler
 
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { getGuildMember } from '../../auth/discord-oauth.js';
 import getPrismaClient from '../../../database/db.js';
 import { getModuleLogger } from '../../../utils/logger.js';
 import { getBotGuildIds } from '../../../services/botGuildSync.js';
@@ -17,6 +16,7 @@ const prisma = getPrismaClient();
  * Get user's admin guilds - show guilds where:
  * 1. (Bot present AND user is member) OR (Data in DB AND user is member)
  * 2. Mark each guild with hasBot: true/false
+ * Note: User membership is already verified via Discord OAuth (/users/@me/guilds).
  */
 export async function guildsHandler(
   request: FastifyRequest,
@@ -52,43 +52,15 @@ export async function guildsHandler(
   }, 'Checking guild presence');
   
   // Show guilds where: (bot present OR data in DB) AND user is member
-  const filteredGuilds: any[] = [];
-  
-  for (const g of adminGuilds) {
-    const hasBot = botGuildIds.has(g.id);
-    const inDB = dbGuildIds.has(g.id);
-    
-    // Skip if neither bot present nor data in DB
-    if (!hasBot && !inDB) {
-      logger.debug({ guildId: g.id, guildName: g.name }, 'Skipping guild - no bot and no data');
-      continue;
-    }
-    
-    // If bot is present, verify user is actually a member via Discord API
-    // If bot is NOT present, we can't verify membership (bot can't access guild info)
-    // so trust the OAuth data (guild is in adminGuilds = user has access)
-    if (hasBot) {
-      const memberInfo = await getGuildMember(g.id, user.id);
-      if (!memberInfo) {
-        logger.debug({ guildId: g.id, guildName: g.name, userId: user.id }, 'Skipping guild - user not a member');
-        continue;
-      }
-    }
-    
-    filteredGuilds.push({
+  // No external Discord API calls needed: instantaneous Redis + DB filter
+  const filteredGuilds = adminGuilds
+    .filter(g => botGuildIds.has(g.id) || dbGuildIds.has(g.id))
+    .map(g => ({
       ...g,
-      hasBot, // true if bot present, false if only data in DB
-    });
-    
-    logger.debug({
-      guildId: g.id,
-      guildName: g.name,
-      hasBot,
-      inDB
-    }, 'Guild included in list');
-  }
+      hasBot: botGuildIds.has(g.id),
+    }));
   
   logger.debug({ resultCount: filteredGuilds.length }, 'Filtered guilds result');
   
-  reply.send({ guilds: filteredGuilds });
+  return reply.send({ guilds: filteredGuilds });
 }

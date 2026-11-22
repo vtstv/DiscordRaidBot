@@ -5,6 +5,7 @@
 import { getGuildMember, hasAdminPermissions } from '../../auth/discord-oauth.js';
 import getPrismaClient from '../../../database/db.js';
 import { getModuleLogger } from '../../../utils/logger.js';
+import { getBotGuildIds } from '../../../services/botGuildSync.js';
 
 const logger = getModuleLogger('guild-permissions');
 const prisma = getPrismaClient();
@@ -33,82 +34,91 @@ export async function getAdminGuildsForUser(
   userId: string,
   userGuilds: DiscordGuild[]
 ): Promise<AdminGuild[]> {
+  const userGuildMap = new Map(userGuilds.map(g => [g.id, g]));
+
   // Find guilds where user has admin permissions
-  let adminGuilds: (DiscordGuild & { isRoleBased?: boolean })[] = userGuilds.filter(guild => 
+  const adminGuilds: (DiscordGuild & { isRoleBased?: boolean })[] = userGuilds.filter(guild => 
     guild.owner || hasAdminPermissions(guild.permissions)
   );
 
-  // Also check guilds with dashboardRoles configured
-  const dbGuildsWithDashboardRoles = await prisma.guild.findMany({
-    where: {
-      dashboardRoles: {
-        isEmpty: false
+  // Get guilds where bot is present
+  const botGuildIdsArray = await getBotGuildIds();
+  const botGuildIds = new Set(botGuildIdsArray);
+
+  // Only check guilds where:
+  // 1. User is actually a member (in userGuilds)
+  // 2. Bot is also present (in botGuildIds)
+  const candidateGuildIds = userGuilds
+    .map(g => g.id)
+    .filter(id => botGuildIds.has(id));
+
+  if (candidateGuildIds.length > 0) {
+    const dbGuildsWithDashboardRoles = await prisma.guild.findMany({
+      where: {
+        id: { in: candidateGuildIds },
+        dashboardRoles: {
+          isEmpty: false
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        dashboardRoles: true
       }
-    },
-    select: {
-      id: true,
-      name: true,
-      dashboardRoles: true
-    }
-  });
+    });
 
-  logger.debug({ 
-    userId, 
-    adminGuildsCount: adminGuilds.length,
-    dashboardRoleGuildsCount: dbGuildsWithDashboardRoles.length 
-  }, 'Checking guild permissions');
+    logger.debug({ 
+      userId, 
+      adminGuildsCount: adminGuilds.length,
+      candidateRoleGuildsCount: dbGuildsWithDashboardRoles.length 
+    }, 'Checking role-based guild permissions');
 
-  // For each guild with dashboardRoles, check if user has any of those roles
-  for (const dbGuild of dbGuildsWithDashboardRoles) {
-    // Get user's member info in this guild
-    const memberInfo = await getGuildMember(dbGuild.id, userId);
-    
-    if (memberInfo) {
-      // Check if user has any role in dashboardRoles
-      const hasRequiredRole = memberInfo.roles.some(roleId => 
-        dbGuild.dashboardRoles.includes(roleId)
+    // Run member checks in parallel with Promise.allSettled
+    if (dbGuildsWithDashboardRoles.length > 0) {
+      const memberChecks = await Promise.allSettled(
+        dbGuildsWithDashboardRoles.map(async dbGuild => {
+          const memberInfo = await getGuildMember(dbGuild.id, userId);
+          return { dbGuild, memberInfo };
+        })
       );
 
-      if (hasRequiredRole) {
-        // Check if user already in adminGuilds (has ADMINISTRATOR permission)
-        const existingIndex = adminGuilds.findIndex(g => g.id === dbGuild.id);
-        
-        if (existingIndex !== -1) {
-          // User has ADMINISTRATOR but also has dashboard role
-          // Mark as role-based to enforce permission restrictions
-          adminGuilds[existingIndex] = {
-            ...adminGuilds[existingIndex],
-            isRoleBased: true
-          };
-        } else {
-          // User doesn't have ADMINISTRATOR, only dashboard role
-          // Find the guild in user's guilds list
-          const guildInfo = userGuilds.find(g => g.id === dbGuild.id);
-          if (guildInfo) {
-            // Mark this guild as role-based access (not admin)
-            adminGuilds.push({
-              ...guildInfo,
-              isRoleBased: true // Flag to indicate this is role-based, not admin
-            });
-          } else {
-            // User is in the guild but it didn't come from Discord API
-            // This shouldn't happen, but add it anyway with minimal info
-            adminGuilds.push({
-              id: dbGuild.id,
-              name: dbGuild.name,
-              icon: null,
-              isRoleBased: true, // Flag to indicate this is role-based, not admin
-              owner: false,
-              permissions: '0'
-            });
-          }
+      for (const check of memberChecks) {
+        if (check.status !== 'fulfilled' || !check.value.memberInfo) {
+          continue;
         }
 
-        logger.debug({ 
-          guildId: dbGuild.id, 
-          userId, 
-          hasRequiredRole 
-        }, 'User has dashboard role access');
+        const { dbGuild, memberInfo } = check.value;
+        const hasRequiredRole = memberInfo.roles.some(roleId => 
+          dbGuild.dashboardRoles.includes(roleId)
+        );
+
+        if (hasRequiredRole) {
+          const existingIndex = adminGuilds.findIndex(g => g.id === dbGuild.id);
+          
+          if (existingIndex !== -1) {
+            // User has ADMINISTRATOR but also has dashboard role
+            // Mark as role-based to enforce permission restrictions
+            adminGuilds[existingIndex] = {
+              ...adminGuilds[existingIndex],
+              isRoleBased: true
+            };
+          } else {
+            // User doesn't have ADMINISTRATOR, only dashboard role
+            const guildInfo = userGuildMap.get(dbGuild.id);
+            if (guildInfo) {
+              adminGuilds.push({
+                ...guildInfo,
+                isRoleBased: true
+              });
+            }
+          }
+
+          logger.debug({ 
+            guildId: dbGuild.id, 
+            userId, 
+            hasRequiredRole 
+          }, 'User has dashboard role access');
+        }
       }
     }
   }

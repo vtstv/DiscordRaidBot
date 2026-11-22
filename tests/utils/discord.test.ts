@@ -9,7 +9,7 @@ import {
   mentionRole,
   mentionChannel,
   escapeMarkdown,
-} from '../src/utils/discord.js';
+} from '../../src/utils/discord.js';
 
 describe('Discord Utils', () => {
   describe('truncate', () => {

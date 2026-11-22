@@ -10,6 +10,8 @@ const logger = getModuleLogger('discord-oauth');
 const DISCORD_API_BASE = 'https://discord.com/api/v10';
 const DISCORD_OAUTH_URL = 'https://discord.com/api/oauth2/authorize';
 const DISCORD_TOKEN_URL = 'https://discord.com/api/oauth2/token';
+const DISCORD_TIMEOUT_MS = 10000;
+const MEMBER_CHECK_TIMEOUT_MS = 5000;
 
 export interface DiscordUser {
   id: string;
@@ -84,6 +86,7 @@ export async function exchangeCode(
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: params.toString(),
+    signal: AbortSignal.timeout(DISCORD_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -103,6 +106,7 @@ export async function getDiscordUser(accessToken: string): Promise<DiscordUser> 
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    signal: AbortSignal.timeout(DISCORD_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -118,19 +122,33 @@ export async function getDiscordUser(accessToken: string): Promise<DiscordUser> 
  * Get user's guilds from Discord
  */
 export async function getUserGuilds(accessToken: string): Promise<GuildInfo[]> {
-  const response = await fetch(`${DISCORD_API_BASE}/users/@me/guilds`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  try {
+    const response = await fetch(`${DISCORD_API_BASE}/users/@me/guilds`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      signal: AbortSignal.timeout(DISCORD_TIMEOUT_MS),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    logger.error({ status: response.status, error }, 'Failed to get user guilds');
-    throw new Error('Failed to get user guilds');
+    if (!response.ok) {
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('retry-after');
+        logger.warn({ retryAfter }, 'Discord rate limit hit (429) getting user guilds');
+        throw new Error(`Discord rate limit reached. Please wait ${retryAfter ? retryAfter + 's' : 'a moment'} and retry.`);
+      }
+      const error = await response.text();
+      logger.error({ status: response.status, error }, 'Failed to get user guilds');
+      throw new Error(`Failed to get user guilds: HTTP ${response.status}`);
+    }
+
+    return (await response.json()) as GuildInfo[];
+  } catch (error: unknown) {
+    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+      logger.error('Discord API timeout while fetching user guilds');
+      throw new Error('Discord API timed out while fetching servers. Please try again.');
+    }
+    throw error;
   }
-
-  return (await response.json()) as GuildInfo[];
 }
 
 /**
@@ -145,21 +163,35 @@ export async function getGuildMember(
       headers: {
         Authorization: `Bot ${config.DISCORD_TOKEN}`,
       },
+      signal: AbortSignal.timeout(MEMBER_CHECK_TIMEOUT_MS),
     });
 
     if (!response.ok) {
       if (response.status === 404) {
-        logger.warn({ guildId, userId, status: 404 }, 'Guild member not found (404)');
+        logger.debug({ guildId, userId, status: 404 }, 'Guild member not found (404)');
+        return null;
+      }
+      if (response.status === 403) {
+        logger.debug({ guildId, userId, status: 403 }, 'Bot lacks permission or not in guild (403)');
+        return null;
+      }
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('retry-after');
+        logger.warn({ guildId, userId, retryAfter }, 'Discord rate limit hit (429) getting guild member');
         return null;
       }
       const errorText = await response.text();
-      logger.error({ guildId, userId, status: response.status, errorText }, 'Discord API error getting guild member');
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+      logger.warn({ guildId, userId, status: response.status, errorText }, 'Discord API error getting guild member');
+      return null;
     }
 
     return (await response.json()) as GuildMemberInfo;
-  } catch (error) {
-    logger.error({ error, guildId, userId, message: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get guild member');
+  } catch (error: unknown) {
+    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+      logger.warn({ guildId, userId }, 'Discord API timeout getting guild member');
+      return null;
+    }
+    logger.warn({ error, guildId, userId, message: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get guild member');
     return null;
   }
 }
@@ -196,6 +228,7 @@ export async function getGuildRoles(guildId: string): Promise<any[]> {
       headers: {
         Authorization: `Bot ${config.DISCORD_TOKEN}`,
       },
+      signal: AbortSignal.timeout(8000),
     });
 
     if (!response.ok) {
@@ -221,6 +254,7 @@ export async function getGuildChannels(guildId: string): Promise<any[]> {
       headers: {
         Authorization: `Bot ${config.DISCORD_TOKEN}`,
       },
+      signal: AbortSignal.timeout(8000),
     });
 
     if (!response.ok) {
@@ -267,6 +301,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenRes
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: params.toString(),
+    signal: AbortSignal.timeout(DISCORD_TIMEOUT_MS),
   });
 
   if (!response.ok) {
